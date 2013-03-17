@@ -1,4 +1,3 @@
-
 package tv.hoozon;
 
 import java.io.IOException;
@@ -27,7 +26,13 @@ public class Endpoint extends HttpServlet {
 
 	public void init(ServletConfig config) throws ServletException
 	{
-		System.err.println("RedirectServlet init()");
+		System.err.println("Endpoint init()");
+		 try {
+		        Class.forName("com.mysql.jdbc.Driver");
+		    } catch (ClassNotFoundException e) {
+		        // TODO Auto-generated catch block
+		        e.printStackTrace();
+		    } 
 		super.init(config);
 	}
 
@@ -94,6 +99,7 @@ public class Endpoint extends HttpServlet {
 					{
 						jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
 						jsonresponse.put("response_status", "error");
+						sqle.printStackTrace();
 					}
 					finally
 					{
