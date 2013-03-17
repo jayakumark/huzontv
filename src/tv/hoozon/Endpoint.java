@@ -3,6 +3,11 @@ package tv.hoozon;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Calendar;
 
 import javax.servlet.ServletConfig;
@@ -11,6 +16,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
@@ -59,6 +65,54 @@ public class Endpoint extends HttpServlet {
 					JSONObject jo = new JSONObject(jsonpostbody);
 					jsonresponse.put("response_status", "success");
 					jsonresponse.put("postbody_as_received", jo);
+					
+					ResultSet rs = null;
+					Connection con = null;
+					Statement stmt = null;
+					try
+					{
+						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " limit 0,1"); 
+						rs.moveToInsertRow();
+						JSONArray ja = jo.getJSONArray("reporter_scores");
+						for(int x = 0; x < ja.length(); x++)
+						{
+							rs.updateString(ja.getJSONObject(x).getString("designation"), ja.getJSONObject(x).getJSONArray("scores").toString());
+						}
+						rs.updateString("frame_url", "https://s3.amazonaws.com/hoozon_wkyt/" + jo.getInt("timestamp") + ".jpg");
+						rs.updateLong("timestamp", jo.getInt("timestamp"));
+						rs.insertRow();
+						rs.close();
+						stmt.close();
+						con.close();
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("postbody_as_received", jo);
+						jsonresponse.put("message", "Scores should be entered into the database now.");
+					}
+					catch(SQLException sqle)
+					{
+						jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
+						jsonresponse.put("response_status", "error");
+					}
+					finally
+					{
+						try
+						{
+							if (rs  != null)
+								rs.close();
+							if (stmt  != null)
+								stmt.close();
+							if (con  != null)
+								con.close();
+						}
+						catch(SQLException sqle)
+						{
+							jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
+						}
+					}   	
+					
+					
 					/*SimpleEmailer se = new SimpleEmailer();
 					try {
 						se.sendMail("hoozon email", jo.toString(), "cyrus@gmail.com", "info@crasher.com");
