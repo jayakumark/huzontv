@@ -11,7 +11,7 @@
     	<img src="images/hoozon_logo.jpg">
     </div>
     <div style="text-align:center">
-    	Default jsp
+    	<img src="http://localhost/hoozon_finished/1363545787.jpg">
     </div>
 </body>
 </html>
