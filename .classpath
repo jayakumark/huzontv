@@ -12,8 +12,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/json-20080701.jar"/>
-	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/httpclient-4.2.3.jar"/>
-	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/httpcore-4.2.3.jar"/>
 	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/mysql-connector-java-5.1.24-bin.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

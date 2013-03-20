@@ -11,7 +11,7 @@
     	<img src="images/hoozon_logo.jpg">
     </div>
     <div style="text-align:center">
-    	<img src="http://localhost/hoozon_finished/1363545787.jpg">
+    	Backend
     </div>
 </body>
 </html>

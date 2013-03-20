@@ -78,22 +78,41 @@ public class Endpoint extends HttpServlet {
 					{
 						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
 						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " limit 0,1"); 
-						rs.moveToInsertRow();
-						JSONArray ja = jo.getJSONArray("reporter_scores");
-						for(int x = 0; x < ja.length(); x++)
-						{
-							rs.updateString(ja.getJSONObject(x).getString("designation"), ja.getJSONObject(x).getJSONArray("scores").toString());
+						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getInt("timestamp") + "' limit 0,1");
+						double currentavgscore = 0.0;
+						double total = 0.0;
+						if(!rs.next())
+						{	
+							rs.moveToInsertRow();
+							JSONArray ja = jo.getJSONArray("reporter_scores");
+							for(int x = 0; x < ja.length(); x++)
+							{
+								total = 0.0;
+								for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
+								{
+									total = total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+								}
+								currentavgscore = total / ja.getJSONObject(x).getJSONArray("scores").length();
+								rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
+								rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
+								rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
+							}
+							System.out.println("url: http://localhost/hoozon_finished/" + jo.getInt("timestamp") + ".jpg");
+							rs.updateString("image_url", "http://localhost/hoozon_finished/" + jo.getInt("timestamp") + ".jpg");
+							rs.updateLong("timestamp_in_seconds", jo.getInt("timestamp"));
+							rs.insertRow();
+							rs.close();
+							stmt.close();
+							con.close();
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("postbody_as_received", jo);
+							jsonresponse.put("message", "Scores should be entered into the database now.");
 						}
-						rs.updateString("frame_url", "https://s3.amazonaws.com/hoozon_wkyt/" + jo.getInt("timestamp") + ".jpg");
-						rs.updateLong("timestamp", jo.getInt("timestamp"));
-						rs.insertRow();
-						rs.close();
-						stmt.close();
-						con.close();
-						jsonresponse.put("response_status", "success");
-						jsonresponse.put("postbody_as_received", jo);
-						jsonresponse.put("message", "Scores should be entered into the database now.");
+						else
+						{
+							jsonresponse.put("message", "A frame for that timestamp already exists. Skipping insertion.");
+							jsonresponse.put("response_status", "error");
+						}
 					}
 					catch(SQLException sqle)
 					{
@@ -117,16 +136,12 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
 						}
 					}   	
-					
-					
-					/*SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("hoozon email", jo.toString(), "cyrus@gmail.com", "info@crasher.com");
-					} catch (MessagingException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}*/
 				}
+			}
+			else
+			{
+				jsonresponse.put("message", "Unknown method.");
+				jsonresponse.put("response_status", "error");
 			}
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
@@ -153,8 +168,190 @@ public class Endpoint extends HttpServlet {
 		long timestamp_at_entry = tempcal.getTimeInMillis();
 		try
 		{
-			jsonresponse.put("response_status", "error");
-			jsonresponse.put("message", "This endpoint doesn't speak GET yet.");
+			String method = request.getParameter("method");
+			if(method == null)
+			{
+				jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
+				jsonresponse.put("response_status", "error");
+			}
+			else if (method.equals("getFrames"))
+			{
+				String begin = request.getParameter("begin"); // required
+				String end = request.getParameter("end"); // required
+				if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "begin or end was empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else
+				{
+					ResultSet rs = null;
+					Connection con = null;
+					Statement stmt = null;
+					int x = 0;
+					double total = 0;
+					try
+					{
+						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						stmt = con.createStatement();
+						rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
+						rs.last();
+						jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+						rs.beforeFirst(); // go back to the beginning for parsing
+						JSONObject current_frame_jo = null;
+						JSONArray frames_ja = new JSONArray();
+						while(rs.next())
+						{
+							current_frame_jo = new JSONObject();
+							current_frame_jo.put("image_url", rs.getString("image_url"));
+							current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+							frames_ja.put(current_frame_jo);
+						}
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("frames", frames_ja);
+					}
+					catch(SQLException sqle)
+					{
+						jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+						jsonresponse.put("response_status", "error");
+						sqle.printStackTrace();
+					}
+					finally
+					{
+						try
+						{
+							if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+						}
+						catch(SQLException sqle)
+						{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+					}   	
+				}
+			}	
+			else if (method.equals("getFramesByDesignationAndThreshold"))
+			{	
+				String begin = request.getParameter("begin"); // required
+				String end = request.getParameter("end"); // required
+				if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "begin or end was empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // begin/end ok
+				{	
+					String designation = request.getParameter("designation"); 
+					String threshold = request.getParameter("threshold"); 
+					if(designation == null || designation.isEmpty() || threshold == null || threshold.isEmpty())
+					{	
+						jsonresponse.put("message", "designation or threshold was empty");
+						jsonresponse.put("response_status", "error");
+					}
+					else // designation/threshold ok
+					{
+						double threshold_double = 0.0;
+						try
+						{
+							threshold_double = (new Double(threshold)).doubleValue();
+							
+							// threshold value OK
+							ResultSet rs = null;
+							Connection con = null;
+							Statement stmt = null;
+							try
+							{
+								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+								stmt = con.createStatement();
+								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold_double + ")"); // get the frames in the time range
+								rs.last();
+								jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+								rs.beforeFirst(); // go back to the beginning for parsing
+								JSONObject current_frame_jo = null;
+								JSONArray frames_ja = new JSONArray();
+								while(rs.next())
+								{
+									current_frame_jo = new JSONObject();
+									current_frame_jo.put("image_url", rs.getString("image_url"));
+									current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+									current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
+									//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
+									frames_ja.put(current_frame_jo);
+								}
+								jsonresponse.put("response_status", "success");
+								jsonresponse.put("frames", frames_ja);
+							}
+							catch(SQLException sqle)
+							{
+								jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+								jsonresponse.put("response_status", "error");
+								sqle.printStackTrace();
+							}
+							finally
+							{
+								try
+								{
+									if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+								}
+								catch(SQLException sqle)
+								{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+							}   	
+							
+						}
+						catch(NumberFormatException nfe)
+						{
+							jsonresponse.put("message", "threshold was not a valid double value");
+							jsonresponse.put("response_status", "error");
+						}
+					}
+				}
+			}
+			else if (method.equals("getDesignations"))
+			{	
+				String station = request.getParameter("station"); // required
+				if(station == null || station.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "station was null or empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // station ok
+				{	
+					ResultSet rs = null;
+					Connection con = null;
+					Statement stmt = null;
+					try
+					{
+						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						stmt = con.createStatement();
+						rs = stmt.executeQuery("SELECT designation FROM people_" + station); 
+						JSONArray designations_ja = new JSONArray();
+						while(rs.next())
+						{
+							designations_ja.put(rs.getString("designation"));
+						}
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("designations", designations_ja);
+					}
+					catch(SQLException sqle)
+					{
+						jsonresponse.put("message", "Error getting designations from DB. sqle.getMessage()=" + sqle.getMessage());
+						jsonresponse.put("response_status", "error");
+						sqle.printStackTrace();
+					}
+					finally
+					{
+						try
+						{
+							if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+						}
+						catch(SQLException sqle)
+						{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+					}  	
+				}
+			
+			}
+			else
+			{
+				jsonresponse.put("message", "Unknown method.");
+				jsonresponse.put("response_status", "error");
+			}
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
 			long elapsed = timestamp_at_exit - timestamp_at_entry;
