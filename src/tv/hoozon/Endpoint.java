@@ -227,7 +227,7 @@ public class Endpoint extends HttpServlet {
 					}   	
 				}
 			}	
-			else if (method.equals("getFramesByDesignationAndThreshold"))
+			else if (method.equals("getFramesByDesignationThresholdAndDelta"))
 			{	
 				String begin = request.getParameter("begin"); // required
 				String end = request.getParameter("end"); // required
@@ -240,6 +240,7 @@ public class Endpoint extends HttpServlet {
 				{	
 					String designation = request.getParameter("designation"); 
 					String threshold = request.getParameter("threshold"); 
+					String delta = request.getParameter("delta");
 					if(designation == null || designation.isEmpty() || threshold == null || threshold.isEmpty())
 					{	
 						jsonresponse.put("message", "designation or threshold was empty");
@@ -248,10 +249,16 @@ public class Endpoint extends HttpServlet {
 					else // designation/threshold ok
 					{
 						double threshold_double = 0.0;
+						double delta_double = -1;
+						JSONArray designations = null; 
 						try
 						{
 							threshold_double = (new Double(threshold)).doubleValue();
-							
+							if(delta != null)
+							{
+								delta_double = (new Double(delta)).doubleValue();
+								designations = getDesignations("wkyt");
+							}
 							// threshold value OK
 							ResultSet rs = null;
 							Connection con = null;
@@ -266,14 +273,57 @@ public class Endpoint extends HttpServlet {
 								rs.beforeFirst(); // go back to the beginning for parsing
 								JSONObject current_frame_jo = null;
 								JSONArray frames_ja = new JSONArray();
+								boolean all_others_below_delta = true;
+								double control_avg = 0.0;
+								String closest_designation = "";
+								double closest_avg = 100;
+								double challenge_avg = 0.0;
 								while(rs.next())
 								{
-									current_frame_jo = new JSONObject();
-									current_frame_jo.put("image_url", rs.getString("image_url"));
-									current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-									current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-									//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
-									frames_ja.put(current_frame_jo);
+									if(delta_double >= 0.0)
+									{
+										all_others_below_delta = true;
+										control_avg = rs.getDouble(designation + "_avg");
+										System.out.println("Delta supplied. Control avg=" + control_avg);
+										for(int d = 0; d < designations.length(); d++)
+										{	
+											if(!designations.getString(d).equals(designation)) // skip comparing this against itself
+											{	
+												challenge_avg = rs.getDouble(designations.getString(d) + "_avg");
+												System.out.println("\t\tChallenge avg=" + challenge_avg);
+												if((control_avg - challenge_avg) < delta_double) // this one did not satisfy the delta requirement
+												{
+													all_others_below_delta = false;
+													// could include a break here to save cycles, but want to get closest for informational purposes
+												}
+												if((control_avg - challenge_avg) < closest_avg)
+												{
+													closest_avg = challenge_avg;
+													closest_designation = designations.getString(d);
+												}
+											}
+										}
+										if(all_others_below_delta)
+										{
+											current_frame_jo = new JSONObject();
+											current_frame_jo.put("image_url", rs.getString("image_url"));
+											current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+											current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
+											current_frame_jo.put("closest_avg", closest_avg);
+											current_frame_jo.put("closest_designation", closest_designation);
+											//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
+											frames_ja.put(current_frame_jo);
+										}
+									}
+									else
+									{
+										current_frame_jo = new JSONObject();
+										current_frame_jo.put("image_url", rs.getString("image_url"));
+										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
+										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
+										frames_ja.put(current_frame_jo);
+									}
 								}
 								jsonresponse.put("response_status", "success");
 								jsonresponse.put("frames", frames_ja);
@@ -313,39 +363,18 @@ public class Endpoint extends HttpServlet {
 				}
 				else // station ok
 				{	
-					ResultSet rs = null;
-					Connection con = null;
-					Statement stmt = null;
-					try
+					JSONArray designations_ja = getDesignations(station);
+					if(designations_ja == null)
 					{
-						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
-						stmt = con.createStatement();
-						rs = stmt.executeQuery("SELECT designation FROM people_" + station); 
-						JSONArray designations_ja = new JSONArray();
-						while(rs.next())
-						{
-							designations_ja.put(rs.getString("designation"));
-						}
+						jsonresponse.put("message", "Error getting designations from DB.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{
 						jsonresponse.put("response_status", "success");
 						jsonresponse.put("designations", designations_ja);
 					}
-					catch(SQLException sqle)
-					{
-						jsonresponse.put("message", "Error getting designations from DB. sqle.getMessage()=" + sqle.getMessage());
-						jsonresponse.put("response_status", "error");
-						sqle.printStackTrace();
-					}
-					finally
-					{
-						try
-						{
-							if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-						}
-						catch(SQLException sqle)
-						{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
-					}  	
 				}
-			
 			}
 			else
 			{
@@ -366,4 +395,41 @@ public class Endpoint extends HttpServlet {
 		}	
 		return;
 	}
+	
+	JSONArray getDesignations(String station)
+	{
+		JSONArray designations_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT designation FROM people_" + station); 
+			while(rs.next())
+			{
+				designations_ja.put(rs.getString("designation"));
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			return null;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				return null;
+			}
+		}  	
+		return designations_ja;
+	}
+	
 }
