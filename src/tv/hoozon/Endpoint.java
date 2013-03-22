@@ -80,19 +80,29 @@ public class Endpoint extends HttpServlet {
 						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getInt("timestamp") + "' limit 0,1");
 						double currentavgscore = 0.0;
-						double total = 0.0;
+						double reporter_total = 0.0;
+						JSONArray all_scores_ja = null;
+						JSONArray all_deviations_ja = null;
+						JSONArray all_deviation_squares_ja = null;
+						double sum_of_deviation_squares = 0.0;
+						double stddev_double = 0.0;
+						double total_score = 0.0;
+						double average_of_all_scores = 0.0;
 						if(!rs.next())
 						{	
 							rs.moveToInsertRow();
+							all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
 							JSONArray ja = jo.getJSONArray("reporter_scores");
 							for(int x = 0; x < ja.length(); x++)
 							{
-								total = 0.0;
+								reporter_total = 0.0;
 								for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
 								{
-									total = total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+									reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+									all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
+									total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 								}
-								currentavgscore = total / ja.getJSONObject(x).getJSONArray("scores").length();
+								currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
 								rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
 								rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
 								rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
@@ -100,6 +110,28 @@ public class Endpoint extends HttpServlet {
 							System.out.println("url: http://localhost/hoozon_finished/" + jo.getInt("timestamp") + ".jpg");
 							rs.updateString("image_url", "http://localhost/hoozon_finished/" + jo.getInt("timestamp") + ".jpg");
 							rs.updateLong("timestamp_in_seconds", jo.getInt("timestamp"));
+							
+							System.out.println("total of all scores=" + total_score);
+							average_of_all_scores = total_score / all_scores_ja.length();
+							System.out.println("average score of each comparison=" + average_of_all_scores);
+																
+							all_deviations_ja = new JSONArray();
+							all_deviation_squares_ja = new JSONArray();
+							// 2. get all deviations
+							sum_of_deviation_squares = 0.0;
+							for(int s = 0; s < all_scores_ja.length(); s++)
+							{
+								all_deviations_ja.put(all_scores_ja.getDouble(s) - average_of_all_scores);
+								all_deviation_squares_ja.put(all_deviations_ja.getDouble(s) * all_deviations_ja.getDouble(s));
+								sum_of_deviation_squares = sum_of_deviation_squares + all_deviation_squares_ja.getDouble(s);
+							}
+							double temp = sum_of_deviation_squares / (all_scores_ja.length() -1);
+							stddev_double = Math.sqrt(temp);							  
+							
+							System.out.println("**** stddev=" + stddev_double);
+							rs.updateDouble("average_score", average_of_all_scores);
+							rs.updateDouble("stddev", stddev_double);
+							
 							rs.insertRow();
 							rs.close();
 							stmt.close();
@@ -367,20 +399,21 @@ public class Endpoint extends HttpServlet {
 				else // begin/end ok
 				{	
 					String designation = request.getParameter("designation"); 
-					String stddev = request.getParameter("stddev"); 
-					if(designation == null || designation.isEmpty() || stddev == null || stddev.isEmpty())
+					String numstddev = request.getParameter("numstddev"); 
+					String basement = request.getParameter("basement");
+					if(designation == null || designation.isEmpty() || numstddev == null || numstddev.isEmpty())
 					{	
-						jsonresponse.put("message", "designation or stddev was empty");
+						jsonresponse.put("message", "designation or numstddev was empty");
 						jsonresponse.put("response_status", "error");
 					}
-					else // designation/stddev ok
+					else // designation/numstddev ok
 					{
-						double stddev_double = 0.0;
-						JSONArray designations = null; 
+						double numstddev_double = 0;
+						double basement_double = 0.0;
 						try
 						{
-							stddev_double = (new Double(stddev)).doubleValue();
-							designations = getDesignations("wkyt");
+							numstddev_double = (new Double(numstddev)).doubleValue();
+							basement_double = (new Double(basement)).doubleValue();
 							
 							ResultSet rs = null;
 							Connection con = null;
@@ -389,71 +422,25 @@ public class Endpoint extends HttpServlet {
 							{
 								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
 								stmt = con.createStatement();
-								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
+								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + basement_double + ")"); // get the frames in the time range
 								rs.last();
 								jsonresponse.put("frames_processed", rs.getRow());  // get a row count
 								rs.beforeFirst(); // go back to the beginning for parsing
-								double total_score = 0.0;
-								double total_num = 0.0;
-								double average_of_all_scores = 0.0;
 								JSONObject current_frame_jo = null;
 								JSONArray frames_ja = new JSONArray();
-								JSONArray all_scores_ja = null;
-								JSONArray all_deviations_ja = null;
-								JSONArray all_deviation_squares_ja = null;
-								JSONArray tempscores_ja = null;
-								double sum_of_deviation_squares = 0.0;
 								while(rs.next()) // get one row
 								{
-									all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
-									// 1. get all scores into an array
-									for(int d = 0; d < designations.length(); d++) // for each designation, get its _scores array
-									{	
-										if(rs.getString(designations.getString(d) + "_scores") != null) // but not if it's null
-										{	
-											tempscores_ja = new JSONArray(rs.getString(designations.getString(d) + "_scores")); // get the _scores array for this designation									
-											for(int i = 0; i < tempscores_ja.length(); i++) // loop through this _scores array for this designation and add to the full ja
-											{
-												all_scores_ja.put(tempscores_ja.getDouble(i));
-											}
-										}
-									}
-									//all_scores_ja is now a jsonarray of every score for this row
-									System.out.println(all_scores_ja);
-									total_score = 0;
-									for(int s = 0; s < all_scores_ja.length(); s++)
-									{
-										total_score = total_score + all_scores_ja.getDouble(s);
-									}
-									System.out.println("total of all scores=" + total_score);
-									average_of_all_scores = total_score / all_scores_ja.length();
-									System.out.println("average score of each comparison=" + average_of_all_scores);
-																		
-									all_deviations_ja = new JSONArray();
-									all_deviation_squares_ja = new JSONArray();
-									// 2. get all deviations
-									sum_of_deviation_squares = 0.0;
-									for(int s = 0; s < all_scores_ja.length(); s++)
-									{
-										all_deviations_ja.put(all_scores_ja.getDouble(s) - average_of_all_scores);
-										all_deviation_squares_ja.put(all_deviations_ja.getDouble(s) * all_deviations_ja.getDouble(s));
-										sum_of_deviation_squares = sum_of_deviation_squares + all_deviation_squares_ja.getDouble(s);
-									}
-									double temp = sum_of_deviation_squares / (all_scores_ja.length() -1);
-									stddev_double = Math.sqrt(temp);							
-									// 2. Is the incoming designation we care about above the average? If so, add to the return list 
-									// (we will want to make this threshold higher based on stddev
-									if((rs.getDouble(designation + "_avg") > (average_of_all_scores + stddev_double + stddev_double)) && (rs.getDouble(designation + "_avg") > .7))
+									if((rs.getDouble(designation + "_avg") > (rs.getDouble("average_score") + (numstddev_double * rs.getDouble("stddev"))) && (rs.getDouble(designation + "_avg") > basement_double)))
 									{
 										current_frame_jo = new JSONObject();
 										current_frame_jo.put("image_url", rs.getString("image_url"));
 										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
 										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-										current_frame_jo.put("average_of_all_scores", average_of_all_scores);
-										current_frame_jo.put("stddev", stddev_double);
-										current_frame_jo.put("one_stddev_above_avg", average_of_all_scores + stddev_double);
-										current_frame_jo.put("two_stddev_above_avg", average_of_all_scores + stddev_double + stddev_double);
-										current_frame_jo.put("three_stddev_above_avg", average_of_all_scores + stddev_double + stddev_double + stddev_double);
+										current_frame_jo.put("average_of_all_scores", rs.getDouble("average_score"));
+										current_frame_jo.put("stddev", rs.getDouble("stddev"));
+										current_frame_jo.put("one_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev"));
+										current_frame_jo.put("two_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev") + rs.getDouble("stddev"));
+										current_frame_jo.put("three_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev") + rs.getDouble("stddev") + rs.getDouble("stddev"));
 										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
 										frames_ja.put(current_frame_jo);
 									}

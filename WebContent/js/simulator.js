@@ -78,7 +78,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
 	}	
 	mds = mds + "	</select><br>";
-	mds = mds + "	Stddev: <input type=\"text\" id=\"function5_threshold_input\" value=\"1\" size=4><br>";
+	mds = mds + "	numstddev: <input type=\"text\" id=\"function5_numstddev_input\" value=\"2\" size=4><br>";
+	mds = mds + "	Basement: <input type=\"text\" id=\"function5_basement_input\" value=\".75\" size=4><br>";
 	mds = mds + "	Begin: <input type=\"text\" id=\"function5_begin_input\" size=20 value=\"20130319_160000\"><br>";
 	mds = mds + "	End: <input type=\"text\" id=\"function5_end_input\" value=\"20130319_160100\" size=20><br>";
 	mds = mds + "   <input id=\"function5_go_button\" type=button value=\"GO\">";
@@ -307,13 +308,14 @@ document.addEventListener('DOMContentLoaded', function () {
 				            begin: begin,             
 				            end: end,
 				            designation: $('#function5_designation_select').val(),
-				            stddev: $('#function5_threshold_input').val()
+				            numstddev: $('#function5_numstddev_input').val(),
+				            basement: $('#function5_basement_input').val()
 						},
 				        dataType: 'json',
 				        async: true,
 				        success: function (data, status) {
 				        	if (data.response_status == "error")
-				        		$("#results_div").html("error");
+				        		$("#results_div").html("error: " + data.message);
 				        	else
 				        	{
 				        		if(data.frames.length > 100000)
