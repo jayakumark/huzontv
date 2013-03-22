@@ -329,7 +329,18 @@ document.addEventListener('DOMContentLoaded', function () {
 				        				for(var x = 0; x < data.frames.length; x++)
 				        				{
 				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
-				        					rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\"><br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average + "<br>avg4all:" + data.frames[x].average_of_all_scores + "<br>stddev:" + data.frames[x].stddev + "<br>1stddev:" + data.frames[x].one_stddev_above_avg + "<br>2stddev:" + data.frames[x].two_stddev_above_avg+ "<br>3stddev:" + data.frames[x].three_stddev_above_avg + "</div>";
+				        					if(data.frames[x].streak > 4)
+				        						rds = rds + "<div style=\"border: 2px red solid;width:160px;display:inline-block;\">";
+				        					else
+				        						rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
+				        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\">";
+				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
+				        					rds = rds + "<br>avg4all:" + data.frames[x].average_of_all_scores;
+				        					rds = rds + "<br>stddev:" + data.frames[x].stddev;
+				        					rds = rds + "<br>1stddev:" + data.frames[x].one_stddev_above_avg;
+				        					rds = rds + "<br>2stddev:" + data.frames[x].two_stddev_above_avg;
+				        					rds = rds + "<br>3stddev:" + data.frames[x].three_stddev_above_avg;
+				        					rds = rds + "<br>streak:" + data.frames[x].streak + "</div>";
 				        				}
 				        			}
 				        			else

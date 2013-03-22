@@ -442,6 +442,18 @@ public class Endpoint extends HttpServlet {
 										current_frame_jo.put("two_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev") + rs.getDouble("stddev"));
 										current_frame_jo.put("three_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev") + rs.getDouble("stddev") + rs.getDouble("stddev"));
 										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
+										
+										// if the previous frame's timestamp is one less than this one
+										if(frames_ja.length() > 0 && frames_ja.getJSONObject(frames_ja.length()-1).getInt("timestamp_in_seconds") == (rs.getInt("timestamp_in_seconds") - 1))
+										{
+											// then add to whatever streak number is there
+											current_frame_jo.put("streak", frames_ja.getJSONObject(frames_ja.length()-1).getInt("streak")+1);
+										}
+										else
+										{
+											// else set the streak to 0
+											current_frame_jo.put("streak", 1);
+										}
 										frames_ja.put(current_frame_jo);
 									}
 								}
