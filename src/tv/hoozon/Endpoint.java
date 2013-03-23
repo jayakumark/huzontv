@@ -259,233 +259,99 @@ public class Endpoint extends HttpServlet {
 					}   	
 				}
 			}
-			/*
-			else if (method.equals("getFramesByDesignationThresholdAndDelta"))
-			{	
+			else if (method.equals("getFramesByDesignation"))
+			{
 				String begin = request.getParameter("begin"); // required
 				String end = request.getParameter("end"); // required
+				String designation = request.getParameter("designation");
+				double ma_modifier_double = (new Double(request.getParameter("ma_modifier"))).doubleValue();
+				double single_modifier_double = (new Double(request.getParameter("single_modifier"))).doubleValue();
+				int alert_waiting_period = (new Integer(request.getParameter("alert_waiting_period"))).intValue();
+				String seconds_to_average = request.getParameter("seconds_to_average");
 				if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
 				{
 					jsonresponse.put("message", "begin or end was empty.");
 					jsonresponse.put("response_status", "error");
 				}
-				else // begin/end ok
-				{	
-					String designation = request.getParameter("designation"); 
-					String threshold = request.getParameter("threshold"); 
-					String delta = request.getParameter("delta");
-					if(designation == null || designation.isEmpty() || threshold == null || threshold.isEmpty())
-					{	
-						jsonresponse.put("message", "designation or threshold was empty");
-						jsonresponse.put("response_status", "error");
-					}
-					else // designation/threshold ok
+				else
+				{
+					ResultSet rs = null;
+					Connection con = null;
+					Statement stmt = null;
+					try
 					{
-						double threshold_double = 0.0;
-						double delta_double = -1;
-						JSONArray designations = null; 
+						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						stmt = con.createStatement();
+						rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
+						rs.last();
+						jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+						rs.beforeFirst(); // go back to the beginning for parsing
+						JSONObject current_frame_jo = null;
+						JSONArray frames_ja = new JSONArray();
+						JSONArray alertframes_ja = new JSONArray();
+						int x = 0;
+						int y = 0;
+						double sum_of_last_few_seconds = 0.0;
+						double homogeneity_double = getHomogeneityScore("wkyt",designation);
+						int seconds_to_average_int = Integer.parseInt(seconds_to_average);
+						int frames_since_last_alert = alert_waiting_period + 1; // this makes it so an alert can go out immediately
+						while(rs.next())
+						{
+							current_frame_jo = new JSONObject();
+							current_frame_jo.put("image_url", rs.getString("image_url"));
+							current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+							current_frame_jo.put("designation_score", rs.getDouble(designation + "_avg"));
+							current_frame_jo.put("homogeneity_score", homogeneity_double);
+							current_frame_jo.put("ma_threshold", homogeneity_double * ma_modifier_double);
+							current_frame_jo.put("single_threshold", homogeneity_double * single_modifier_double);
+							y=0; sum_of_last_few_seconds = 0.0;
+							while(y < seconds_to_average_int)
+							{
+								if(y == 0)
+									rs.getDouble(designation + "_avg");
+								else
+								{	
+									if((x-y) >= 0)
+									{	
+										sum_of_last_few_seconds = sum_of_last_few_seconds + frames_ja.getJSONObject(x-y).getDouble("designation_score");
+									}
+								}
+								y++;
+							}
+							current_frame_jo.put("moving_average", sum_of_last_few_seconds / seconds_to_average_int);
+							frames_ja.put(current_frame_jo);
+							
+							if((sum_of_last_few_seconds / seconds_to_average_int) > (homogeneity_double * ma_modifier_double) && // the moving average is greater than the moving average threshold
+									frames_since_last_alert > alert_waiting_period &&  // it has been at least alert_waiting_period second since last alert
+									rs.getDouble(designation + "_avg") > (homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
+							{
+								alertframes_ja.put(current_frame_jo);
+								frames_since_last_alert = 0;
+							}
+							frames_since_last_alert++;
+							x++;
+						}
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("frames", frames_ja);
+						jsonresponse.put("alertframes", alertframes_ja);
+					}
+					catch(SQLException sqle)
+					{
+						jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+						jsonresponse.put("response_status", "error");
+						sqle.printStackTrace();
+					}
+					finally
+					{
 						try
 						{
-							threshold_double = (new Double(threshold)).doubleValue();
-							if(delta != null)
-							{
-								delta_double = (new Double(delta)).doubleValue();
-								designations = getDesignations("wkyt");
-							}
-							// threshold value OK
-							ResultSet rs = null;
-							Connection con = null;
-							Statement stmt = null;
-							try
-							{
-								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
-								stmt = con.createStatement();
-								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold_double + ")"); // get the frames in the time range
-								rs.last();
-								jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-								rs.beforeFirst(); // go back to the beginning for parsing
-								JSONObject current_frame_jo = null;
-								JSONArray frames_ja = new JSONArray();
-								boolean all_others_below_delta = true;
-								double control_avg = 0.0;
-								String closest_designation = "";
-								double closest_avg = 0;
-								double challenge_avg = 0.0;
-								while(rs.next())
-								{
-									if(delta_double >= 0.0)
-									{
-										all_others_below_delta = true;
-										control_avg = rs.getDouble(designation + "_avg");
-										closest_avg = 0;
-										System.out.println("Delta supplied. Control avg=" + control_avg);
-										for(int d = 0; d < designations.length(); d++)
-										{	
-											if(!designations.getString(d).equals(designation)) // skip comparing this against itself
-											{	
-												challenge_avg = rs.getDouble(designations.getString(d) + "_avg");
-												if(challenge_avg > closest_avg)
-												{
-													closest_avg = challenge_avg;
-													closest_designation = designations.getString(d);
-												}
-												System.out.println("\t\tChallenge avg=" + challenge_avg + " (" + designations.getString(d) + ")");
-												if((control_avg - challenge_avg) < delta_double) // this one did not satisfy the delta requirement
-												{
-													all_others_below_delta = false;
-													// could include a break here to save cycles, but want to get closest for informational purposes
-												}
-												
-											}
-										}
-										if(all_others_below_delta)
-										{
-											current_frame_jo = new JSONObject();
-											current_frame_jo.put("image_url", rs.getString("image_url"));
-											current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-											current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-											current_frame_jo.put("closest_avg", closest_avg);
-											current_frame_jo.put("closest_designation", closest_designation);
-											//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
-											frames_ja.put(current_frame_jo);
-										}
-									}
-									else
-									{
-										current_frame_jo = new JSONObject();
-										current_frame_jo.put("image_url", rs.getString("image_url"));
-										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
-										frames_ja.put(current_frame_jo);
-									}
-								}
-								jsonresponse.put("response_status", "success");
-								jsonresponse.put("frames", frames_ja);
-							}
-							catch(SQLException sqle)
-							{
-								jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-								jsonresponse.put("response_status", "error");
-								sqle.printStackTrace();
-							}
-							finally
-							{
-								try
-								{
-									if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-								}
-								catch(SQLException sqle)
-								{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
-							}   	
-							
+							if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 						}
-						catch(NumberFormatException nfe)
-						{
-							jsonresponse.put("message", "threshold was not a valid double value");
-							jsonresponse.put("response_status", "error");
-						}
-					}
+						catch(SQLException sqle)
+						{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+					}   	
 				}
 			}
-			else if (method.equals("getFramesByDesignationAndDynamicThreshold"))
-			{	
-				String begin = request.getParameter("begin"); // required
-				String end = request.getParameter("end"); // required
-				if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
-				{
-					jsonresponse.put("message", "begin or end was empty.");
-					jsonresponse.put("response_status", "error");
-				}
-				else // begin/end ok
-				{	
-					String designation = request.getParameter("designation"); 
-					String numstddev = request.getParameter("numstddev"); 
-					String basement = request.getParameter("basement");
-					if(designation == null || designation.isEmpty() || numstddev == null || numstddev.isEmpty())
-					{	
-						jsonresponse.put("message", "designation or numstddev was empty");
-						jsonresponse.put("response_status", "error");
-					}
-					else // designation/numstddev ok
-					{
-						double numstddev_double = 0;
-						double basement_double = 0.0;
-						try
-						{
-							numstddev_double = (new Double(numstddev)).doubleValue();
-							basement_double = (new Double(basement)).doubleValue();
-							
-							ResultSet rs = null;
-							Connection con = null;
-							Statement stmt = null;
-							try
-							{
-								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
-								stmt = con.createStatement();
-								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + basement_double + ")"); // get the frames in the time range
-								rs.last();
-								jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-								rs.beforeFirst(); // go back to the beginning for parsing
-								JSONObject current_frame_jo = null;
-								JSONArray frames_ja = new JSONArray();
-								while(rs.next()) // get one row
-								{
-									if((rs.getDouble(designation + "_avg") > (rs.getDouble("average_score") + (numstddev_double * rs.getDouble("stddev"))) && (rs.getDouble(designation + "_avg") > basement_double)))
-									{
-										current_frame_jo = new JSONObject();
-										current_frame_jo.put("image_url", rs.getString("image_url"));
-										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-										current_frame_jo.put("average_of_all_scores", rs.getDouble("average_score"));
-										current_frame_jo.put("stddev", rs.getDouble("stddev"));
-										current_frame_jo.put("one_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev"));
-										current_frame_jo.put("two_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev") + rs.getDouble("stddev"));
-										current_frame_jo.put("three_stddev_above_avg", rs.getDouble("average_score") + rs.getDouble("stddev") + rs.getDouble("stddev") + rs.getDouble("stddev"));
-										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
-										
-										// if the previous frame's timestamp is one less than this one
-										if(frames_ja.length() > 0 && frames_ja.getJSONObject(frames_ja.length()-1).getInt("timestamp_in_seconds") == (rs.getInt("timestamp_in_seconds") - 1))
-										{
-											// then add to whatever streak number is there
-											current_frame_jo.put("streak", frames_ja.getJSONObject(frames_ja.length()-1).getInt("streak")+1);
-										}
-										else
-										{
-											// else set the streak to 0
-											current_frame_jo.put("streak", 1);
-										}
-										frames_ja.put(current_frame_jo);
-									}
-								}
-								jsonresponse.put("response_status", "success");
-								jsonresponse.put("frames", frames_ja);
-							}
-							catch(SQLException sqle)
-							{
-								jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-								jsonresponse.put("response_status", "error");
-								sqle.printStackTrace();
-							}
-							finally
-							{
-								try
-								{
-									if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-								}
-								catch(SQLException sqle)
-								{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
-							}   	
-							
-						}
-						catch(NumberFormatException nfe)
-						{
-							jsonresponse.put("message", "threshold was not a valid double value");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
-			}*/
 			else if (method.equals("getFramesByDesignationAndHomogeneityThreshold"))
 			{	
 				String begin = request.getParameter("begin"); // required
@@ -508,6 +374,7 @@ public class Endpoint extends HttpServlet {
 						double homogeneity_double = getHomogeneityScore("wkyt",designation);
 						double modifier_double = (new Double(request.getParameter("modifier"))).doubleValue();
 						double threshold = homogeneity_double * modifier_double;
+						double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
 						try
 						{
 							ResultSet rs = null;
@@ -515,6 +382,7 @@ public class Endpoint extends HttpServlet {
 							Statement stmt = null;
 							try
 							{
+								
 								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
 								stmt = con.createStatement();
 								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
@@ -523,16 +391,47 @@ public class Endpoint extends HttpServlet {
 								rs.beforeFirst(); // go back to the beginning for parsing
 								JSONObject current_frame_jo = null;
 								JSONArray frames_ja = new JSONArray();
+								boolean all_others_below_delta = true;
+								double control_avg = 100;
+								double closest_avg = 0;
+								JSONArray designations = getDesignations("wkyt");
+								double challenge_avg = 0;
+								String closest_designation = "";
+								int delta_suppressions = 0;
 								while(rs.next()) // get one row
 								{
-									//if(rs.getDouble(designation + "_avg") > homogeneity_double)
-									//{
+									all_others_below_delta = true;
+									control_avg = rs.getDouble(designation + "_avg");
+									closest_avg = 0;
+									for(int d = 0; d < designations.length(); d++)
+									{	
+										if(!designations.getString(d).equals(designation)) // skip comparing this against itself
+										{	
+											challenge_avg = rs.getDouble(designations.getString(d) + "_avg");
+											if(challenge_avg > closest_avg)
+											{
+												closest_avg = challenge_avg;
+												closest_designation = designations.getString(d);
+											}
+											System.out.println("\t\tChallenge avg=" + challenge_avg + " (" + designations.getString(d) + ")");
+											if((control_avg - challenge_avg) < delta_double) // this one did not satisfy the delta requirement
+											{
+												all_others_below_delta = false;
+												// could include a break here to save cycles, but want to get closest for informational purposes
+											}
+											
+										}
+									}
+									if(all_others_below_delta)
+									{
 										current_frame_jo = new JSONObject();
 										current_frame_jo.put("image_url", rs.getString("image_url"));
 										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
 										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
 										current_frame_jo.put("homogeneity_score", homogeneity_double);
 										current_frame_jo.put("threshold", threshold);
+										current_frame_jo.put("closest_avg", closest_avg);
+										current_frame_jo.put("closest_designation", closest_designation);
 										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
 										
 										// if the previous frame's timestamp is one less than this one
@@ -547,8 +446,13 @@ public class Endpoint extends HttpServlet {
 											current_frame_jo.put("streak", 1);
 										}
 										frames_ja.put(current_frame_jo);
-									//}
+									}
+									else
+									{
+										delta_suppressions++;
+									}
 								}
+								jsonresponse.put("delta_suppressions", delta_suppressions);
 								jsonresponse.put("response_status", "success");
 								jsonresponse.put("frames", frames_ja);
 							}

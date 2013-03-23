@@ -31,60 +31,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	mds = mds + "<div style=\"font-size:16px\">";
 	mds = mds + "	Available functions:";
 	mds = mds + "</div>"
-	/*mds = mds + "<div style=\"text-align:left\">";
-	mds = mds + "	<b>Function 1:</b> Get all still frames in a certain epoch time (in seconds) range.<br>";
-	mds = mds + "	Begin: <input type=\"text\" id=\"function_begin_input\" size=20 value=\"1363723213\"><br>";
-	mds = mds + "	End: <input type=\"text\" id=\"function_end_input\" value=\"1363723300\" size=20><br>";
-	mds = mds + "   <input id=\"function_go_button\" type=button value=\"GO\">";
-	mds = mds + "</div>"*/
-	mds = mds + "<div style=\"text-align:left\">";
+	mds = mds + "<table style=\"width:100%\">";
+	mds = mds + "	<tr>";
+	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
 	mds = mds + "	<b>Function 2:</b> Get all still frames in a certain calendar/date time (in seconds) range.<br>";
 	mds = mds + "	Begin: <input type=\"text\" id=\"function2_begin_input\" size=20 value=\"20130317_230000\"><br>";
 	mds = mds + "	End: <input type=\"text\" id=\"function2_end_input\" value=\"20130317_230100\" size=20><br>";
 	mds = mds + "   <input id=\"function2_go_button\" type=button value=\"GO\">";
-	mds = mds + "</div>"
-/*	mds = mds + "<div style=\"text-align:left\">";
-	mds = mds + "	<b>Function 3:</b> Get all frames for designation above an average score threshold over a period of time<br>";
-	mds = mds + "	Designation: <select id=\"function3_designation_select\">";
-	for(var a = 0; a < designations.length; a++)
-	{
-		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
-	}	
-	mds = mds + "	</select><br>";
-	mds = mds + "	Threshold: <input type=\"text\" id=\"function3_threshold_input\" value=\".9\" size=20><br>";
-	mds = mds + "	Begin: <input type=\"text\" id=\"function3_begin_input\" size=20 value=\"20130319_160000\"><br>";
-	mds = mds + "	End: <input type=\"text\" id=\"function3_end_input\" value=\"20130319_160100\" size=20><br>";
-	mds = mds + "   <input id=\"function3_go_button\" type=button value=\"GO\">";
-	mds = mds + "</div>"
-	mds = mds + "<div style=\"text-align:left\">";
-	mds = mds + "	<b>Function 4:</b> Get all frames for designation above an average score threshold over a period of time WITH delta<br>";
-	mds = mds + "	Designation: <select id=\"function4_designation_select\">";
-	for(var a = 0; a < designations.length; a++)
-	{
-		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
-	}	
-	mds = mds + "	</select><br>";
-	mds = mds + "	Threshold: <input type=\"text\" id=\"function4_threshold_input\" value=\".9\" size=4><br>";
-	mds = mds + "   Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4><br>";
-	mds = mds + "	Begin: <input type=\"text\" id=\"function4_begin_input\" size=20 value=\"20130319_160000\"><br>";
-	mds = mds + "	End: <input type=\"text\" id=\"function4_end_input\" value=\"20130320_160100\" size=20><br>";
-	mds = mds + "   <input id=\"function4_go_button\" type=button value=\"GO\">";
-	mds = mds + "</div>"
-	mds = mds + "<div style=\"text-align:left\">";
-	mds = mds + "	<b>Function 5:</b> Get all frames for designation above dynamic threshold<br>";
-	mds = mds + "	Designation: <select id=\"function5_designation_select\">";
-	for(var a = 0; a < designations.length; a++)
-	{
-		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
-	}	
-	mds = mds + "	</select><br>";
-	mds = mds + "	numstddev: <input type=\"text\" id=\"function5_numstddev_input\" value=\"2\" size=4><br>";
-	mds = mds + "	Basement: <input type=\"text\" id=\"function5_basement_input\" value=\".75\" size=4><br>";
-	mds = mds + "	Begin: <input type=\"text\" id=\"function5_begin_input\" size=20 value=\"20130319_160000\"><br>";
-	mds = mds + "	End: <input type=\"text\" id=\"function5_end_input\" value=\"20130319_160100\" size=20><br>";
-	mds = mds + "   <input id=\"function5_go_button\" type=button value=\"GO\">";
-	mds = mds + "</div>"*/
-	mds = mds + "<div style=\"text-align:left\">";
+	mds = mds + "		</td>";
+	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
 	mds = mds + "	<b>Function 6:</b> Get all frames for designation above calculated homogeneity threshold<br>";
 	mds = mds + "	Designation: <select id=\"function6_designation_select\">";
 	for(var a = 0; a < designations.length; a++)
@@ -93,45 +48,47 @@ document.addEventListener('DOMContentLoaded', function () {
 	}	
 	mds = mds + "	</select><br>";
 	mds = mds + "	Modifier: <input type=\"text\" id=\"function6_modifier_input\" value=\"1.0\" size=4><br>";
+	mds = mds + "	Delta: <input type=\"text\" id=\"function6_delta_input\" value=\".1\" size=4><br>";
 	mds = mds + "	Begin: <input type=\"text\" id=\"function6_begin_input\" size=20 value=\"20130319_160000\"><br>";
 	mds = mds + "	End: <input type=\"text\" id=\"function6_end_input\" value=\"20130319_160100\" size=20><br>";
 	mds = mds + "   <input id=\"function6_go_button\" type=button value=\"GO\">";
-	mds = mds + "</div>"
-	$("#main_div").html(mds);
+	mds = mds + "		</td>";
+	mds = mds + "	</tr>";
+	mds = mds + "	<tr>";
+	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	mds = mds + "	<b>Function 7:</b> Graph one designee over time.<br>";
+	mds = mds + "	Designation: <select id=\"function7_designation_select\">";
+	for(var a = 0; a < designations.length; a++)
+	{
+		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
+	}	
+	mds = mds + "	</select><br>";
+	mds = mds + "	Single Thresh Modifier: <input type=\"text\" id=\"function7_singlemodifier_input\" value=\"1\" size=4><br>";
+	mds = mds + "	MA Thresh Modifier: <input type=\"text\" id=\"function7_mamodifier_input\" value=\".63\" size=4><br>";
+	mds = mds + "	Secs2avg: <input type=\"text\" id=\"function7_seconds2average_input\" value=\"5\" size=4><br>";
+	mds = mds + "	Alert waiting period: <input type=\"text\" id=\"function7_awp_input\" value=\"60\" size=4><br>";
+	mds = mds + "	Begin: <input type=\"text\" id=\"function7_begin_input\" size=20 value=\"20130319_170000\"><br>";
+	mds = mds + "	End: <input type=\"text\" id=\"function7_end_input\" value=\"20130319_173000\" size=20><br>";
+	mds = mds + "   <input id=\"function7_go_button\" type=button value=\"GO\">";
+	mds = mds + "		</td>";
+	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+/*	mds = mds + "	<b>Function 6:</b> Get all frames for designation above calculated homogeneity threshold<br>";
+	mds = mds + "	Designation: <select id=\"function6_designation_select\">";
+	for(var a = 0; a < designations.length; a++)
+	{
+		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
+	}	
+	mds = mds + "	</select><br>";
+	mds = mds + "	Modifier: <input type=\"text\" id=\"function6_modifier_input\" value=\"1.0\" size=4><br>";
+	mds = mds + "	Delta: <input type=\"text\" id=\"function6_delta_input\" value=\".1\" size=4><br>";
+	mds = mds + "	Begin: <input type=\"text\" id=\"function6_begin_input\" size=20 value=\"20130319_160000\"><br>";
+	mds = mds + "	End: <input type=\"text\" id=\"function6_end_input\" value=\"20130319_160100\" size=20><br>";
+	mds = mds + "   <input id=\"function6_go_button\" type=button value=\"GO\">";*/
+	mds = mds + "		</td>";
+	mds = mds + "	</tr>";	
 	
-	/*$("#function_go_button").click(
-			function () {
-				var rds = "";
-				 $.ajax({
-						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
-						data: {
-				            method: "getFrames",
-				            begin: $('#function_begin_input').val(),             
-				            end:$('#function_end_input').val()  
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error");
-				        	else
-				        	{
-				        		for(var x = 0; x < data.frames.length; x++)
-				        		{
-				        			rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\"></div>";
-				        		}
-				        		$("#results_div").html(rds);
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});*/
+	mds = mds + "</table>";
+	$("#main_div").html(mds);
 	
 	$("#function2_go_button").click(
 			function () {
@@ -180,196 +137,6 @@ document.addEventListener('DOMContentLoaded', function () {
 					});
 				return;
 			});
-	/*
-	$("#function3_go_button").click(
-			function () {
-				var rds = "";
-				var datestring = $('#function3_begin_input').val();
-				
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				
-				var begin = d.getTime()/1000;
-				
-				datestring = $('#function3_end_input').val();
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				
-				$.ajax({
-						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
-						data: {
-				            method: "getFramesByDesignationThresholdAndDelta",
-				            begin: begin,             
-				            end: end,
-				            designation: $('#function3_designation_select').val(),
-				            threshold: $('#function3_threshold_input').val()
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error");
-				        	else
-				        	{
-				        		if(data.frames.length > 100000)
-				        		{
-				        			$("#results_div").html("too many results. Try again.");
-				        		}	
-				        		else
-				        		{
-				        			if(data.frames.length > 0)
-				        			{	
-				        				for(var x = 0; x < data.frames.length; x++)
-				        				{
-				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
-				        					rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\"><br>" + d.toString() + "<br>"+ data.frames[x].score_average + "</div>";
-				        				}
-				        			}
-				        			else
-				        				rds = "no matches";
-				        			$("#results_div").html(rds);
-				        		}
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
-	
-	$("#function4_go_button").click(
-			function () {
-				var rds = "";
-				var datestring = $('#function4_begin_input').val();
-				
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				
-				var begin = d.getTime()/1000;
-				
-				datestring = $('#function4_end_input').val();
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				
-				$.ajax({
-						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
-						data: {
-				            method: "getFramesByDesignationThresholdAndDelta",
-				            begin: begin,             
-				            end: end,
-				            designation: $('#function4_designation_select').val(),
-				            threshold: $('#function4_threshold_input').val(),
-				            delta:  $('#function4_delta_input').val()
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error");
-				        	else
-				        	{
-				        		if(data.frames.length > 100000)
-				        		{
-				        			$("#results_div").html("too many results. Try again.");
-				        		}	
-				        		else
-				        		{
-				        			if(data.frames.length > 0)
-				        			{	
-				        				for(var x = 0; x < data.frames.length; x++)
-				        				{
-				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
-				        					rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\"><br>" + d.toString() + "<br>"+ data.frames[x].score_average + "<br>"+ data.frames[x].closest_avg + "<br>"+ data.frames[x].closest_designation + "</div>";
-				        				}
-				        			}
-				        			else
-				        				rds = "no matches";
-				        			$("#results_div").html(rds);
-				        		}
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
-	
-	$("#function5_go_button").click(
-			function () {
-				var rds = "";
-				var datestring = $('#function5_begin_input').val();
-				
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				
-				var begin = d.getTime()/1000;
-				
-				datestring = $('#function5_end_input').val();
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				
-				$.ajax({
-						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
-						data: {
-				            method: "getFramesByDesignationAndDynamicThreshold",
-				            begin: begin,             
-				            end: end,
-				            designation: $('#function5_designation_select').val(),
-				            numstddev: $('#function5_numstddev_input').val(),
-				            basement: $('#function5_basement_input').val()
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error: " + data.message);
-				        	else
-				        	{
-				        		if(data.frames.length > 100000)
-				        		{
-				        			$("#results_div").html("too many results. Try again.");
-				        		}	
-				        		else
-				        		{
-				        			if(data.frames.length > 0)
-				        			{	
-				        				for(var x = 0; x < data.frames.length; x++)
-				        				{
-				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
-				        					if(data.frames[x].streak > 4)
-				        						rds = rds + "<div style=\"border: 2px red solid;width:160px;display:inline-block;\">";
-				        					else
-				        						rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
-				        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\">";
-				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
-				        					rds = rds + "<br>avg4all:" + data.frames[x].average_of_all_scores;
-				        					rds = rds + "<br>stddev:" + data.frames[x].stddev;
-				        					rds = rds + "<br>1stddev:" + data.frames[x].one_stddev_above_avg;
-				        					rds = rds + "<br>2stddev:" + data.frames[x].two_stddev_above_avg;
-				        					rds = rds + "<br>3stddev:" + data.frames[x].three_stddev_above_avg;
-				        					rds = rds + "<br>streak:" + data.frames[x].streak + "</div>";
-				        				}
-				        			}
-				        			else
-				        				rds = "no matches";
-				        			$("#results_div").html(rds);
-				        		}
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});*/
 	
 	$("#function6_go_button").click(
 			function () {
@@ -392,7 +159,8 @@ document.addEventListener('DOMContentLoaded', function () {
 				            begin: begin,             
 				            end: end,
 				            designation: $('#function6_designation_select').val(),
-				            modifier: $('#function6_modifier_input').val()
+				            modifier: $('#function6_modifier_input').val(),
+				            delta: $('#function6_delta_input').val()
 						},
 				        dataType: 'json',
 				        async: true,
@@ -420,11 +188,136 @@ document.addEventListener('DOMContentLoaded', function () {
 				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
 				        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
 				        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
+				        					rds = rds + "<br>closest_desg:" + data.frames[x].closest_designation;
+				        					rds = rds + "<br>closest_avg:" + data.frames[x].closest_avg;
+				        					rds = rds + "<br>closest_delta:" + (data.frames[x].score_average - data.frames[x].closest_avg);
 				        					rds = rds + "<br>streak:" + data.frames[x].streak + "</div>";
 				        				}
 				        			}
 				        			else
 				        				rds = "no matches";
+				        			
+				        			rds = "frames processed:" + data.frames_processed + "<br>delta suppressions:" + data.delta_suppressions + "<br>" + rds;
+				        			$("#results_div").html(rds);
+				        		}
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				return;
+			});
+	
+	$("#function7_go_button").click(
+			function () {
+				var rds = "";
+				var datestring = $('#function7_begin_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var begin = d.getTime()/1000;
+				datestring = $('#function7_end_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end = d.getTime()/1000;
+				
+				$.ajax({
+						type: 'GET',
+						url: "http://localhost:8080/hoozontv/endpoint",
+						data: {
+				            method: "getFramesByDesignation",
+				            begin: begin,             
+				            end: end,
+				            designation: $('#function7_designation_select').val(),
+				            ma_modifier: $('#function7_mamodifier_input').val(),
+				            single_modifier: $('#function7_singlemodifier_input').val(),
+				            alert_waiting_period: $('#function7_awp_input').val(),
+				            seconds_to_average: $('#function7_seconds2average_input').val()
+						},
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error");
+				        	else
+				        	{
+				        		if(data.frames.length > 100000)
+				        		{
+				        			$("#results_div").html("too many results. Try again.");
+				        		}	
+				        		else
+				        		{
+				        			//rds = rds + "<table style=\"border-spacing:0px\"><tr>";
+				        			//var lineheight = 200;
+				        			$("#results_div").html("");
+				        			var scores = []; var moving_avg = [];
+				        			for(var x = 0; x < data.frames.length; x++)
+				        			{
+				        				scores.push(data.frames[x].designation_score);
+				        				moving_avg.push(data.frames[x].moving_average);
+				        				//lineheight = Math.floor(200 * data.frames[x].designation_score);
+				        				//rds = rds + "<td style=\"vertical-align:bottom\"><img src=\"images/vertical_line_200px.png\" style=\"width:1px;height:" + lineheight + "px\"></td>";
+				        				//rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\"></div>";
+				        			}
+				        			//rds = rds + "</tr></table>";
+				        			//$("#results_div").html(rds);
+				        			//alert(scores);
+				        			//$.jqplot.config.enablePlugins = true;
+				        			//alert(data.frames[0].homogeneity_score +" " + (data.frames[0].homogeneity_score * $('#function7_modifier_input').val()));
+				        			var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
+				        				axes: {
+				        					yaxis: {
+				        			            min:0,max:1
+				        			        }
+				        				},
+				        				canvasOverlay: {
+				        					show: true,
+				        			        objects: [
+				        			       /*   {horizontalLine: {
+				        			            name: 'pebbles',
+				        			            y: 0,
+				        			            lineWidth: 3,
+				        			            color: 'rgb(100, 55, 124)',
+				        			            shadow: true,
+				        			            lineCap: 'butt',
+				        			            xOffset: 0
+				        			          }},*/
+				        			          {dashedHorizontalLine: {
+				        			            name: 'bam-bam',
+				        			            y: (data.frames[0].homogeneity_score * $('#function7_mamodifier_input').val()),
+				        			            lineWidth: 4,
+				        			            dashPattern: [8, 16],
+				        			            lineCap: 'round',
+				        			            xOffset: '25',
+				        			            color: 'rgb(66, 98, 144)',
+				        			            shadow: false
+				        			          }}
+				        			        ]
+				        			      }
+				        			    });
+				        			
+				        			if(data.alertframes.length > 0)
+				        			{	
+				        				rds = rds + "MA thresh:" + data.alertframes[0].ma_threshold;
+				        				rds = rds + "<br>Single thresh:" + data.alertframes[0].single_threshold;
+				        				rds = rds + "<br>Homogeneity:" + data.alertframes[0].homogeneity_score;
+				        				rds = rds + "<br>";
+				        			}
+				        			for(x = 0; x < data.alertframes.length; x++)
+				        			{
+				        				d = new Date(data.alertframes[x].timestamp_in_seconds *1000);
+				        				rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
+			        					rds = rds + "<img src=" + data.alertframes[x].image_url + " style=\"width:160px;height:90px\">";
+			        					rds = rds + "<br>" + d.toString();
+			        					rds = rds + "<br>avg4des:"+ data.alertframes[x].designation_score;
+			        					rds = rds + "<br>h-score:" + data.alertframes[x].homogeneity_score;
+			        					rds = rds + "<br>moving_avg:" + data.alertframes[x].moving_average;
+			        					//rds = rds + "<br>closest_desg:" + data.frames[x].closest_designation;
+			        				//	rds = rds + "<br>closest_avg:" + data.frames[x].closest_avg;
+			        				//	rds = rds + "<br>closest_delta:" + (data.frames[x].score_average - data.frames[x].closest_avg);
+			        				//	rds = rds + "<br>streak:" + data.frames[x].streak;
+			        					rds = rds + "</div>";
+			        				}	
 				        			$("#results_div").html(rds);
 				        		}
 				        	}
