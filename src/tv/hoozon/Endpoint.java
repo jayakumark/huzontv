@@ -258,7 +258,8 @@ public class Endpoint extends HttpServlet {
 						{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
 					}   	
 				}
-			}	
+			}
+			/*
 			else if (method.equals("getFramesByDesignationThresholdAndDelta"))
 			{	
 				String begin = request.getParameter("begin"); // required
@@ -484,6 +485,97 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
+			}*/
+			else if (method.equals("getFramesByDesignationAndHomogeneityThreshold"))
+			{	
+				String begin = request.getParameter("begin"); // required
+				String end = request.getParameter("end"); // required
+				if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "begin and/or end was null and/or empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // begin/end ok
+				{	
+					String designation = request.getParameter("designation"); 
+					if(designation == null || designation.isEmpty())
+					{	
+						jsonresponse.put("message", "designation was null or empty");
+						jsonresponse.put("response_status", "error");
+					}
+					else // designation/numstddev ok
+					{
+						double homogeneity_double = getHomogeneityScore("wkyt",designation);
+						double modifier_double = (new Double(request.getParameter("modifier"))).doubleValue();
+						double threshold = homogeneity_double * modifier_double;
+						try
+						{
+							ResultSet rs = null;
+							Connection con = null;
+							Statement stmt = null;
+							try
+							{
+								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+								stmt = con.createStatement();
+								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
+								rs.last();
+								jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+								rs.beforeFirst(); // go back to the beginning for parsing
+								JSONObject current_frame_jo = null;
+								JSONArray frames_ja = new JSONArray();
+								while(rs.next()) // get one row
+								{
+									//if(rs.getDouble(designation + "_avg") > homogeneity_double)
+									//{
+										current_frame_jo = new JSONObject();
+										current_frame_jo.put("image_url", rs.getString("image_url"));
+										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
+										current_frame_jo.put("homogeneity_score", homogeneity_double);
+										current_frame_jo.put("threshold", threshold);
+										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
+										
+										// if the previous frame's timestamp is one less than this one
+										if(frames_ja.length() > 0 && frames_ja.getJSONObject(frames_ja.length()-1).getInt("timestamp_in_seconds") == (rs.getInt("timestamp_in_seconds") - 1))
+										{
+											// then add to whatever streak number is there
+											current_frame_jo.put("streak", frames_ja.getJSONObject(frames_ja.length()-1).getInt("streak")+1);
+										}
+										else
+										{
+											// else set the streak to 0
+											current_frame_jo.put("streak", 1);
+										}
+										frames_ja.put(current_frame_jo);
+									//}
+								}
+								jsonresponse.put("response_status", "success");
+								jsonresponse.put("frames", frames_ja);
+							}
+							catch(SQLException sqle)
+							{
+								jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+								jsonresponse.put("response_status", "error");
+								sqle.printStackTrace();
+							}
+							finally
+							{
+								try
+								{
+									if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+								}
+								catch(SQLException sqle)
+								{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+							}   	
+							
+						}
+						catch(NumberFormatException nfe)
+						{
+							jsonresponse.put("message", "threshold was not a valid double value");
+							jsonresponse.put("response_status", "error");
+						}
+					}
+				}
 			}
 			else if (method.equals("getDesignations"))
 			{	
@@ -562,6 +654,40 @@ public class Endpoint extends HttpServlet {
 			}
 		}  	
 		return designations_ja;
+	}
+	
+	double getHomogeneityScore(String station, String designation)
+	{
+		double returnval = 0.0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			while(rs.next())
+			{
+				returnval = rs.getDouble("homogeneity");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
 	}
 	
 }

@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	mds = mds + "	End: <input type=\"text\" id=\"function2_end_input\" value=\"20130317_230100\" size=20><br>";
 	mds = mds + "   <input id=\"function2_go_button\" type=button value=\"GO\">";
 	mds = mds + "</div>"
-	mds = mds + "<div style=\"text-align:left\">";
+/*	mds = mds + "<div style=\"text-align:left\">";
 	mds = mds + "	<b>Function 3:</b> Get all frames for designation above an average score threshold over a period of time<br>";
 	mds = mds + "	Designation: <select id=\"function3_designation_select\">";
 	for(var a = 0; a < designations.length; a++)
@@ -83,6 +83,19 @@ document.addEventListener('DOMContentLoaded', function () {
 	mds = mds + "	Begin: <input type=\"text\" id=\"function5_begin_input\" size=20 value=\"20130319_160000\"><br>";
 	mds = mds + "	End: <input type=\"text\" id=\"function5_end_input\" value=\"20130319_160100\" size=20><br>";
 	mds = mds + "   <input id=\"function5_go_button\" type=button value=\"GO\">";
+	mds = mds + "</div>"*/
+	mds = mds + "<div style=\"text-align:left\">";
+	mds = mds + "	<b>Function 6:</b> Get all frames for designation above calculated homogeneity threshold<br>";
+	mds = mds + "	Designation: <select id=\"function6_designation_select\">";
+	for(var a = 0; a < designations.length; a++)
+	{
+		mds = mds + "	<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
+	}	
+	mds = mds + "	</select><br>";
+	mds = mds + "	Modifier: <input type=\"text\" id=\"function6_modifier_input\" value=\"1.0\" size=4><br>";
+	mds = mds + "	Begin: <input type=\"text\" id=\"function6_begin_input\" size=20 value=\"20130319_160000\"><br>";
+	mds = mds + "	End: <input type=\"text\" id=\"function6_end_input\" value=\"20130319_160100\" size=20><br>";
+	mds = mds + "   <input id=\"function6_go_button\" type=button value=\"GO\">";
 	mds = mds + "</div>"
 	$("#main_div").html(mds);
 	
@@ -167,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					});
 				return;
 			});
-	
+	/*
 	$("#function3_go_button").click(
 			function () {
 				var rds = "";
@@ -356,6 +369,72 @@ document.addEventListener('DOMContentLoaded', function () {
 				        }
 					});
 				return;
-			});
+			});*/
 	
+	$("#function6_go_button").click(
+			function () {
+				var rds = "";
+				var datestring = $('#function6_begin_input').val();
+				
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				
+				var begin = d.getTime()/1000;
+				
+				datestring = $('#function6_end_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end = d.getTime()/1000;
+				
+				$.ajax({
+						type: 'GET',
+						url: "http://localhost:8080/hoozontv/endpoint",
+						data: {
+				            method: "getFramesByDesignationAndHomogeneityThreshold",
+				            begin: begin,             
+				            end: end,
+				            designation: $('#function6_designation_select').val(),
+				            modifier: $('#function6_modifier_input').val()
+						},
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error: " + data.message);
+				        	else
+				        	{
+				        		if(data.frames.length > 100000)
+				        		{
+				        			$("#results_div").html("too many results. Try again.");
+				        		}	
+				        		else
+				        		{
+				        			if(data.frames.length > 0)
+				        			{	
+				        				for(var x = 0; x < data.frames.length; x++)
+				        				{
+				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
+				        					if(data.frames[x].streak > 4)
+				        						rds = rds + "<div style=\"border: 2px red solid;width:160px;display:inline-block;\">";
+				        					else
+				        						rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
+				        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\">";
+				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
+				        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
+				        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
+				        					rds = rds + "<br>streak:" + data.frames[x].streak + "</div>";
+				        				}
+				        			}
+				        			else
+				        				rds = "no matches";
+				        			$("#results_div").html(rds);
+				        		}
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				return;
+			});
 });
