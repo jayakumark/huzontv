@@ -481,6 +481,171 @@ public class Endpoint extends HttpServlet {
 					}
 				}
 			}
+			else if (method.equals("simulateNewFrame"))
+			{
+				String end = request.getParameter("end"); // required
+				long end_long = Long.parseLong(end);
+				int moving_average_window_int = Integer.parseInt(request.getParameter("moving_average_window"));
+				int alert_waiting_period = Integer.parseInt(request.getParameter("alert_waiting_period"));
+				double ma_modifier_double = (new Double(request.getParameter("ma_modifier"))).doubleValue();
+				double single_modifier_double = (new Double(request.getParameter("single_modifier"))).doubleValue();
+				if(end == null || end.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "begin and/or end was null and/or empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // begin/end ok
+				{	
+					JSONArray dnh_ja = getDesignationsAndHomogeneities("wkyt");
+					try
+					{
+						ResultSet rs = null;
+						Connection con = null;
+						Statement stmt = null;
+						try
+						{
+							con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+							stmt = con.createStatement();
+							rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + (end_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + end + ") ORDER BY timestamp_in_seconds ASC"); 
+							//AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
+							rs.last();
+							jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+							if(rs.getRow() < moving_average_window_int)
+							{
+								jsonresponse.put("message", "missing a frame in the target window, cant draw safe conclusions");
+								jsonresponse.put("response_status", "error");
+							}
+							else
+							{	
+								rs.beforeFirst(); // go back to the beginning for parsing
+								JSONArray frames_ja = new JSONArray();
+								JSONObject current_frame_jo = null;
+								JSONObject current_frame_scores_jo = null;
+								/*
+								
+								{
+									"response_status": "success",
+									"frames":
+										[
+											{
+												"timestamp_in_seconds": 12312312,
+												"image_url": "url",
+												"scores":
+													{
+														"person_a": .984332,
+														"person_b": .3423423
+														...
+													}
+											}
+											...											
+										],
+									"averages":
+										[
+											{
+												"designation": "person_a",
+												"average": .9754
+											},
+											{
+												"designation": "person_b",
+												"average": .5432
+											},
+											...
+										]
+								}
+								
+								*/
+								while(rs.next()) // get one row
+								{
+									current_frame_jo = new JSONObject();
+									current_frame_jo.put("image_url", rs.getString("image_url"));
+									current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
+									current_frame_scores_jo = new JSONObject();
+									for(int x = 0; x < dnh_ja.length(); x++)
+									{
+										current_frame_scores_jo.put(dnh_ja.getJSONObject(x).getString("designation"), rs.getDouble(dnh_ja.getJSONObject(x).getString("designation") + "_avg"));
+									}
+									current_frame_jo.put("scores", current_frame_scores_jo);
+									frames_ja.put(current_frame_jo);
+								}
+								
+								double person_total = 0.0;
+								double person_avg = 0.0;
+								JSONArray designation_averages_ja = new JSONArray();
+								JSONObject jo = new JSONObject();
+								double max_avg = 0.0;
+								String max_designation = "";
+								for(int x = 0; x < dnh_ja.length(); x++)
+								{
+									jo = new JSONObject();
+									person_total = 0.0;
+									for(int j = 0; j < frames_ja.length(); j++)
+									{	
+										person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(dnh_ja.getJSONObject(x).getString("designation"));
+									}
+									person_avg = person_total/frames_ja.length();
+									jo.put("designation", dnh_ja.getJSONObject(x).getString("designation"));
+									jo.put("average", person_avg);
+									if(person_avg > max_avg)
+									{
+										max_avg = person_avg;
+										max_designation = dnh_ja.getJSONObject(x).getString("designation");
+									}
+									designation_averages_ja.put(jo);
+								}
+								double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
+								if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
+								{
+									if(frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation) > (max_homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
+									{
+										long last_alert = getLastAlert("wkyt", max_designation);
+										if((end_long - last_alert) > alert_waiting_period)
+										{
+											jsonresponse.put("alert_fired", "yes");
+											setLastAlert("wkyt", max_designation, end_long);
+										}
+										else
+										{
+											jsonresponse.put("alert_fired", "no");
+										}
+									}
+									else
+									{
+										jsonresponse.put("alert_fired", "no");
+									}
+								}
+								else
+								{
+									jsonresponse.put("alert_fired", "no");
+								}
+								jsonresponse.put("designation_averages", designation_averages_ja);
+								jsonresponse.put("response_status", "success");
+								jsonresponse.put("frames", frames_ja);
+							}
+						}
+						catch(SQLException sqle)
+						{
+							jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+							jsonresponse.put("response_status", "error");
+							sqle.printStackTrace();
+						}
+						finally
+						{
+							try
+							{
+								if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+							}
+							catch(SQLException sqle)
+							{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+						}   	
+						
+					}
+					catch(NumberFormatException nfe)
+					{
+						jsonresponse.put("message", "threshold was not a valid double value");
+						jsonresponse.put("response_status", "error");
+					}
+				}
+			}
 			else if (method.equals("getDesignations"))
 			{	
 				String station = request.getParameter("station"); // required
@@ -560,6 +725,52 @@ public class Endpoint extends HttpServlet {
 		return designations_ja;
 	}
 	
+	JSONArray getDesignationsAndHomogeneities(String station)
+	{
+		JSONArray designations_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people_" + station); 
+			JSONObject jo = null;
+			while(rs.next())
+			{
+				jo = new JSONObject();
+				try {
+					jo.put("designation", rs.getString("designation"));
+					jo.put("homogeneity", rs.getDouble("homogeneity"));
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				designations_ja.put(jo);
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			return null;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				return null;
+			}
+		}  	
+		return designations_ja;
+	}
+	
+	
 	double getHomogeneityScore(String station, String designation)
 	{
 		double returnval = 0.0;
@@ -593,5 +804,77 @@ public class Endpoint extends HttpServlet {
 		}  	
 		return returnval;
 	}
+	
+	long getLastAlert(String station, String designation)
+	{
+		long returnval = 0L;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			while(rs.next())
+			{
+				returnval = rs.getLong("last_alert");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+	
+	boolean setLastAlert(String station, String designation, long alert_ts)
+	{
+		boolean returnval;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			while(rs.next())
+			{
+				rs.updateLong("last_alert", alert_ts);
+				rs.updateRow();
+			}
+			returnval = true;
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			returnval = false;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+	
 	
 }
