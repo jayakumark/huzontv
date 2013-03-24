@@ -483,19 +483,19 @@ public class Endpoint extends HttpServlet {
 			}
 			else if (method.equals("simulateNewFrame"))
 			{
-				String end = request.getParameter("end"); // required
-				long end_long = Long.parseLong(end);
+				String ts = request.getParameter("ts"); // required
 				int moving_average_window_int = Integer.parseInt(request.getParameter("moving_average_window"));
 				int alert_waiting_period = Integer.parseInt(request.getParameter("alert_waiting_period"));
 				double ma_modifier_double = (new Double(request.getParameter("ma_modifier"))).doubleValue();
 				double single_modifier_double = (new Double(request.getParameter("single_modifier"))).doubleValue();
-				if(end == null || end.isEmpty()) // must always have the time range 
+				if(ts == null || ts.isEmpty()) // must always have the time range 
 				{
 					jsonresponse.put("message", "begin and/or end was null and/or empty.");
 					jsonresponse.put("response_status", "error");
 				}
 				else // begin/end ok
 				{	
+					long ts_long = Long.parseLong(ts);
 					JSONArray dnh_ja = getDesignationsAndHomogeneities("wkyt");
 					try
 					{
@@ -506,7 +506,7 @@ public class Endpoint extends HttpServlet {
 						{
 							con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
 							stmt = con.createStatement();
-							rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + (end_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + end + ") ORDER BY timestamp_in_seconds ASC"); 
+							rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + (ts_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts + ") ORDER BY timestamp_in_seconds ASC"); 
 							//AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
 							rs.last();
 							jsonresponse.put("frames_processed", rs.getRow());  // get a row count
@@ -598,10 +598,16 @@ public class Endpoint extends HttpServlet {
 									if(frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation) > (max_homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
 									{
 										long last_alert = getLastAlert("wkyt", max_designation);
-										if((end_long - last_alert) > alert_waiting_period)
+										if((ts_long - last_alert) > alert_waiting_period)
 										{
 											jsonresponse.put("alert_fired", "yes");
-											setLastAlert("wkyt", max_designation, end_long);
+											jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
+											jsonresponse.put("designation", max_designation);
+											jsonresponse.put("moving_average", max_avg);
+											jsonresponse.put("homogeneity_score", max_homogeneity_double);
+											jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
+											jsonresponse.put("single_threshold", max_homogeneity_double * single_modifier_double);
+											setLastAlert("wkyt", max_designation, ts_long);
 										}
 										else
 										{
@@ -644,6 +650,20 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("message", "threshold was not a valid double value");
 						jsonresponse.put("response_status", "error");
 					}
+				}
+			}
+			else if (method.equals("resetAllLastAlerts"))
+			{	
+				String station = request.getParameter("station"); // required
+				if(station == null || station.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "station was null or empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // station ok
+				{	
+					boolean successful = resetAllLastAlerts(station);
+					jsonresponse.put("response_status", "success");
 				}
 			}
 			else if (method.equals("getDesignations"))
@@ -876,5 +896,40 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	
+	boolean resetAllLastAlerts(String station)
+	{
+		boolean returnval;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + ""); 
+			while(rs.next())
+			{
+				rs.updateLong("last_alert", 0);
+				rs.updateRow();
+			}
+			returnval = true;
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			returnval = false;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
 }

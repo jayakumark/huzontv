@@ -72,13 +72,14 @@ document.addEventListener('DOMContentLoaded', function () {
 	mds = mds + "   		<input id=\"function7_go_button\" type=button value=\"GO\">";
 	mds = mds + "		</td>";
 	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	mds = mds + "			<b>Function 8:</b> Simulate single frame<br>";
-	mds = mds + "			Single Thresh Modifier: <input type=\"text\" id=\"function8_singlemodifier_input\" value=\".97\" size=4><br>";
-	mds = mds + "			MA Thresh Modifier: <input type=\"text\" id=\"function8_mamodifier_input\" value=\".67\" size=4><br>";
-	mds = mds + "			Moving Avg Window: <input type=\"text\" id=\"function8_maw_input\" value=\"5\" size=4><br>";
-	mds = mds + "			Alert waiting period: <input type=\"text\" id=\"function8_awp_input\" value=\"60\" size=4><br>";
-	mds = mds + "			End: <input type=\"text\" id=\"function8_end_input\" value=\"20130320_163309\" size=20><br>";
-	mds = mds + "   		<input id=\"function8_go_button\" type=button value=\"GO\">";
+	mds = mds + "			<b>Function 9:</b> Simulate alerts for a given time range:<br>";
+	mds = mds + "			Single Thresh Modifier: <input type=\"text\" id=\"function9_singlemodifier_input\" value=\".97\" size=4><br>";
+	mds = mds + "			MA Thresh Modifier: <input type=\"text\" id=\"function9_mamodifier_input\" value=\".67\" size=4><br>";
+	mds = mds + "			Moving Avg Window: <input type=\"text\" id=\"function9_maw_input\" value=\"5\" size=4><br>";
+	mds = mds + "			Alert waiting period: <input type=\"text\" id=\"function9_awp_input\" value=\"7200\" size=4><br>";
+	mds = mds + "			Begin: <input type=\"text\" id=\"function9_begin_input\" size=20 value=\"20130320_050000\"><br>";
+	mds = mds + "			End: <input type=\"text\" id=\"function9_end_input\" value=\"20130320_233500\" size=20><br>";
+	mds = mds + "   		<input id=\"function9_go_button\" type=button value=\"GO\">";
 	mds = mds + "		</td>";
 	mds = mds + "	</tr>";	
 	
@@ -331,72 +332,151 @@ document.addEventListener('DOMContentLoaded', function () {
 				return;
 			});
 	
+	/*
 	$("#function8_go_button").click(
 			function () {
 				$("#results_div").html("");
 				$("#chart1").html("");
-				var rds = "";
-				var datestring = $('#function8_end_input').val();
+				var datestring = $('#function8_ts_input').val();
 				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				//alert($('#function8_maw_input').val());
-				$.ajax({
-						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
-						data: {
-				            method: "simulateNewFrame",
-				            end: end,
-				            ma_modifier: $('#function8_mamodifier_input').val(),
-				            single_modifier: $('#function8_singlemodifier_input').val(),
-				            alert_waiting_period: $('#function8_awp_input').val(),
-				            moving_average_window: $('#function8_maw_input').val()
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error");
-				        	else
-				        	{
-				        		if(data.frames.length > 100000)
-				        		{
-				        			$("#results_div").html("too many results. Try again.");
-				        		}	
-				        		else
-				        		{
-				        			var max_score = 0;
-				        			var max_designation = "";
-				        			for(var c = 0; c < data.designation_averages.length; c++)
-				        			{
-				        				if(data.designation_averages[c].average > max_score)
-				        				{
-				        					max_score = data.designation_averages[c].average;
-				        					max_designation = data.designation_averages[c].designation;
-				        				}
-				        			}	
-				        			rds = rds + "max designation for this frame:" + max_designation;
-		        					rds = rds + "<br>max designation score for this frame:" + max_score;
-		        					rds = rds + "<br>alert_fired:" + data.alert_fired;
-		        					rds = rds + "<br><br>";
-				        			for(var x = 0; x < data.frames.length; x++)
-				        			{
-				        				d = new Date(data.frames[x].timestamp_in_seconds *1000);
-				        				rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
-			        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\">";
-			        					rds = rds + "<br>" + d.toString();
-			        					rds = rds + "</div>";
-				        			}
-				        			$("#results_div").html(rds);
-				        		}
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
+				var ts = d.getTime()/1000;
+				// end, ma_modifier, single_modifier, alert_waiting_period, moving_average_window
+				simulateNewFrame(ts,  $('#function8_mamodifier_input').val(), $('#function8_singlemodifier_input').val(), $('#function8_awp_input').val(), $('#function8_maw_input').val());
+			});*/
 	
+	$("#function9_go_button").click(
+			function () {
+				$("#alerts_div").html("");
+				$("#results_div").html("");
+				$("#chart1").html("");
+				resetAllLastAlerts("wkyt");
+				var rds = "";
+				var datestring = $('#function9_begin_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var begin = d.getTime()/1000;
+				datestring = $('#function9_end_input').val();
+				d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end = d.getTime()/1000;
+				// end, ma_modifier, single_modifier, alert_waiting_period, moving_average_window
+				var current_ts = begin;
+				var x = 0;
+				while(current_ts <= end && x < 3600)
+				{
+					simulateNewFrame(current_ts,  $('#function9_mamodifier_input').val(), $('#function9_singlemodifier_input').val(), $('#function9_awp_input').val(), $('#function9_maw_input').val());
+					current_ts++;
+					x++;
+				}	
+			});
 });
+
+function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
+{
+	var rds = "";
+	$.ajax({
+			type: 'GET',
+			url: "http://localhost:8080/hoozontv/endpoint",
+			data: {
+	            method: "simulateNewFrame",
+	            ts: ts,
+	            ma_modifier: ma_modifier,
+	            single_modifier: single_modifier,
+	            alert_waiting_period: awp,
+	            moving_average_window: maw
+			},
+	        dataType: 'json',
+	        async: false,
+	        success: function (data, status) {
+	        	if (data.response_status == "error")
+	        	{
+	        	//	$("#results_div").html("error: "  + data.message);
+	        	}
+	        	else
+	        	{
+	        		if(data.frames.length > 100000)
+	        		{
+	        			$("#results_div").html("too many results. Try again.");
+	        		}	
+	        		else
+	        		{
+	        			/*var max_score = 0;
+	        			var max_designation = "";
+	        			for(var c = 0; c < data.designation_averages.length; c++)
+	        			{
+	        				if(data.designation_averages[c].average > max_score)
+	        				{
+	        					max_score = data.designation_averages[c].average;
+	        					max_designation = data.designation_averages[c].designation;
+	        				}
+	        			}	
+	        			for(var x = 0; x < data.frames.length; x++)
+	        			{
+	        				d = new Date(data.frames[x].timestamp_in_seconds *1000);
+	        				rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
+        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:160px;height:90px\">";
+        					rds = rds + "<br>" + d.toString();
+        					rds = rds + "</div>";
+	        			}
+	        			rds = rds + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
+	        			rds = rds + "<br>max designation for this frame:" + max_designation;
+    					rds = rds + "<br>max designation score for this frame:" + max_score;
+    					rds = rds + "<br>alert_fired:" + data.alert_fired;
+    					rds = rds + "</div>";
+	        			$("#results_div").html(rds);*/
+	        			if(data.alert_fired === "yes")
+	        			{
+	        				alert("alert fired");
+	        				var alertstring = "";
+	        				d = new Date(data.frames[data.frames.length -1].timestamp_in_seconds *1000);
+	        				alertstring = alertstring + "<div style=\"border: 1px black solid;width:160px;display:inline-block;\">";
+	        				alertstring = alertstring + "<img src=" + data.frames[data.frames.length -1].image_url + " style=\"width:160px;height:90px\">";
+	        				alertstring = alertstring + "<br>" + d.toString();
+	        				alertstring = alertstring + "<br>des:" + data.designation;
+	        				alertstring = alertstring + "<br>frame score:" + data.score;
+	        				alertstring = alertstring + "<br>ma score:" + data.moving_average;
+	        				alertstring = alertstring + "<br>des h-score:" + data.homogeneity_score;
+	        				alertstring = alertstring + "<br>des ma thres:" + data.ma_threshold;
+	        				alertstring = alertstring + "<br>des single thresh:" + data.single_threshold;
+	        				alertstring = alertstring + "<br>alert_fired:" + data.alert_fired;
+	        				alertstring = alertstring + "</div>";
+	        				$("#results_div").append(alertstring);
+	        			}	
+	        		}
+	        	}
+	        }
+	        ,
+	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        	$("#results_div").html("ajax error");
+	            console.log(textStatus, errorThrown);
+	        }
+		});
+	return;
+}
+
+function resetAllLastAlerts(station)
+{
+	$.ajax({
+			type: 'GET',
+			url: "http://localhost:8080/hoozontv/endpoint",
+			data: {
+	            method: "resetAllLastAlerts",
+	            station: station
+			},
+	        dataType: 'json',
+	        async: false,
+	        success: function (data, status) {
+	        	if (data.response_status == "error")
+	        		$("#results_div").html("error: "  + data.message);
+	        	else
+	        	{
+	        		//$("#results_div").html("success resetting all last alerts");
+	        	}
+	        }
+	        ,
+	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        	$("#results_div").html("ajax error");
+	            console.log(textStatus, errorThrown);
+	        }
+		});
+	return;
+}
+
