@@ -510,7 +510,14 @@ public class Endpoint extends HttpServlet {
 							//AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
 							rs.last();
 							jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-							if(rs.getRow() < moving_average_window_int)
+							if(rs.getRow() == 0)
+							{
+								jsonresponse.put("message", "No frames for this entire window. Returning with next_frame.");
+								jsonresponse.put("response_status", "error");
+								long next_frame = getNextFrame(ts_long);
+								jsonresponse.put("next_frame", next_frame);
+							}
+							else if(rs.getRow() < moving_average_window_int)
 							{
 								jsonresponse.put("message", "missing a frame in the target window, cant draw safe conclusions");
 								jsonresponse.put("response_status", "error");
@@ -603,6 +610,7 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("alert_fired", "yes");
 											jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
 											jsonresponse.put("designation", max_designation);
+											jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
 											jsonresponse.put("moving_average", max_avg);
 											jsonresponse.put("homogeneity_score", max_homogeneity_double);
 											jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
@@ -709,6 +717,43 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
+	long getNextFrame(long inc_ts)
+	{
+		long next_frame = -1L;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			// get next frame in database, up to one day from now.
+			rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds>" + inc_ts + " AND timestamp_in_seconds<" + (inc_ts + 86400) + ") limit 1"); 
+			if(rs.next())
+			{
+				next_frame = rs.getLong("timestamp_in_seconds");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return next_frame; // -1L indicates no frame found
+	}
+	
+	
 	JSONArray getDesignations(String station)
 	{
 		JSONArray designations_ja = new JSONArray();
@@ -790,6 +835,39 @@ public class Endpoint extends HttpServlet {
 		return designations_ja;
 	}
 	
+	String getTwitterHandle(String station, String designation)
+	{
+		String returnval = "unknown";
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			if(rs.next())
+			{
+				returnval = rs.getString("twitter_handle");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
 	
 	double getHomogeneityScore(String station, String designation)
 	{
