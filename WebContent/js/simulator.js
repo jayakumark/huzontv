@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var designations = null;
 	$.ajax({
 		type: 'GET',
-		url: "http://localhost:8080/hoozontv/endpoint",
+		url: "http://hoozontv.elasticbeanstalk.com/endpoint",
 		data: {
             method: "getDesignations",
             station: "wkyt"       
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	mds = mds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
 	mds = mds + "					</td>";
 	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function4_maw_input\" value=\"5\" size=4>";
+	mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function4_maw_input\" value=\"4\" size=4>";
 	mds = mds + "					</td>";
 	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				
 				$.ajax({
 						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
+						url: "http://hoozontv.elasticbeanstalk.com/endpoint",
 						data: {
 				            method: "getFrames",
 				            begin: begin,             
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        		{
 				        			for(var x = 0; x < data.frames.length; x++)
 				        			{
-				        				rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:200px;height:113px\"></div>";
+				        				rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\"><img src=http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + " style=\"width:200px;height:113px\"></div>";
 				        			}
 				        			$("#results_div").html(rds);
 				        		}
@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				
 				$.ajax({
 						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
+						url: "http://hoozontv.elasticbeanstalk.com/endpoint",
 						data: {
 				            method: "getFramesByDesignationAndHomogeneityThreshold",
 				            begin: begin,             
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        				{
 				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
 				        					rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
-				        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:200px;height:113px\">";
+				        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + "\" style=\"width:200px;height:113px\">";
 				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
 				        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
 				        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	$("#function3_go_button").click(
 			function () {
-				$("#results_div").html("");
+				$("#results_div").html("<span style=\"font-size:20px;font-weight:bold\">BLUE = frame scores<br>ORANGE = moving average<br>DASHED LINE = alert threshold (for moving average)</span>");
 				$("#chart1").html("");
 				var rds = "";
 				var datestring = $('#function3_begin_input').val();
@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				
 				$.ajax({
 						type: 'GET',
-						url: "http://localhost:8080/hoozontv/endpoint",
+						url: "http://hoozontv.elasticbeanstalk.com/endpoint",
 						data: {
 				            method: "getFramesByDesignation",
 				            begin: begin,             
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        				moving_avg.push(data.frames[x].moving_average);
 				        				//lineheight = Math.floor(200 * data.frames[x].designation_score);
 				        				//rds = rds + "<td style=\"vertical-align:bottom\"><img src=\"images/vertical_line_200px.png\" style=\"width:1px;height:" + lineheight + "px\"></td>";
-				        				//rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\"><img src=" + data.frames[x].image_url + " style=\"width:200px;height:113px\"></div>";
+				        				//rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\"><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[data.frames.length -1].image_name + "\" style=\"width:200px;height:113px\"></div>";
 				        			}
 				        			//rds = rds + "</tr></table>";
 				        			//$("#results_div").html(rds);
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        			{
 				        				d = new Date(data.alertframes[x].timestamp_in_seconds *1000);
 				        				rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
-			        					rds = rds + "<img src=" + data.alertframes[x].image_url + " style=\"width:200px;height:113px\">";
+			        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[data.frames.length -1].image_name + "\" style=\"width:200px;height:113px\">";
 			        					rds = rds + "<br>" + d.toString();
 			        					rds = rds + "<br>avg4des:"+ data.alertframes[x].designation_score;
 			        					rds = rds + "<br>h-score:" + data.alertframes[x].homogeneity_score;
@@ -570,319 +570,317 @@ document.addEventListener('DOMContentLoaded', function () {
 				// end, ma_modifier, single_modifier, alert_waiting_period, moving_average_window
 				var current_ts = begin;
 				var x = 0;
-				var alert_fired = false;
+				var alert_triggered = false;
 				while(current_ts <= end)
 				{
-					alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-					if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-						current_ts = alert_fired; // alert_fired is the next valid frame
-					if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-						current_ts = alert_fired; // alert_fired is the next valid frame
-					if(alert_fired == true)
+					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+						current_ts = alert_triggered; // alert_triggered is the next valid frame
+					if(alert_triggered == true)
 					{
 						setTimeout(function(){
 							while(current_ts <= end)
 							{
-								alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-								if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-									current_ts = alert_fired; // alert_fired is the next valid frame
-								if(alert_fired == true)
+								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+									current_ts = alert_triggered; // alert_triggered is the next valid frame
+								if(alert_triggered == true)
 								{
 									setTimeout(function(){
 										while(current_ts <= end)
 										{
-											alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-											if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-												current_ts = alert_fired; // alert_fired is the next valid frame
-											if(alert_fired == true)
+											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+												current_ts = alert_triggered; // alert_triggered is the next valid frame
+											if(alert_triggered == true)
 											{
 												setTimeout(function(){
 													while(current_ts <= end)
 													{
-														alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-														if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-															current_ts = alert_fired; // alert_fired is the next valid frame
-														if(alert_fired == true)
+														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+															current_ts = alert_triggered; // alert_triggered is the next valid frame
+														if(alert_triggered == true)
 														{
 															setTimeout(function(){
 																while(current_ts <= end)
 																{
-																	alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																	if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																		current_ts = alert_fired; // alert_fired is the next valid frame
-																	if(alert_fired == true)
+																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																		current_ts = alert_triggered; // alert_triggered is the next valid frame
+																	if(alert_triggered == true)
 																	{
 																		setTimeout(function(){
 																			while(current_ts <= end)
 																			{
-																				alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																				if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																					current_ts = alert_fired; // alert_fired is the next valid frame
-																				if(alert_fired == true)
+																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																					current_ts = alert_triggered; // alert_triggered is the next valid frame
+																				if(alert_triggered == true)
 																				{
 																					setTimeout(function(){
 																						while(current_ts <= end)
 																						{
-																							alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																							if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																								current_ts = alert_fired; // alert_fired is the next valid frame
-																							if(alert_fired == true)
+																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																								current_ts = alert_triggered; // alert_triggered is the next valid frame
+																							if(alert_triggered == true)
 																							{
 																								setTimeout(function(){
 																									while(current_ts <= end)
 																									{
-																										alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																										if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																											current_ts = alert_fired; // alert_fired is the next valid frame
-																										if(alert_fired == true)
+																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																										if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																											current_ts = alert_triggered; // alert_triggered is the next valid frame
+																										if(alert_triggered == true)
 																										{
 																											setTimeout(function(){
 																												while(current_ts <= end)
 																												{
-																													alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																													if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																														current_ts = alert_fired; // alert_fired is the next valid frame
-																													if(alert_fired == true)
+																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																													if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																														current_ts = alert_triggered; // alert_triggered is the next valid frame
+																													if(alert_triggered == true)
 																													{
 																														setTimeout(function(){
 																															while(current_ts <= end)
 																															{
-																																alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																	current_ts = alert_fired; // alert_fired is the next valid frame
-																																if(alert_fired == true)
+																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																	current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																if(alert_triggered == true)
 																																{
 																																	setTimeout(function(){
 																																		while(current_ts <= end)
 																																		{
-																																			alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																			if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																				current_ts = alert_fired; // alert_fired is the next valid frame
-																																			if(alert_fired == true)
+																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																			if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																				current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																			if(alert_triggered == true)
 																																			{
 																																				setTimeout(function(){
 																																					while(current_ts <= end)
 																																					{
-																																						alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																						if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																							current_ts = alert_fired; // alert_fired is the next valid frame
-																																						if(alert_fired == true)
+																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																							current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																						if(alert_triggered == true)
 																																						{
 																																							setTimeout(function(){
 																																								while(current_ts <= end)
 																																								{
-																																									alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																									if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																										current_ts = alert_fired; // alert_fired is the next valid frame
-																																									if(alert_fired == true)
+																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																										current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																									if(alert_triggered == true)
 																																									{
 																																										setTimeout(function(){
 																																											while(current_ts <= end)
 																																											{
-																																												alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																												if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																													current_ts = alert_fired; // alert_fired is the next valid frame
-																																												if(alert_fired == true)
+																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																													current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																												if(alert_triggered == true)
 																																												{
 																																													setTimeout(function(){
 																																														while(current_ts <= end)
 																																														{
-																																															alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																															if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																current_ts = alert_fired; // alert_fired is the next valid frame
-																																															if(alert_fired == true)
+																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																															if(alert_triggered == true)
 																																															{
 																																																setTimeout(function(){
 																																																	while(current_ts <= end)
 																																																	{
-																																																		alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																		if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																			current_ts = alert_fired; // alert_fired is the next valid frame
-																																																		if(alert_fired == true)
+																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																			current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																		if(alert_triggered == true)
 																																																		{
 																																																			setTimeout(function(){
 																																																				while(current_ts <= end)
 																																																				{
-																																																					alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																					if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																						current_ts = alert_fired; // alert_fired is the next valid frame
-																																																					if(alert_fired == true)
+																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																						current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																					if(alert_triggered == true)
 																																																					{
 																																																						setTimeout(function(){
 																																																							while(current_ts <= end)
 																																																							{
-																																																								alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																								if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																									current_ts = alert_fired; // alert_fired is the next valid frame
-																																																								if(alert_fired == true)
+																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																									current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																								if(alert_triggered == true)
 																																																								{
 																																																									setTimeout(function(){
 																																																										while(current_ts <= end)
 																																																										{
-																																																											alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																											if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																												current_ts = alert_fired; // alert_fired is the next valid frame
-																																																											if(alert_fired == true)
+																																																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																												current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																											if(alert_triggered == true)
 																																																											{
 																																																												setTimeout(function(){
 																																																													while(current_ts <= end)
 																																																													{
-																																																														alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																														if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																															current_ts = alert_fired; // alert_fired is the next valid frame
-																																																														if(alert_fired == true)
+																																																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																															current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																														if(alert_triggered == true)
 																																																														{
 																																																															setTimeout(function(){
 																																																																while(current_ts <= end)
 																																																																{
-																																																																	alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																	if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																		current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																	if(alert_fired == true)
+																																																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																		current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																	if(alert_triggered == true)
 																																																																	{
 																																																																		setTimeout(function(){
 																																																																			while(current_ts <= end)
 																																																																			{
-																																																																				alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																				if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																					current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																				if(alert_fired == true)
+																																																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																					current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																				if(alert_triggered == true)
 																																																																				{
 																																																																					setTimeout(function(){
 																																																																						while(current_ts <= end)
 																																																																						{
-																																																																							alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																							if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																								current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																							if(alert_fired == true)
+																																																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																								current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																							if(alert_triggered == true)
 																																																																							{
 																																																																								setTimeout(function(){
 																																																																									while(current_ts <= end)
 																																																																									{
-																																																																										alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																										if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																											current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																										if(alert_fired == true)
+																																																																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																										if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																											current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																										if(alert_triggered == true)
 																																																																										{
 																																																																											setTimeout(function(){
 																																																																												while(current_ts <= end)
 																																																																												{
-																																																																													alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																													if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																														current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																													if(alert_fired == true)
+																																																																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																													if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																														current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																													if(alert_triggered == true)
 																																																																													{
 																																																																														setTimeout(function(){
 																																																																															while(current_ts <= end)
 																																																																															{
-																																																																																alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																	current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																if(alert_fired == true)
+																																																																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																	current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																if(alert_triggered == true)
 																																																																																{
 																																																																																	setTimeout(function(){
 																																																																																		while(current_ts <= end)
 																																																																																		{
-																																																																																			alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																			if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																				current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																			if(alert_fired == true)
+																																																																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																			if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																				current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																			if(alert_triggered == true)
 																																																																																			{
 																																																																																				setTimeout(function(){
 																																																																																					while(current_ts <= end)
 																																																																																					{
-																																																																																						alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																						if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																							current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																						if(alert_fired == true)
+																																																																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																							current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																						if(alert_triggered == true)
 																																																																																						{
 																																																																																							setTimeout(function(){
 																																																																																								while(current_ts <= end)
 																																																																																								{
-																																																																																									alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																									if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																										current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																									if(alert_fired == true)
+																																																																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																										current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																									if(alert_triggered == true)
 																																																																																									{
 																																																																																										setTimeout(function(){
 																																																																																											while(current_ts <= end)
 																																																																																											{
-																																																																																												alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																												if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																													current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																												if(alert_fired == true)
+																																																																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																													current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																												if(alert_triggered == true)
 																																																																																												{
 																																																																																													setTimeout(function(){
 																																																																																														while(current_ts <= end)
 																																																																																														{
-																																																																																															alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																															if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																															if(alert_fired == true)
+																																																																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																															if(alert_triggered == true)
 																																																																																															{
 																																																																																																setTimeout(function(){
 																																																																																																	while(current_ts <= end)
 																																																																																																	{
-																																																																																																		alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																		if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																			current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																		if(alert_fired == true)
+																																																																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																			current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																		if(alert_triggered == true)
 																																																																																																		{
 																																																																																																			setTimeout(function(){
 																																																																																																				while(current_ts <= end)
 																																																																																																				{
-																																																																																																					alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																					if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																						current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																					if(alert_fired == true)
+																																																																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																						current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																					if(alert_triggered == true)
 																																																																																																					{
 																																																																																																						setTimeout(function(){
 																																																																																																							while(current_ts <= end)
 																																																																																																							{
-																																																																																																								alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																								if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																									current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																								if(alert_fired == true)
+																																																																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																									current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																								if(alert_triggered == true)
 																																																																																																								{
 																																																																																																									setTimeout(function(){
 																																																																																																										while(current_ts <= end)
 																																																																																																										{
-																																																																																																											alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																											if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																												current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																											if(alert_fired == true)
+																																																																																																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																												current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																											if(alert_triggered == true)
 																																																																																																											{
 																																																																																																												setTimeout(function(){
 																																																																																																													while(current_ts <= end)
 																																																																																																													{
-																																																																																																														alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																														if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																															current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																														if(alert_fired == true)
+																																																																																																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																															current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																														if(alert_triggered == true)
 																																																																																																														{
 																																																																																																															setTimeout(function(){
 																																																																																																																while(current_ts <= end)
 																																																																																																																{
-																																																																																																																	alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																																	if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																																		current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																																	if(alert_fired == true)
+																																																																																																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																																		current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																																	if(alert_triggered == true)
 																																																																																																																	{
 																																																																																																																		setTimeout(function(){
 																																																																																																																			while(current_ts <= end)
 																																																																																																																			{
-																																																																																																																				alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																																				if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																																					current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																																				if(alert_fired == true)
+																																																																																																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																																					current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																																				if(alert_triggered == true)
 																																																																																																																				{
 																																																																																																																					setTimeout(function(){
 																																																																																																																						while(current_ts <= end)
 																																																																																																																						{
-																																																																																																																							alert_fired = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
-																																																																																																																							if(alert_fired != true && alert_fired != false && alert_fired != -1) // this means that it's a next_frame value and not null
-																																																																																																																								current_ts = alert_fired; // alert_fired is the next valid frame
-																																																																																																																							if(alert_fired == true)
+																																																																																																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_maw_input').val());
+																																																																																																																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
+																																																																																																																								current_ts = alert_triggered; // alert_triggered is the next valid frame
+																																																																																																																							if(alert_triggered == true)
 																																																																																																																							{
 																																																																																																																								setTimeout(function(){
 																																																																																																																									alert("demo alert limit reached");
@@ -1125,10 +1123,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
 {
-	var alert_fired = false;
+	var alert_triggered = false;
+	$("#alerts_div").html(ts);
 	$.ajax({
 			type: 'GET',
-			url: "http://localhost:8080/hoozontv/endpoint",
+			url: "http://hoozontv.elasticbeanstalk.com/endpoint",
 			data: {
 	            method: "simulateNewFrame",
 	            ts: ts,
@@ -1146,13 +1145,14 @@ function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
 	        		if(data.next_frame)
 	        		{ 
 	        			//alert("next_frame " + data.next_frame);
-	        			alert_fired = data.next_frame;
+	        			alert_triggered = data.next_frame;
 	        		}	
 	        	}
 	        	else
 	        	{
 	        		if(data.frames.length > 100000)
 	        		{
+	        			alert("too many results");
 	        			$("#results_div").html("too many results. Try again.");
 	        		}	
 	        		else
@@ -1171,24 +1171,24 @@ function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
 	        			{
 	        				d = new Date(data.frames[x].timestamp_in_seconds *1000);
 	        				rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
-        					rds = rds + "<img src=" + data.frames[x].image_url + " style=\"width:200px;height:113px\">";
+        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[data.frames.length -1].image_name + "\" style=\"width:200px;height:113px\">";
         					rds = rds + "<br>" + d.toString();
         					rds = rds + "</div>";
 	        			}
 	        			rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
 	        			rds = rds + "<br>max designation for this frame:" + max_designation;
     					rds = rds + "<br>max designation score for this frame:" + max_score;
-    					rds = rds + "<br>alert_fired:" + data.alert_fired;
+    					rds = rds + "<br>alert_triggered:" + data.alert_triggered;
     					rds = rds + "</div>";
 	        			$("#results_div").html(rds);*/
-	        			if(data.alert_fired === "yes")
+	        			if(data.alert_triggered === "yes")
 	        			{
-	        				//alert("alert fired");
+	        				//alert("alert triggered");
 	        				var alertstring = "";
 	        				d = new Date(data.frames[data.frames.length -1].timestamp_in_seconds *1000);
 	        				alertstring = alertstring + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
 	        				alertstring = alertstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-	        				alertstring = alertstring + "<br><img src=" + data.frames[data.frames.length -1].image_url + " style=\"width:200px;height:113px\">";
+	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[data.frames.length -1].image_name + "\" style=\"width:200px;height:113px\">";
 	        				alertstring = alertstring + "<br>" + d.format();
 	        				alertstring = alertstring + "<br>des:" + data.designation;
 	        				alertstring = alertstring + "<br>frame score:" + data.score;
@@ -1196,10 +1196,10 @@ function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
 	        				alertstring = alertstring + "<br>des h-score:" + data.homogeneity_score;
 	        				alertstring = alertstring + "<br>des ma thres:" + data.ma_threshold;
 	        				alertstring = alertstring + "<br>des single thresh:" + data.single_threshold;
-	        				alertstring = alertstring + "<br>alert_fired:" + data.alert_fired;
+	        				alertstring = alertstring + "<br>alert_triggered:" + data.alert_triggered;
 	        				alertstring = alertstring + "</div>";
 	        				$("#results_div").append(alertstring);
-	        				alert_fired = true;
+	        				alert_triggered = true;
 	        			}	
 	        		}
 	        	}
@@ -1210,14 +1210,14 @@ function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
 	            console.log(textStatus, errorThrown);
 	        }
 		});
-	return alert_fired;
+	return alert_triggered;
 }
 
 function resetAllLastAlerts(station)
 {
 	$.ajax({
 			type: 'GET',
-			url: "http://localhost:8080/hoozontv/endpoint",
+			url: "http://hoozontv.elasticbeanstalk.com/endpoint",
 			data: {
 	            method: "resetAllLastAlerts",
 	            station: station

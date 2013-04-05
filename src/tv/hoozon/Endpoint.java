@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
 
+import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -40,6 +41,7 @@ public class Endpoint extends HttpServlet {
 	{
 		System.out.println("tv.hoozon.Endpoint.doPost(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
+		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
 		PrintWriter out = response.getWriter();
 				JSONObject jsonresponse = new JSONObject();
 		Calendar tempcal = Calendar.getInstance();
@@ -52,7 +54,7 @@ public class Endpoint extends HttpServlet {
 				jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
 				jsonresponse.put("response_status", "error");
 			}
-			else if (method.equals("commitFrameData"))
+			else if (method.equals("commitFrameDataAndAlert"))
 			{
 				String jsonpostbody = request.getParameter("jsonpostbody");
 				if(jsonpostbody == null)
@@ -68,17 +70,14 @@ public class Endpoint extends HttpServlet {
 				else
 				{
 					JSONObject jo = new JSONObject(jsonpostbody);
-					jsonresponse.put("response_status", "success");
-					jsonresponse.put("postbody_as_received", jo);
-					
 					ResultSet rs = null;
 					Connection con = null;
 					Statement stmt = null;
 					try
 					{
-						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getInt("timestamp") + "' limit 0,1");
+						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getLong("timestamp_in_seconds") + "' limit 0,1");
 						double currentavgscore = 0.0;
 						double reporter_total = 0.0;
 						JSONArray all_scores_ja = null;
@@ -107,9 +106,9 @@ public class Endpoint extends HttpServlet {
 								rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
 								rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
 							}
-							System.out.println("url: http://localhost/hoozon_finished/" + jo.getInt("timestamp") + ".jpg");
-							rs.updateString("image_url", "http://localhost/hoozon_finished/" + jo.getInt("timestamp") + ".jpg");
-							rs.updateLong("timestamp_in_seconds", jo.getInt("timestamp"));
+							System.out.println("image_name: " + jo.getString("image_name"));
+							rs.updateString("image_name", jo.getString("image_name"));
+							rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
 							
 							System.out.println("total of all scores=" + total_score);
 							average_of_all_scores = total_score / all_scores_ja.length();
@@ -137,20 +136,100 @@ public class Endpoint extends HttpServlet {
 							stmt.close();
 							con.close();
 							jsonresponse.put("response_status", "success");
-							jsonresponse.put("postbody_as_received", jo);
-							jsonresponse.put("message", "Scores should be entered into the database now.");
+							JSONObject frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 4, 0.67, 1.0, 3600);
+							if(frame_processing_jo.getString("response_status").equals("error") && frame_processing_jo.has("error_code") && (frame_processing_jo.getString("error_code").equals("100")))
+							{
+								// missing a frame, wait 2 seconds, try again.
+								Thread.sleep(2000);
+								frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 4, 0.67, 1.0, 3600);
+							}
+							if(frame_processing_jo.has("alert_triggered") && frame_processing_jo.getString("alert_triggered").equals("yes"))
+							{
+								jsonresponse.put("alert_triggered", "yes");
+								SimpleEmailer se = new SimpleEmailer();
+								try {
+									se.sendMail("Alert fired", "http://s3.amazonaws.com/hoozon_wkyt/" + jo.getString("image_name") + " Alert fired " + frame_processing_jo.toString(), "cyrus7580@gmail.com", "info@crasher.com");
+									jsonresponse.put("message", "Scores entered. Alert email sent.");
+								} catch (MessagingException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+									System.out.println("failed to send alert message=" + e.getMessage());
+									jsonresponse.put("message", "Scores entered. Exception trying to send mail, though. message=" + e.getMessage());
+								}
+							}
+							else
+							{
+								jsonresponse.put("alert_triggered", "no");
+								jsonresponse.put("message", "Scores entered. No alert.");
+							}
+							
 						}
 						else
 						{
-							jsonresponse.put("message", "A frame for that timestamp already exists. Skipping insertion.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("alert_triggered", "no");
+							jsonresponse.put("message", "Duplicate frame.");
 						}
+						/*else // a row already exists... overwrite.
+						{
+							all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
+							JSONArray ja = jo.getJSONArray("reporter_scores");
+							for(int x = 0; x < ja.length(); x++)
+							{
+								reporter_total = 0.0;
+								for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
+								{
+									reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+									all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
+									total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+								}
+								currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
+								rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
+								rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
+								rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
+							}
+							System.out.println("image_name: " + jo.getString("image_name"));
+							rs.updateString("image_name", jo.getString("image_name"));
+							rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
+							
+							System.out.println("total of all scores=" + total_score);
+							average_of_all_scores = total_score / all_scores_ja.length();
+							System.out.println("average score of each comparison=" + average_of_all_scores);
+																
+							all_deviations_ja = new JSONArray();
+							all_deviation_squares_ja = new JSONArray();
+							// 2. get all deviations
+							sum_of_deviation_squares = 0.0;
+							for(int s = 0; s < all_scores_ja.length(); s++)
+							{
+								all_deviations_ja.put(all_scores_ja.getDouble(s) - average_of_all_scores);
+								all_deviation_squares_ja.put(all_deviations_ja.getDouble(s) * all_deviations_ja.getDouble(s));
+								sum_of_deviation_squares = sum_of_deviation_squares + all_deviation_squares_ja.getDouble(s);
+							}
+							double temp = sum_of_deviation_squares / (all_scores_ja.length() -1);
+							stddev_double = Math.sqrt(temp);							  
+							
+							System.out.println("**** stddev=" + stddev_double);
+							rs.updateDouble("average_score", average_of_all_scores);
+							rs.updateDouble("stddev", stddev_double);
+							
+							rs.updateRow();
+							rs.close();
+							stmt.close();
+							con.close();
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("alert_triggered", "yes");
+							jsonresponse.put("message", "Scores should be UPDATED now.");
+						}*/
 					}
 					catch(SQLException sqle)
 					{
 						jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
 						jsonresponse.put("response_status", "error");
 						sqle.printStackTrace();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 					finally
 					{
@@ -167,7 +246,10 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
 						}
-					}   	
+					}  
+					
+					
+					
 				}
 			}
 			else
@@ -194,6 +276,7 @@ public class Endpoint extends HttpServlet {
 	{
 		System.out.println("tv.hoozon.Endpoint.doGet(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
+		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
 		PrintWriter out = response.getWriter();
 		JSONObject jsonresponse = new JSONObject();
 		Calendar tempcal = Calendar.getInstance();
@@ -205,6 +288,29 @@ public class Endpoint extends HttpServlet {
 			{
 				jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
 				jsonresponse.put("response_status", "error");
+			}
+			else if (method.equals("getDesignationsRDSTEST"))
+			{
+				String station = request.getParameter("station"); // required
+				if(station == null || station.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "station was null or empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // station ok
+				{	
+					JSONArray designations_ja = getDesignationsRDSTEST(station);
+					if(designations_ja == null)
+					{
+						jsonresponse.put("message", "Error getting designations from DB.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("designations", designations_ja);
+					}
+				}
 			}
 			else if (method.equals("getFrames"))
 			{
@@ -224,7 +330,7 @@ public class Endpoint extends HttpServlet {
 					double total = 0;
 					try
 					{
-						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 						stmt = con.createStatement();
 						rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
 						rs.last();
@@ -235,7 +341,7 @@ public class Endpoint extends HttpServlet {
 						while(rs.next())
 						{
 							current_frame_jo = new JSONObject();
-							current_frame_jo.put("image_url", rs.getString("image_url"));
+							current_frame_jo.put("image_name", rs.getString("image_name"));
 							current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
 							frames_ja.put(current_frame_jo);
 						}
@@ -280,7 +386,7 @@ public class Endpoint extends HttpServlet {
 					Statement stmt = null;
 					try
 					{
-						con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+						con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 						stmt = con.createStatement();
 						rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
 						rs.last();
@@ -298,7 +404,7 @@ public class Endpoint extends HttpServlet {
 						while(rs.next())
 						{
 							current_frame_jo = new JSONObject();
-							current_frame_jo.put("image_url", rs.getString("image_url"));
+							current_frame_jo.put("image_name", rs.getString("image_name"));
 							current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
 							current_frame_jo.put("designation_score", rs.getDouble(designation + "_avg"));
 							current_frame_jo.put("homogeneity_score", homogeneity_double);
@@ -383,7 +489,7 @@ public class Endpoint extends HttpServlet {
 							try
 							{
 								
-								con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+								con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 								stmt = con.createStatement();
 								rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
 								rs.last();
@@ -425,14 +531,14 @@ public class Endpoint extends HttpServlet {
 									if(all_others_below_delta)
 									{
 										current_frame_jo = new JSONObject();
-										current_frame_jo.put("image_url", rs.getString("image_url"));
+										current_frame_jo.put("image_name", rs.getString("image_name"));
 										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
 										current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
 										current_frame_jo.put("homogeneity_score", homogeneity_double);
 										current_frame_jo.put("threshold", threshold);
 										current_frame_jo.put("closest_avg", closest_avg);
 										current_frame_jo.put("closest_designation", closest_designation);
-										//System.out.println("Adding a frame. " + rs.getString("image_url") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
+										//System.out.println("Adding a frame. " + rs.getString("image_name") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
 										
 										// if the previous frame's timestamp is one less than this one
 										if(frames_ja.length() > 0 && frames_ja.getJSONObject(frames_ja.length()-1).getInt("timestamp_in_seconds") == (rs.getInt("timestamp_in_seconds") - 1))
@@ -483,181 +589,22 @@ public class Endpoint extends HttpServlet {
 			}
 			else if (method.equals("simulateNewFrame"))
 			{
+				// get the incoming parameters, the most important of which is the timestamp (ts) value
 				String ts = request.getParameter("ts"); // required
 				int moving_average_window_int = Integer.parseInt(request.getParameter("moving_average_window"));
 				int alert_waiting_period = Integer.parseInt(request.getParameter("alert_waiting_period"));
 				double ma_modifier_double = (new Double(request.getParameter("ma_modifier"))).doubleValue();
 				double single_modifier_double = (new Double(request.getParameter("single_modifier"))).doubleValue();
+				// is the ts empty? if so, bail.
 				if(ts == null || ts.isEmpty()) // must always have the time range 
 				{
 					jsonresponse.put("message", "begin and/or end was null and/or empty.");
 					jsonresponse.put("response_status", "error");
 				}
-				else // begin/end ok
+				else // ts exists, proceed
 				{	
-					long ts_long = Long.parseLong(ts);
-					JSONArray dnh_ja = getDesignationsAndHomogeneities("wkyt");
-					try
-					{
-						ResultSet rs = null;
-						Connection con = null;
-						Statement stmt = null;
-						try
-						{
-							con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
-							stmt = con.createStatement();
-							rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + (ts_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts + ") ORDER BY timestamp_in_seconds ASC"); 
-							//AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
-							rs.last();
-							jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-							if(rs.getRow() == 0)
-							{
-								jsonresponse.put("message", "No frames for this entire window. Returning with next_frame.");
-								jsonresponse.put("response_status", "error");
-								long next_frame = getNextFrame(ts_long);
-								jsonresponse.put("next_frame", next_frame);
-							}
-							else if(rs.getRow() < moving_average_window_int)
-							{
-								jsonresponse.put("message", "missing a frame in the target window, cant draw safe conclusions");
-								jsonresponse.put("response_status", "error");
-							}
-							else
-							{	
-								rs.beforeFirst(); // go back to the beginning for parsing
-								JSONArray frames_ja = new JSONArray();
-								JSONObject current_frame_jo = null;
-								JSONObject current_frame_scores_jo = null;
-								/*
-								
-								{
-									"response_status": "success",
-									"frames":
-										[
-											{
-												"timestamp_in_seconds": 12312312,
-												"image_url": "url",
-												"scores":
-													{
-														"person_a": .984332,
-														"person_b": .3423423
-														...
-													}
-											}
-											...											
-										],
-									"averages":
-										[
-											{
-												"designation": "person_a",
-												"average": .9754
-											},
-											{
-												"designation": "person_b",
-												"average": .5432
-											},
-											...
-										]
-								}
-								
-								*/
-								while(rs.next()) // get one row
-								{
-									current_frame_jo = new JSONObject();
-									current_frame_jo.put("image_url", rs.getString("image_url"));
-									current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
-									current_frame_scores_jo = new JSONObject();
-									for(int x = 0; x < dnh_ja.length(); x++)
-									{
-										current_frame_scores_jo.put(dnh_ja.getJSONObject(x).getString("designation"), rs.getDouble(dnh_ja.getJSONObject(x).getString("designation") + "_avg"));
-									}
-									current_frame_jo.put("scores", current_frame_scores_jo);
-									frames_ja.put(current_frame_jo);
-								}
-								
-								double person_total = 0.0;
-								double person_avg = 0.0;
-								JSONArray designation_averages_ja = new JSONArray();
-								JSONObject jo = new JSONObject();
-								double max_avg = 0.0;
-								String max_designation = "";
-								for(int x = 0; x < dnh_ja.length(); x++)
-								{
-									jo = new JSONObject();
-									person_total = 0.0;
-									for(int j = 0; j < frames_ja.length(); j++)
-									{	
-										person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(dnh_ja.getJSONObject(x).getString("designation"));
-									}
-									person_avg = person_total/frames_ja.length();
-									jo.put("designation", dnh_ja.getJSONObject(x).getString("designation"));
-									jo.put("average", person_avg);
-									if(person_avg > max_avg)
-									{
-										max_avg = person_avg;
-										max_designation = dnh_ja.getJSONObject(x).getString("designation");
-									}
-									designation_averages_ja.put(jo);
-								}
-								double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
-								if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
-								{
-									if(frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation) > (max_homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
-									{
-										long last_alert = getLastAlert("wkyt", max_designation);
-										if((ts_long - last_alert) > alert_waiting_period)
-										{
-											jsonresponse.put("alert_fired", "yes");
-											jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
-											jsonresponse.put("designation", max_designation);
-											jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
-											jsonresponse.put("moving_average", max_avg);
-											jsonresponse.put("homogeneity_score", max_homogeneity_double);
-											jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
-											jsonresponse.put("single_threshold", max_homogeneity_double * single_modifier_double);
-											setLastAlert("wkyt", max_designation, ts_long);
-										}
-										else
-										{
-											jsonresponse.put("alert_fired", "no");
-										}
-									}
-									else
-									{
-										jsonresponse.put("alert_fired", "no");
-									}
-								}
-								else
-								{
-									jsonresponse.put("alert_fired", "no");
-								}
-								jsonresponse.put("designation_averages", designation_averages_ja);
-								jsonresponse.put("response_status", "success");
-								jsonresponse.put("frames", frames_ja);
-							}
-						}
-						catch(SQLException sqle)
-						{
-							jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-							jsonresponse.put("response_status", "error");
-							sqle.printStackTrace();
-						}
-						finally
-						{
-							try
-							{
-								if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-							}
-							catch(SQLException sqle)
-							{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
-						}   	
-						
-					}
-					catch(NumberFormatException nfe)
-					{
-						jsonresponse.put("message", "threshold was not a valid double value");
-						jsonresponse.put("response_status", "error");
-					}
+					Long ts_long = new Long(ts);
+					jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
 				}
 			}
 			else if (method.equals("resetAllLastAlerts"))
@@ -717,6 +664,202 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
+	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, double ma_modifier_double, double single_modifier_double, int alert_waiting_period)
+	{
+		
+		/* this function takes certain parameters and simulates what would happen if this were a realtime new 
+		 * frame coming into the system and we were checking for alerts. 
+		 * 
+		 * 1. It gets X frames, cycles through them, putting together a JSONArray of X frames with timestamp, image name and scores object for each frame.  (see structure below)
+		 * 2. It then cycles through the designations array getting an average score for each designation over the window, creating a designation_averages_ja and finding the max avg
+		 * 3. If the max average is greater than the moving average threshold for that person and the last frame is greater than the raw threshold for that person
+		 * 4. then respond with all the information about that frame.
+		 * 
+		 */
+		
+		JSONObject jsonresponse = new JSONObject();
+		try
+		{
+			JSONArray dnh_ja = getDesignationsAndHomogeneities(station); // get the designations and homogeneities for WKYT
+			try
+			{
+				ResultSet rs = null;
+				Connection con = null;
+				Statement stmt = null;
+				try
+				{
+					con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+					stmt = con.createStatement();
+					// search database for X frames
+					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts_long + ") ORDER BY timestamp_in_seconds ASC"); 
+					rs.last();
+					jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+					if(rs.getRow() == 0) // no frames at all
+					{
+						jsonresponse.put("message", "No frames for this entire window. Returning with next_frame.");
+						jsonresponse.put("response_status", "error");
+						long next_frame = getNextFrame(ts_long);
+						jsonresponse.put("next_frame", next_frame);
+					}
+					else if(rs.getRow() < moving_average_window_int) // missing a frame
+					{
+						jsonresponse.put("message", "missing a frame in the target window, cant draw safe conclusions");
+						jsonresponse.put("error_code", "100");
+						jsonresponse.put("response_status", "error");
+					}
+					else // had all X frames
+					{	
+						rs.beforeFirst(); // go back to the beginning for parsing
+						JSONArray frames_ja = new JSONArray();
+						JSONObject current_frame_jo = null;
+						JSONObject current_frame_scores_jo = null;
+						/*
+						
+						{
+							"response_status": "success",
+							"frames":
+								[
+									{
+										"timestamp_in_seconds": 12312312,
+										"image_name": "url",
+										"scores":
+											{
+												"person_a": .984332,
+												"person_b": .3423423
+												...
+											}
+									}
+									...											
+								],
+							"averages":
+								[
+									{
+										"designation": "person_a",
+										"average": .9754
+									},
+									{
+										"designation": "person_b",
+										"average": .5432
+									},
+									...
+								]
+						}
+						
+						*/
+						while(rs.next()) // get one row
+						{
+							current_frame_jo = new JSONObject();
+							current_frame_jo.put("image_name", rs.getString("image_name"));
+							current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
+							current_frame_scores_jo = new JSONObject();
+							for(int x = 0; x < dnh_ja.length(); x++)
+							{
+								current_frame_scores_jo.put(dnh_ja.getJSONObject(x).getString("designation"), rs.getDouble(dnh_ja.getJSONObject(x).getString("designation") + "_avg"));
+							}
+							current_frame_jo.put("scores", current_frame_scores_jo);
+							frames_ja.put(current_frame_jo);
+						}
+						
+						/*
+						(designation_averages_ja)
+						[
+							{ "designation" : "guy_mcperson", "average": .4345 },
+							{ "designation" : "suzi_cue", "average": .6555 }
+							...
+						]
+						*/
+						double person_total = 0.0;
+						double person_avg = 0.0;
+						JSONArray designation_averages_ja = new JSONArray();
+						JSONObject jo = new JSONObject();
+						double max_avg = 0.0;
+						String max_designation = "";
+						for(int x = 0; x < dnh_ja.length(); x++)
+						{
+							jo = new JSONObject();
+							person_total = 0.0;
+							for(int j = 0; j < frames_ja.length(); j++)
+							{	
+								person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(dnh_ja.getJSONObject(x).getString("designation"));
+							}
+							person_avg = person_total/frames_ja.length();
+							jo.put("designation", dnh_ja.getJSONObject(x).getString("designation"));
+							jo.put("average", person_avg);
+							if(person_avg > max_avg)
+							{
+								max_avg = person_avg;
+								max_designation = dnh_ja.getJSONObject(x).getString("designation");
+							}
+							designation_averages_ja.put(jo);
+						}
+														
+						double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
+						if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
+						{
+							if(frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation) > (max_homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
+							{
+								long last_alert = getLastAlert("wkyt", max_designation);
+								if((ts_long - last_alert) > alert_waiting_period)
+								{
+									jsonresponse.put("alert_triggered", "yes");
+									jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
+									jsonresponse.put("designation", max_designation);
+									jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
+									jsonresponse.put("moving_average", max_avg);
+									jsonresponse.put("homogeneity_score", max_homogeneity_double);
+									jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
+									jsonresponse.put("single_threshold", max_homogeneity_double * single_modifier_double);
+									setLastAlert("wkyt", max_designation, ts_long);
+								}
+								else
+								{
+									jsonresponse.put("alert_triggered", "no");
+								}
+							}
+							else
+							{
+								jsonresponse.put("alert_triggered", "no");
+							}
+						}
+						else
+						{
+							jsonresponse.put("alert_triggered", "no");
+						}
+						jsonresponse.put("designation_averages", designation_averages_ja);
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("frames", frames_ja);
+					}
+				}
+				catch(SQLException sqle)
+				{
+					jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+					jsonresponse.put("response_status", "error");
+					sqle.printStackTrace();
+				}
+				finally
+				{
+					try
+					{
+						if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+					}
+					catch(SQLException sqle)
+					{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+				}   	
+				
+			}
+			catch(NumberFormatException nfe)
+			{
+				jsonresponse.put("message", "threshold was not a valid double value");
+				jsonresponse.put("response_status", "error");
+			}	
+		}
+		catch(JSONException jsone)
+		{
+			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
+		}	
+		return jsonresponse;
+	}
+	
 	long getNextFrame(long inc_ts)
 	{
 		long next_frame = -1L;
@@ -725,7 +868,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			// get next frame in database, up to one day from now.
 			rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds>" + inc_ts + " AND timestamp_in_seconds<" + (inc_ts + 86400) + ") limit 1"); 
@@ -753,6 +896,41 @@ public class Endpoint extends HttpServlet {
 		return next_frame; // -1L indicates no frame found
 	}
 	
+	JSONArray getDesignationsRDSTEST(String station)
+	{
+		JSONArray designations_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT designation FROM people_" + station); 
+			while(rs.next())
+			{
+				designations_ja.put(rs.getString("designation"));
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			return null;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				return null;
+			}
+		}  	
+		return designations_ja;
+	}
 	
 	JSONArray getDesignations(String station)
 	{
@@ -762,7 +940,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT designation FROM people_" + station); 
 			while(rs.next())
@@ -798,7 +976,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people_" + station); 
 			JSONObject jo = null;
@@ -843,7 +1021,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			if(rs.next())
@@ -877,7 +1055,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -911,7 +1089,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -945,7 +1123,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -982,7 +1160,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://localhost/hoozon?user=root&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + ""); 
 			while(rs.next())
