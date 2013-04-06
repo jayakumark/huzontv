@@ -12,6 +12,9 @@
  * The mask defaults to dateFormat.masks.default.
  */
 
+var endpoint = "http://hoozontv.elasticbeanstalk.com/endpoint";
+//var endpoint = "http://localhost:8080/hoozontv/endpoint";
+
 var dateFormat = function () {
 	var	token = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
 		timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
@@ -130,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var designations = null;
 	$.ajax({
 		type: 'GET',
-		url: "http://hoozontv.elasticbeanstalk.com/endpoint",
+		url: endpoint,
 		data: {
             method: "getDesignations",
             station: "wkyt"       
@@ -295,7 +298,65 @@ document.addEventListener('DOMContentLoaded', function () {
 	mds = mds + "				</tr>";
 	mds = mds + "			</table>";
 	mds = mds + "		</td>";
-	mds = mds + "	</tr>";	
+	mds = mds + "	</tr>";
+	mds = mds + "	<tr>";
+	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	mds = mds + "			<table style=\"border-spacing:3px\">";
+	mds = mds + "				<tr>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	mds = mds + "						<b>Function 5:</b> Get list of missing frames.";
+	mds = mds + "					</td>";
+	mds = mds + "				</tr>";
+	mds = mds + "				<tr>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130405_050000\">";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130405_233500\" size=13>";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "   					<input id=\"function5_go_button\" type=button value=\"GO\">";
+	mds = mds + "					</td>";
+	mds = mds + "				</tr>";
+	mds = mds + "			</table>";
+	mds = mds + "		</td>";
+	mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+/*	mds = mds + "			<table style=\"border-spacing:3px\">";
+	mds = mds + "				<tr>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
+	mds = mds + "						<b>Function 4:</b> Simulate alerts for a given time range:";
+	mds = mds + "					</td>";
+	mds = mds + "				</tr>";
+	mds = mds + "				<tr>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function4_maw_input\" value=\"4\" size=4>";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
+	mds = mds + "					</td>";
+	mds = mds + "				</tr>";
+	mds = mds + "				<tr>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130320_050000\"><br>";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130320_233500\" size=13><br>";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
+	mds = mds + "					</td>";
+	mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	mds = mds + "					</td>";
+	mds = mds + "				</tr>";
+	mds = mds + "			</table>";*/
+	mds = mds + "		</td>";
+	mds = mds + "	</tr>";
 	mds = mds + "</table>";
 	$("#main_div").html(mds);
 	
@@ -313,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				
 				$.ajax({
 						type: 'GET',
-						url: "http://hoozontv.elasticbeanstalk.com/endpoint",
+						url: endpoint,
 						data: {
 				            method: "getFrames",
 				            begin: begin,             
@@ -366,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				
 				$.ajax({
 						type: 'GET',
-						url: "http://hoozontv.elasticbeanstalk.com/endpoint",
+						url: endpoint,
 						data: {
 				            method: "getFramesByDesignationAndHomogeneityThreshold",
 				            begin: begin,             
@@ -435,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				
 				$.ajax({
 						type: 'GET',
-						url: "http://hoozontv.elasticbeanstalk.com/endpoint",
+						url: endpoint,
 						data: {
 				            method: "getFramesByDesignation",
 				            begin: begin,             
@@ -1119,6 +1180,61 @@ document.addEventListener('DOMContentLoaded', function () {
 					x++;
 				}	
 			});
+	
+	$("#function5_go_button").click(
+			function () {
+				alert("CLICK");
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				var datestring = $('#function5_begin_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var begin = d.getTime()/1000;
+				datestring = $('#function5_end_input').val();
+			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end = d.getTime()/1000;
+				alert("entering with begin=" + begin + " and end=" + end);
+				$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "getMissingFrames",
+				            begin: begin,             
+				            end: end  
+						},
+				        dataType: 'json',
+				        async: false,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error");
+				        	else
+				        	{
+				        		alert("success");
+				        		if(data.missing_frames_timestamps.length > 100000)
+				        		{
+				        			$("#results_div").html("too many results. Try again.");
+				        		}	
+				        		else
+				        		{
+				        			
+				        			for(var x = 0; x < data.missing_frames_timestamps.length; x++)
+				        			{
+				        				rds = rds + data.missing_frames_timestamps[x] + " " + data.missing_frames_datestrings[x] + "<br>";
+				        			}
+				        			$("#results_div").html(rds);
+				        		}
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				alert("exiting");
+				return;
+			});
+	
 });
 
 function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
@@ -1127,7 +1243,7 @@ function simulateNewFrame(ts, ma_modifier, single_modifier, awp, maw)
 	$("#alerts_div").html(ts);
 	$.ajax({
 			type: 'GET',
-			url: "http://hoozontv.elasticbeanstalk.com/endpoint",
+			url: endpoint,
 			data: {
 	            method: "simulateNewFrame",
 	            ts: ts,
@@ -1217,7 +1333,7 @@ function resetAllLastAlerts(station)
 {
 	$.ajax({
 			type: 'GET',
-			url: "http://hoozontv.elasticbeanstalk.com/endpoint",
+			url: endpoint,
 			data: {
 	            method: "resetAllLastAlerts",
 	            station: station

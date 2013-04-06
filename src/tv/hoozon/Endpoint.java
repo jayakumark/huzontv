@@ -8,6 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
+import java.util.Iterator;
+import java.util.TimeZone;
+import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
@@ -347,6 +350,87 @@ public class Endpoint extends HttpServlet {
 						}
 						jsonresponse.put("response_status", "success");
 						jsonresponse.put("frames", frames_ja);
+					}
+					catch(SQLException sqle)
+					{
+						jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+						jsonresponse.put("response_status", "error");
+						sqle.printStackTrace();
+					}
+					finally
+					{
+						try
+						{
+							if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+						}
+						catch(SQLException sqle)
+						{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+					}   	
+				}
+			}
+			else if (method.equals("getMissingFrames"))
+			{
+				System.out.println("Getting missing frames");
+				String begin = request.getParameter("begin"); // required
+				String end = request.getParameter("end"); // required
+				if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "begin or end was empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else
+				{
+					long begin_long = Long.parseLong(begin);
+					long end_long = Long.parseLong(end);
+					long counter = begin_long;
+					System.out.println("Putting all timestamps in window in treeset");
+					TreeSet<String> timestamps = new TreeSet<String>();
+					while(counter < end_long)
+					{
+						timestamps.add(counter+"");
+						counter++;
+					}
+					System.out.println("DONE Putting all timestamps in window in treeset");
+					ResultSet rs = null;
+					Connection con = null;
+					Statement stmt = null;
+					int x = 0;
+					double total = 0; 
+					System.out.println("1");
+					try
+					{
+						con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+						System.out.println("2");
+						stmt = con.createStatement();
+						System.out.println("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ") ORDER BY timestamp_in_seconds ASC");
+						rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ") ORDER BY timestamp_in_seconds ASC"); // get the frames in the time range
+						System.out.println("4");
+						rs.last();
+						System.out.println("5");
+						jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+						System.out.println("6");
+					 	rs.beforeFirst(); // go back to the beginning for parsing
+						System.out.println("Looping through frames found in database and removing entries from timestamps treeset");
+						while(rs.next())
+						{
+							timestamps.remove(rs.getLong("timestamp_in_seconds")+"");
+						}
+						System.out.println("DONE Looping through frames found in database and removing entries from timestamps treeset");
+						Iterator<String> it = timestamps.iterator();
+						JSONArray timestamps_ja = new JSONArray();
+						JSONArray datestrings_ja = new JSONArray();
+						String current = "";
+						System.out.println("Looping through missing frames and creating jsonarrays");
+						while(it.hasNext())
+						{
+							current = it.next();
+							timestamps_ja.put(current);
+							datestrings_ja.put(getDatestringFromTimestampInSeconds(Long.parseLong(current)));
+						}
+						System.out.println("DONE Looping through frames found in database and removing entries from timestamps treeset");
+						jsonresponse.put("missing_frames_timestamps", timestamps_ja);
+						jsonresponse.put("missing_frames_datestrings", datestrings_ja);
+						jsonresponse.put("response_status", "success");
 					}
 					catch(SQLException sqle)
 					{
@@ -1187,5 +1271,37 @@ public class Endpoint extends HttpServlet {
 			}
 		}  	
 		return returnval;
+	}
+	
+	private long getTimestampInSecondsFromDatestring(String datestring)
+	{
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.YEAR, Integer.parseInt(datestring.substring(0,4)));
+		cal.set(Calendar.MONTH, Integer.parseInt(datestring.substring(4,6)) - 1);
+		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(datestring.substring(6,8)));
+		cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(datestring.substring(9,11)));
+		cal.set(Calendar.MINUTE, Integer.parseInt(datestring.substring(11,13)));
+		cal.set(Calendar.SECOND, Integer.parseInt(datestring.substring(13,15)));
+		return (cal.getTimeInMillis()/1000);
+	}
+	
+	private String getDatestringFromTimestampInSeconds(long timestamp_in_seconds)
+	{
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		cal.setTimeInMillis(timestamp_in_seconds * 1000);
+		String year = new Integer(cal.get(Calendar.YEAR)).toString();
+		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		String second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String datestring = year  + month + day + "_" + hour24 + minute + second;
+		return datestring;
 	}
 }
