@@ -8,6 +8,9 @@
         <dependent-module archiveName="mysql-connector-java-5.1.24-bin.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//home/cyrus/Desktop/libraries/mysql-connector-java-5.1.24-bin.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="httpmime-4.2.3.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//home/cyrus/Desktop/libraries/httpmime-4.2.3.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="java-output-path" value="/hoozontv/build/classes"/>
         <property name="context-root" value="hoozontv"/>
     </wb-module>
