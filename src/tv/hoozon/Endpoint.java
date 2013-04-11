@@ -1,7 +1,15 @@
 package tv.hoozon;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -9,16 +17,47 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import javax.mail.MessagingException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpVersion;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.DefaultHttpClientConnection;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHttpEntityEnclosingRequest;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.params.SyncBasicHttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.protocol.HttpRequestExecutor;
+import org.apache.http.protocol.ImmutableHttpProcessor;
+import org.apache.http.protocol.RequestConnControl;
+import org.apache.http.protocol.RequestContent;
+import org.apache.http.protocol.RequestExpectContinue;
+import org.apache.http.protocol.RequestTargetHost;
+import org.apache.http.protocol.RequestUserAgent;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -139,29 +178,21 @@ public class Endpoint extends HttpServlet {
 							stmt.close();
 							con.close();
 							jsonresponse.put("response_status", "success");
-							JSONObject frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 4, 0.67, 1.0, 3600);
+							JSONObject frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 3600);
 							if(frame_processing_jo.getString("response_status").equals("error") && frame_processing_jo.has("error_code") && (frame_processing_jo.getString("error_code").equals("100")))
 							{
 								// missing a frame, wait 2 seconds, try again.
 								Thread.sleep(2000);
-								frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 4, 0.67, 1.0, 3600);
+								frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 3600);
 							}
 							if(frame_processing_jo.has("alert_triggered") && frame_processing_jo.getString("alert_triggered").equals("yes"))
 							{
 								jsonresponse.put("alert_triggered", "yes");
-								/*jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
-								jsonresponse.put("designation", max_designation);
-								jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
-								jsonresponse.put("moving_average", max_avg);
-								jsonresponse.put("homogeneity_score", max_homogeneity_double);
-								jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
-								jsonresponse.put("single_threshold", max_homogeneity_double * single_modifier_double);
-								jsonresponse.put("timestamp_in_seconds", frames_ja.getJSONObject(frames_ja.length() -1).getLong("timestamp_in_seconds"));
-								jsonresponse.put("datestring", getDatestringFromTimestampInSeconds(frames_ja.getJSONObject(frames_ja.length() -1).getLong("timestamp_in_seconds")));*/
-								Twitter twitter = new Twitter();
-								twitter.updateStatus("1137862176-3jK62yPk2UfyflkUewKNM08Uh8jRzPKxSf9UoK7", "93M2J4l7q01HMTiA4Q82be8fhxcZRgwzFCTI1Q6MBrY", 
-										frame_processing_jo.getString("designation") + " is live on the air RIGHT NOW! Tune in or watch here: wkyt.com/livestream http://wkyt.hoozon.tv/" + jo.getString("image_name"));
-								
+								jsonresponse.put("alert_designation", frame_processing_jo.getString("designation"));
+								if(frame_processing_jo.has("twitter_handle"))
+									jsonresponse.put("alert_twitter_handle", frame_processing_jo.getString("twitter_handle"));
+								jsonresponse.put("alert_display_name", frame_processing_jo.getString("display_name"));
+							    
 								SimpleEmailer se = new SimpleEmailer();
 								try {
 									se.sendMail("Alert fired for " + frame_processing_jo.getString("designation"), "http://hoozon-wkyt-alertimgs.s3-website-us-east-1.amazonaws.com/" + jo.getString("image_name"), "cyrus7580@gmail.com", "info@crasher.com");
@@ -304,6 +335,109 @@ public class Endpoint extends HttpServlet {
 			{
 				jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
 				jsonresponse.put("response_status", "error");
+			}
+			else if (method.equals("startTwitterAuthentication"))
+			{
+				String designation = request.getParameter("designation");
+				if(designation == null)
+				{
+					// check for designation validity FIXME
+					jsonresponse.put("message", "Please specify a valid designation");
+					jsonresponse.put("response_status", "error");
+				}
+				else
+				{	
+					Twitter twitter = new Twitter();
+					jsonresponse = twitter.startTwitterAuthentication();
+					/*if(jsonresponse.getString("response_status").equals("success"))
+					{
+						setOAuthToken("wkyt", designation, jsonresponse.getString("oauth_token"));
+					}*/
+				}
+			}
+			else if (method.equals("getTwitterAccessTokenFromAuthorizationCode"))
+			{
+				String oauth_verifier = request.getParameter("oauth_verifier");
+				String oauth_token = request.getParameter("oauth_token");
+				String designation = request.getParameter("designation");
+				if(oauth_verifier == null)
+				{
+					jsonresponse.put("message", "This method requires an oauth_verifier value.");
+					jsonresponse.put("response_status", "error");
+				}
+				else if(oauth_token == null)
+				{
+					jsonresponse.put("message", "This method requires an oauth_token value.");
+					jsonresponse.put("response_status", "error");
+				}
+				else
+				{	
+					// at this point the user has been sent to twitter with an initial request_token. They've been sent back
+					// to the registration page with an oauth_token and oauth_verifier. However, as they come back, we don't know who they are 
+					// except for this oauth_token we've seen before. Therefore, we've saved it above in startTwitterAuthentication
+					// and we need to search the DB for it to figure out who it belongs to.
+					//String designation = getDesignationFromOAuthToken("wkyt", oauth_token);
+					
+					String expected_twitter_handle = getTwitterHandle("wkyt", designation);
+					Twitter twitter = new Twitter();
+					JSONObject preliminary_jsonresponse = new JSONObject();
+					preliminary_jsonresponse = twitter.getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
+					if(preliminary_jsonresponse.getString("response_status").equals("success"))
+					{
+						if(!preliminary_jsonresponse.getString("screen_name").equals(expected_twitter_handle))
+						{
+							jsonresponse.put("message", "The screen name returned by Twitter (" + preliminary_jsonresponse.getString("screen_name") + ") did not match the expected value: " + expected_twitter_handle);
+							jsonresponse.put("response_status", "error");
+						}
+						else
+						{
+							setTwitterAccessTokenAndSecret("wkyt", designation, preliminary_jsonresponse.getString("access_token"), preliminary_jsonresponse.getString("access_token_secret"));
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("message", "The access_token and access_token_secret should be set in the database now.");
+						}
+					}
+					else
+					{
+						jsonresponse = preliminary_jsonresponse;
+					}
+				}
+			}
+			else if (method.equals("getFacebookAccessTokenFromAuthorizationCode"))
+			{
+				String facebook_code = request.getParameter("facebook_code");
+				String designation = request.getParameter("designation");
+				if(facebook_code == null)
+				{
+					jsonresponse.put("message", "This method requires a facebook_code value.");
+					jsonresponse.put("response_status", "error");
+				}
+				else if(designation == null)
+				{
+					jsonresponse.put("message", "This method requires a designation value.");
+					jsonresponse.put("response_status", "error");
+				}
+				else
+				{	
+					// at this point the user has been sent to facebook for permission. The response came back with a code.
+					// Now we need to get and store the user's access_token
+					JSONObject preliminary_jsonresponse = new JSONObject();
+					preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
+					
+					if(preliminary_jsonresponse.getString("response_status").equals("success"))
+					{
+						Calendar cal = Calendar.getInstance();
+						cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+						cal.add(Calendar.SECOND, Integer.parseInt( preliminary_jsonresponse.getString("expires")));
+						long expires_timestamp = cal.getTimeInMillis() / 1000;
+						JSONObject db_update_jo = setFacebookAccessTokenAndExpires("wkyt", designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp);
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("message", "The access_token and expires should be set in the database now.");
+					}
+					else
+					{
+						jsonresponse = preliminary_jsonresponse;
+					}
+				}
 			}
 			else if (method.equals("getFrames"))
 			{
@@ -760,9 +894,38 @@ public class Endpoint extends HttpServlet {
 					}
 				}
 			}
+			else if (method.equals("getDesignationsAndAccounts"))
+			{	
+				String station = request.getParameter("station"); // required
+				String include_master = request.getParameter("include_master");
+				if(station == null || station.isEmpty()) // must always have the time range 
+				{
+					jsonresponse.put("message", "station was null or empty.");
+					jsonresponse.put("response_status", "error");
+				}
+				else // station ok
+				{	
+					
+					JSONArray designations_ja = null;
+					if(include_master != null && include_master.equals("yes")) 
+						designations_ja = getDesignationsAndAccounts(station, true);
+					else
+						designations_ja = getDesignationsAndAccounts(station, false);
+					if(designations_ja == null)
+					{
+						jsonresponse.put("message", "Error getting designations from DB.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("designations", designations_ja);
+					}
+				}
+			}
 			else
 			{
-				jsonresponse.put("message", "Unknown method.");
+				jsonresponse.put("message", "Unknown method " + method); // we have already checked for null above
 				jsonresponse.put("response_status", "error");
 			}
 			tempcal = Calendar.getInstance();
@@ -821,26 +984,30 @@ public class Endpoint extends HttpServlet {
 						stmt2 = con.createStatement();
 						rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts + ")");
 						total = 0;
-						/*while(rs2.next())
+						
+						// this is a pure moving average
+						while(rs2.next())
 						{
 							total = total + rs2.getDouble(current_designation + "_avg");
 						}
-						ma_over_window = total / moving_average_window_int;*/
-						while(rs2.next())
+						ma_over_window = total / moving_average_window_int;
+						
+						// this is a moving average minus the lowest frame across the window.
+						/*while(rs2.next())
 						{
-							/** this removes the lowest score over the window, essentially throwing out an outlier to compensate for closed eyes, 
-							 * or other total failure to locate the face in an otherwise good stream of consistent images **/
+							//** this removes the lowest score over the window, essentially throwing out an outlier to compensate for closed eyes, 
+							//* or other total failure to locate the face in an otherwise good stream of consistent images *
 							if(rs2.getDouble(current_designation + "_avg") < lowest_score_in_window)
 								lowest_score_in_window = rs2.getDouble(current_designation + "_avg");
 							
-							if(rs2.getDouble(current_designation + "_avg") > highest_score_in_window)
-							{
-								highest_score_in_window = rs2.getDouble(current_designation + "_avg");
-								ts_of_highest_score_in_window = rs2.getLong("timestamp_in_seconds");
-							}
+							//if(rs2.getDouble(current_designation + "_avg") > highest_score_in_window)
+							//{
+							//	highest_score_in_window = rs2.getDouble(current_designation + "_avg");
+							//	ts_of_highest_score_in_window = rs2.getLong("timestamp_in_seconds");
+							//}
 							total = total + rs2.getDouble(current_designation + "_avg");
 						}
-						ma_over_window = (total - lowest_score_in_window) / (moving_average_window_int - 1);
+						ma_over_window = (total - lowest_score_in_window) / (moving_average_window_int - 1);*/
 						if(ma_over_window > (current_homogeneity * ma_modifier_double))
 						{	
 							/* get second place information for delta purposes */
@@ -1058,6 +1225,7 @@ public class Endpoint extends HttpServlet {
 							designation_averages_ja.put(jo);
 						}
 														
+						String twitter_handle = null;
 						double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
 						if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
 						{
@@ -1069,7 +1237,12 @@ public class Endpoint extends HttpServlet {
 									jsonresponse.put("alert_triggered", "yes");
 									jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
 									jsonresponse.put("designation", max_designation);
-									jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
+									twitter_handle = getTwitterHandle("wkyt",max_designation);
+									if(twitter_handle != null)
+									{
+										jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
+									}
+									jsonresponse.put("display_name", getDisplayName("wkyt",max_designation));
 									jsonresponse.put("moving_average", max_avg);
 									jsonresponse.put("homogeneity_score", max_homogeneity_double);
 									jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
@@ -1173,7 +1346,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE active=1"); 
+			rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=1 AND acct_type='person')"); 
 			while(rs.next())
 			{
 				designations_ja.put(rs.getString("designation"));
@@ -1209,7 +1382,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people_" + station + " WHERE active=1"); 
+			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people_" + station + " WHERE (active=1 AND acct_type='person')"); 
 			JSONObject jo = null;
 			while(rs.next())
 			{
@@ -1219,6 +1392,73 @@ public class Endpoint extends HttpServlet {
 					jo.put("homogeneity", rs.getDouble("homogeneity"));
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				designations_ja.put(jo);
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			return null;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				return null;
+			}
+		}  	
+		return designations_ja;
+	}
+	
+	JSONArray getDesignationsAndAccounts(String station, boolean include_master)
+	{
+		JSONArray designations_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			if(include_master)
+				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE active=1"); 
+			else // only get people
+				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (active=1 AND acct_type='person')"); 
+			JSONObject jo = null;
+			while(rs.next())
+			{
+				jo = new JSONObject();
+				try {
+					System.out.println("Adding " + rs.getString("designation"));
+					jo.put("designation", rs.getString("designation"));
+					jo.put("display_name",  rs.getString("display_name"));
+					jo.put("acct_type", rs.getString("acct_type"));
+					jo.put("job_function",  rs.getString("job_function"));
+					if(rs.getString("twitter_handle") != null)
+						jo.put("twitter_handle", rs.getString("twitter_handle"));
+					if(rs.getString("twitter_access_token") != null && !rs.getString("twitter_access_token").isEmpty())
+						jo.put("twitter_connected", "yes");
+					else
+						jo.put("twitter_connected", "no");
+					if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
+						jo.put("facebook_connected", "yes");
+					else
+						jo.put("facebook_connected", "no");
+					if(rs.getString("last_alert") != null)
+						jo.put("last_alert_timestamp", rs.getInt("last_alert"));
+					if(rs.getString("last_alert") != null)
+						jo.put("last_alert_datestring", getDatestringFromTimestampInSeconds(rs.getLong("last_alert")));
+					jo.put("homogeneity", rs.getDouble("homogeneity"));
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					System.out.println("JSONException:" + e.getMessage());
 					e.printStackTrace();
 				}
 				designations_ja.put(jo);
@@ -1258,6 +1498,42 @@ public class Endpoint extends HttpServlet {
 			if(rs.next())
 			{
 				returnval = rs.getString("twitter_handle");
+			}
+			else
+				returnval = null;
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+	
+	String getDisplayName(String station, String designation)
+	{
+		String returnval = "unknown";
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1)"); 
+			if(rs.next())
+			{
+				returnval = rs.getString("display_name");
 			}
 		}
 		catch(SQLException sqle)
@@ -1346,6 +1622,41 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
+	/*
+	String getDesignationFromOAuthToken(String station, String oauth_token)
+	{
+		String returnval = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE twitter_oauth_token='" + oauth_token + "' "); 
+			while(rs.next())
+			{
+				returnval = rs.getString("designation");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}*/
+	
 	boolean setLastAlert(String station, String designation, long alert_ts)
 	{
 		boolean returnval;
@@ -1356,7 +1667,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1) "); 
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			while(rs.next())
 			{
 				rs.updateLong("last_alert", alert_ts);
@@ -1381,6 +1692,127 @@ public class Endpoint extends HttpServlet {
 			}
 		}  	
 		return returnval;
+	}
+	
+	/*
+	boolean setOAuthToken(String station, String designation, String oauth_token)
+	{
+		boolean returnval;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			while(rs.next())
+			{
+				rs.updateString("twitter_oauth_token", oauth_token);
+				rs.updateRow();
+			}
+			returnval = true;
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			returnval = false;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}*/
+	
+	boolean setTwitterAccessTokenAndSecret(String station, String designation, String access_token, String access_token_secret)
+	{
+		boolean returnval;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			while(rs.next())
+			{
+				rs.updateString("twitter_access_token", access_token);
+				rs.updateString("twitter_access_token_secret", access_token_secret);
+				rs.updateRow();
+			}
+			returnval = true;
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			returnval = false;
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+	
+	JSONObject setFacebookAccessTokenAndExpires(String station, String designation, String access_token, long expires_timestamp)
+	{
+		JSONObject return_jo = new JSONObject();
+		try
+		{
+			ResultSet rs = null;
+			Connection con = null;
+			Statement stmt = null;
+			try
+			{
+				con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+				while(rs.next())
+				{
+					rs.updateString("facebook_access_token", access_token);
+					rs.updateLong("facebook_access_token_expires", expires_timestamp);
+					rs.updateRow();
+				}
+				return_jo.put("response_status", "success");
+			}
+			catch(SQLException sqle)
+			{
+				sqle.printStackTrace();
+				return_jo.put("response_status", "error");
+				return_jo.put("message", sqle.getMessage());
+			}
+			finally
+			{
+				try
+				{
+					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				}
+				catch(SQLException sqle)
+				{ 
+					System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				}
+			}  	
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return return_jo;
 	}
 	
 	boolean resetAllLastAlerts(String station)
@@ -1451,4 +1883,63 @@ public class Endpoint extends HttpServlet {
 		String datestring = year  + month + day + "_" + hour24 + minute + second;
 		return datestring;
 	}
+	
+	public JSONObject getFacebookAccessTokenFromAuthorizationCode(String code)
+	{
+		JSONObject jsonresponse = new JSONObject();
+		String client_id = "176524552501035";
+		String client_secret = "dbf442014759e75f2f93f2054ac319a0";
+		String redirect_uri = "http://www.hoozon.tv/registration.html";
+		HttpClient client = new DefaultHttpClient();
+		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?client_id=" + client_id + "&client_secret=" + client_secret + "&redirect_uri=" + redirect_uri + "&code=" + code);
+		HttpResponse response;
+		try
+		{
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				jsonresponse.put("response_status", "success");
+				jsonresponse.put("response_from_facebook", text);
+				StringTokenizer st = new StringTokenizer(text,"&");
+				String currenttoken = "";
+				String access_token = "";
+				String expires = "";
+				while(st.hasMoreTokens())
+				{
+					 currenttoken = st.nextToken();
+					 if(currenttoken.startsWith("access_token="))
+						 access_token = currenttoken.substring(currenttoken.indexOf("=") + 1);
+					 else if(currenttoken.startsWith("expires="))
+						 expires = currenttoken.substring(currenttoken.indexOf("=") + 1);
+					 else
+					 {
+						 // something else. The 4 values above are the only ones twitter should return, so this case would be weird.
+						 // skip
+					 }
+				}
+				jsonresponse.put("access_token", access_token);
+				jsonresponse.put("expires", expires);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+				jsonresponse.put("response_status", "error");
+				jsonresponse.put("message", "clientprotocolexception " + e.getMessage());
+			} catch (IOException e) {
+				e.printStackTrace();
+				jsonresponse.put("response_status", "error");
+				jsonresponse.put("message", "ioexception " + e.getMessage());
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
 }

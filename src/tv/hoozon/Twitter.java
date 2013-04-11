@@ -280,7 +280,7 @@ public class Twitter {
 							{
 								jsonresponse.put("response_status", "success");
 								jsonresponse.put("oauth_token", oauth_token);
-								jsonresponse.put("oauth_token_secret", oauth_token);
+								//jsonresponse.put("oauth_token_secret", oauth_token);
 							}
 						 }
 					 }
@@ -330,7 +330,7 @@ public class Twitter {
 	// INPUT: pin, generic request token
 	// OUTPUT: if successful, twitter API will return access_token, access_token_secret, screen_name and user_id
 	
-	public JSONObject getTwitterAccessTokenFromAuthorizationCode(String pin, String oauth_token)
+	public JSONObject getTwitterAccessTokenFromAuthorizationCode(String verifier_or_pin, String oauth_token)
 	{
 		JSONObject jsonresponse = new JSONObject();
 		
@@ -416,7 +416,7 @@ public class Twitter {
 				 
 				 BasicHttpEntityEnclosingRequest request2 = new BasicHttpEntityEnclosingRequest("POST", twitter_endpoint_path);
 				 // this time, we've got to include the oauth_verifier value with the request
-				 request2.setEntity( new StringEntity("oauth_verifier=" + encode(pin), "application/x-www-form-urlencoded", "UTF-8"));
+				 request2.setEntity( new StringEntity("oauth_verifier=" + encode(verifier_or_pin), "application/x-www-form-urlencoded", "UTF-8"));
 				 request2.setParams(params);
 				 request2.addHeader("Authorization", authorization_header_string);
 				 httpexecutor.preProcess(request2, httpproc, context);
@@ -464,6 +464,8 @@ public class Twitter {
 					 jsonresponse.put("response_status", "success");
 					 jsonresponse.put("access_token", access_token);
 					 jsonresponse.put("access_token_secret", access_token_secret);
+					 jsonresponse.put("user_id", user_id);
+					 jsonresponse.put("screen_name", screen_name);
 				 }
 				 conn.close();
 			 }   
