@@ -4,6 +4,7 @@
 <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <script src="/js/jquery-1.8.2.js"></script>
+    <link rel="icon" type="image/png" href="images/hoozon_logo_16x16.png" />
     <title>hoozon.tv default page</title>
 </head>
 <body>
