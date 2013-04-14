@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        }
 			        ,
 			        error: function (XMLHttpRequest, textStatus, errorThrown) {
-			        	$("#message_div").html("ajax error");
+			        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
 			            console.log(textStatus, errorThrown);
 			        }
 				});
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        async: false,
 	        success: function (data, status) {
 	        	if (data.response_status == "error")
-	        		$("#message_div").html("error getting station designations");
+	        		$("#message_div").html("<span style=\"font-size:16;color:red\">error getting station designations</span>");
 	        	else
 	        	{
 	        		designations = data.designations;
@@ -297,12 +297,32 @@ document.addEventListener('DOMContentLoaded', function () {
 	        			{
 	        				if(designations[a].facebook_accounts.length > 0)
 	        				{
-	        					mds = mds + " 			<table>";
-	        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
-		        				{	
-		        					mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
-		        				}
-	        					mds = mds + " 			</table>";
+	        					if(designations[a].facebook_account_id)
+	        					{	
+	        						mds = mds + " 			<table> <!-- 1 -->";
+		        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
+			        				{
+		        						if((designations[a].facebook_account_id+"") === designations[a].facebook_accounts[b].id)
+		        							mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio checked id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td style=\"color:blue\">" + designations[a].facebook_accounts[b].name + "</td></tr>";
+		        						else	
+		        						{
+		        							// do nothing. Don't need to display all this person's accounts to everyone
+		        							//mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
+		        						}
+			        				}
+		        					mds = mds + " 			</table>";
+	        					}
+	        					else
+	        					{
+	        						mds = mds + " 			<table> <!-- 2 -->";
+		        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
+			        				{
+		        						mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
+			        				}
+		        					mds = mds + " 			</table>";
+	        					}	
+	        					
+	        					
 	        				}
 	        				else
 	        				{
@@ -338,10 +358,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        			        async: false,
 	        			        success: function (data, status) {
 	        			        	if (data.response_status == "error")
-	        			        		$("#message_div").html("error getting station designations");
+	        			        		$("#message_div").html("<span style=\"font-size:16;color:red\">error getting station designations</span>");
 	        			        	else
 	        			        	{
-	        			        		$("#message_div").html("Twitter authentication started...");
+	        			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Twitter authentication started...</span>");
 	        			        		oauth_token = data.oauth_token;
 	        			        		//oauth_token_secret = data.oauth_token_secret;
 	        			        		
@@ -351,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        			        }
 	        			        ,
 	        			        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        			        	$("#message_div").html("ajax error");
+	        			        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
 	        			            console.log(textStatus, errorThrown);
 	        			        }
 	        				});
@@ -365,81 +385,56 @@ document.addEventListener('DOMContentLoaded', function () {
 	        					docCookies.setItem("state", randomnumber+"", 31536e3);
 	        					docCookies.setItem("designation", event.data.value1, 31536e3);
 	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.hoozon.tv/registration.html&scope=publish_actions,manage_pages&state=" + randomnumber;
-	        					/*var oauth_token = null;
-	        					$.ajax({
-	        						type: 'GET',
-	        						url: endpoint,
-	        						data: {
-	        				            method: "startFacebookAuthentication",
-	        				            designation: event.data.value1
-	        						},
-	        				        dataType: 'json',
-	        				        async: false,
-	        				        success: function (data, status) {
-	        				        	if (data.response_status == "error")
-	        				        		$("#message_div").html("error getting station designations");
-	        				        	else
-	        				        	{
-	        				        		$("#message_div").html("Twitter authentication started. jsonresponse=" + JSON.stringify(data));
-	        				        		oauth_token = data.oauth_token;
-	        				        		oauth_token_secret = data.oauth_token_secret;
-	        				        		
-	        				        		window.location.href = "https://api.twitter.com/oauth/authenticate?oauth_token=" + oauth_token;
-	        		        		
-	        				        	}
-	        				        }
-	        				        ,
-	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        				        	$("#message_div").html("ajax error");
-	        				            console.log(textStatus, errorThrown);
-	        				        }
-	        					});*/
+	        				
 	        						return false;
 	        					}
 	        				);
 	        			
-	        			if(designations[a].facebook_accounts.length > 0)
-        				{
-        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
-	        				{	
-	        					$("#" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation},
-		        					function (event) {
-	        							alert(event.data.id);
-	        							$.ajax({
-	    	        						type: 'GET',
-	    	        						url: endpoint,
-	    	        						data: {
-	    	        				            method: "setFacebookAccountInfo",
-	    	        				            designation: event.data.designation,
-	    	        				            id: event.data.id
-	    	        						},
-	    	        				        dataType: 'json',
-	    	        				        async: false,
-	    	        				        success: function (data, status) {
-	    	        				        	if (data.response_status == "error")
-	    	        				        		$("#message_div").html("error setting designated account.");
-	    	        				        	else
-	    	        				        	{
-	    	        				        		$("#message_div").html("Designated account is now set. Thanks!");
-	    	        				        	}
-	    	        				        }
-	    	        				        ,
-	    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	    	        				        	$("#message_div").html("ajax error");
-	    	        				            console.log(textStatus, errorThrown);
-	    	        				        }
-	    	        					});
-	        						}
-	        					);
+	        			if(designations[a].facebook_connected && designations[a].facebook_connected === "yes")
+	        			{
+	        				if(designations[a].facebook_accounts.length > 0)
+	        				{
+	        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
+		        				{	
+		        					$("#" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation},
+			        					function (event) {
+		        							alert(event.data.id);
+		        							$.ajax({
+		    	        						type: 'GET',
+		    	        						url: endpoint,
+		    	        						data: {
+		    	        				            method: "setFacebookAccountInfo",
+		    	        				            designation: event.data.designation,
+		    	        				            id: event.data.id
+		    	        						},
+		    	        				        dataType: 'json',
+		    	        				        async: false,
+		    	        				        success: function (data, status) {
+		    	        				        	if (data.response_status == "error")
+		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account.</span>");
+		    	        				        	else
+		    	        				        	{
+		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Designated account is now set. Thanks! (Your non-selected pages will be hidden to others.)</span>");
+		    	        				        	}
+		    	        				        }
+		    	        				        ,
+		    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+		    	        				            console.log(textStatus, errorThrown);
+		    	        				        }
+		    	        					});
+		        						}
+		        					);
+		        				}
 	        				}
-        				}
+	        			}
 	        			
 	        		}
 	        	}
 	        }
 	        ,
 	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	$("#message_div").html("ajax error");
+	        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
 	            console.log(textStatus, errorThrown);
 	        }
 		});

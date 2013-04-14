@@ -202,15 +202,25 @@ public class Endpoint extends HttpServlet {
 									{
 										jsonresponse.put("alert_twitter_handle", frame_processing_jo.getString("twitter_handle"));
 										
+										//**********************************************
 										// FIXME!!!! This is just for testing the tat and tats retrieval by the remote daemon
 										JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master");
-										//JSONObject facebook_stuff = getUserFacebookAccessToken
+										JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master");
+										//**********************************************
+										
 										if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
 												&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
 												&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
 										{
 											jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
 											jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
+										}
+										
+										if(facebook_stuff != null)
+										{
+											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
+											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
+											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
 										}
 									}
 									jsonresponse.put("alert_display_name", frame_processing_jo.getString("display_name"));
@@ -1806,6 +1816,13 @@ public class Endpoint extends HttpServlet {
 						JSONArray fbaccounts_ja = getFacebookAccounts("wkyt", rs.getString("facebook_access_token"));
 						if(fbaccounts_ja != null)
 							jo.put("facebook_accounts", fbaccounts_ja);
+						JSONObject selected_fb_account_jo = getSelectedFacebookAccount("wkyt", rs.getString("designation"));
+						if(selected_fb_account_jo != null)
+						{
+							jo.put("facebook_account_id", selected_fb_account_jo.getLong("facebook_account_id"));
+							jo.put("facebook_account_name", selected_fb_account_jo.getString("facebook_account_name"));
+							jo.put("facebook_account_access_token", selected_fb_account_jo.getString("facebook_account_access_token"));
+						}
 					}
 					else
 					{
@@ -2199,6 +2216,88 @@ public class Endpoint extends HttpServlet {
 				if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
 				{
 					returnval = rs.getString("facebook_access_token");
+				}
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+	
+	JSONObject getSelectedFacebookAccount(String station, String designation)
+	{
+		JSONObject return_jo = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			if(rs.next())
+			{
+				if(rs.getLong("facebook_account_id") != 0 && rs.getString("facebook_account_access_token") != null && rs.getString("facebook_account_name") != null)
+				{
+					return_jo = new JSONObject();
+					try {
+						return_jo.put("facebook_account_id", rs.getLong("facebook_account_id"));
+						return_jo.put("facebook_account_access_token", rs.getString("facebook_account_access_token"));
+						return_jo.put("facebook_account_name", rs.getString("facebook_account_name"));
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return return_jo;
+	}
+	
+	String getSelectedFacebookAccountAccessToken(String station, String designation)
+	{
+		String returnval = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			if(rs.next())
+			{
+				if(rs.getLong("facebook_account_id") != 0 && rs.getString("facebook_account_access_token") != null && rs.getString("facebook_account_name") != null)
+				{
+					returnval = rs.getString("facebook_account_access_token");
 				}
 			}
 		}
