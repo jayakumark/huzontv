@@ -204,7 +204,7 @@ public class Endpoint extends HttpServlet {
 										
 										// FIXME!!!! This is just for testing the tat and tats retrieval by the remote daemon
 										JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master");
-										
+										//JSONObject facebook_stuff = getUserFacebookAccessToken
 										if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
 												&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
 												&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
@@ -215,6 +215,7 @@ public class Endpoint extends HttpServlet {
 									}
 									jsonresponse.put("alert_display_name", frame_processing_jo.getString("display_name"));
 								    
+									/*
 									SimpleEmailer se = new SimpleEmailer();
 									try {
 										se.sendMail("Alert fired for " + frame_processing_jo.getString("designation"), "http://hoozon-wkyt-alertimgs.s3-website-us-east-1.amazonaws.com/" + jo.getString("image_name"), "cyrus7580@gmail.com", "info@crasher.com");
@@ -224,7 +225,7 @@ public class Endpoint extends HttpServlet {
 										e.printStackTrace();
 										System.out.println("failed to send alert message=" + e.getMessage());
 										jsonresponse.put("message", "Scores entered. Exception trying to send mail, though. message=" + e.getMessage());
-									}
+									}*/
 								}
 								else
 								{
@@ -521,21 +522,61 @@ public class Endpoint extends HttpServlet {
 								
 								if(preliminary_jsonresponse.getString("response_status").equals("success"))
 								{
+									JSONObject fb_profile_jo = getFacebookProfile("wkyt", preliminary_jsonresponse.getString("access_token"));
+									long fb_uid = 0L;
 									try
 									{
-										Calendar cal = Calendar.getInstance();
-										cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-										cal.add(Calendar.SECOND, Integer.parseInt( preliminary_jsonresponse.getString("expires")));
-										long expires_timestamp = cal.getTimeInMillis() / 1000;
-										JSONObject db_update_jo = setFacebookAccessTokenAndExpires("wkyt", designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp);
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("message", "The access_token and expires should be set in the database now.");
+										if(fb_profile_jo != null && fb_profile_jo.has("id"))
+										{
+											fb_uid = fb_profile_jo.getLong("id");
+											Calendar cal = Calendar.getInstance();
+											cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+											cal.add(Calendar.SECOND, Integer.parseInt( preliminary_jsonresponse.getString("expires")));
+											long expires_timestamp = cal.getTimeInMillis() / 1000;
+											boolean successful = setFacebookAccessTokenExpiresAndUID("wkyt", designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
+											if(successful)
+											{	
+												jsonresponse.put("response_status", "success");
+												jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
+											}
+											else
+											{
+												jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
+												jsonresponse.put("response_status", "error");
+											}
+										}
+										else
+										{
+											jsonresponse.put("message", "fb profile didn't have id field");
+											jsonresponse.put("response_status", "error");
+										}
+									}
+									catch(NumberFormatException nfe)
+									{
+										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
+										jsonresponse.put("response_status", "error");
+									}
+									/*try
+									{
+										String fbat = getFacebookAccessToken("wkyt", designation);
+										if(fbat != null)
+											jsonresponse.put("facebook_access_token", fbat);
+										else
+											jsonresponse.put("facebook_access_token", "was null");
+										JSONObject fb_profile_jo = getFacebookProfile("wkyt", designation);
+										if(fb_profile_jo != null)
+											jsonresponse.put("facebook_profile", fb_profile_jo);
+										else
+											jsonresponse.put("facebook_profile", "was null");
+									
+										jsonresponse.put("response_from_facebook", preliminary_jsonresponse.getString("response_from_facebook"));
+										
 									}
 									catch(NumberFormatException nfe)
 									{
 										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " full preliminary_jsonresponse=" + preliminary_jsonresponse);
 										jsonresponse.put("response_status", "error");
-									}
+									}*/
 								}
 								else
 								{
@@ -562,6 +603,48 @@ public class Endpoint extends HttpServlet {
 					else
 					{	
 						jsonresponse = getUserTwitterAccessTokenAndSecret("wkyt", designation);
+					}
+				}
+				else if (method.equals("setFacebookAccountInfo")) // sets the designated journalist page for this user
+				{
+					String designation = request.getParameter("designation");
+					String id = request.getParameter("id");
+					if(designation == null)
+					{
+						jsonresponse.put("message", "This method requires a designation value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(id == null)
+					{
+						jsonresponse.put("message", "This method requires an id value for the journalist page.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						JSONArray fbaccounts_ja = getFacebookAccounts("wkyt", getFacebookAccessToken("wkyt",designation));
+						String name = "";
+						String account_access_token = "";
+						long id_long = 0L;
+						boolean successful = false;
+						for(int x =0; x < fbaccounts_ja.length(); x++)
+						{
+							if(fbaccounts_ja.getJSONObject(x).getLong("id") == (new Long(Long.parseLong(id)).longValue()))
+							{
+								name = fbaccounts_ja.getJSONObject(x).getString("name");
+								account_access_token = fbaccounts_ja.getJSONObject(x).getString("access_token");
+								id_long =  (new Long(Long.parseLong(id)).longValue());
+								successful = setFacebookAccountIdNameAndAccessToken("wkyt", designation, id_long, name, account_access_token);
+							}
+						}
+						if(successful)
+						{
+							jsonresponse.put("response_status", "success");
+						}
+						else
+						{
+							jsonresponse.put("message", "There was an error trying to set the FB account id name and access_token for this user");
+							jsonresponse.put("response_status", "error");
+						}
 					}
 				}
 				else if (method.equals("getFrames"))
@@ -1718,9 +1801,17 @@ public class Endpoint extends HttpServlet {
 					else
 						jo.put("twitter_connected", "no");
 					if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
+					{
 						jo.put("facebook_connected", "yes");
+						JSONArray fbaccounts_ja = getFacebookAccounts("wkyt", rs.getString("facebook_access_token"));
+						if(fbaccounts_ja != null)
+							jo.put("facebook_accounts", fbaccounts_ja);
+					}
 					else
+					{
 						jo.put("facebook_connected", "no");
+					}
+					
 					if(rs.getString("last_alert") != null)
 						jo.put("last_alert_timestamp", rs.getInt("last_alert"));
 					if(rs.getString("last_alert") != null)
@@ -1941,41 +2032,6 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	/*
-	String getDesignationFromOAuthToken(String station, String oauth_token)
-	{
-		String returnval = null;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE twitter_oauth_token='" + oauth_token + "' "); 
-			while(rs.next())
-			{
-				returnval = rs.getString("designation");
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-			}
-		}  	
-		return returnval;
-	}*/
-	
 	boolean setLastAlert(String station, String designation, long alert_ts)
 	{
 		boolean returnval;
@@ -2012,44 +2068,6 @@ public class Endpoint extends HttpServlet {
 		}  	
 		return returnval;
 	}
-	
-	/*
-	boolean setOAuthToken(String station, String designation, String oauth_token)
-	{
-		boolean returnval;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
-			while(rs.next())
-			{
-				rs.updateString("twitter_oauth_token", oauth_token);
-				rs.updateRow();
-			}
-			returnval = true;
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			returnval = false;
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-			}
-		}  	
-		return returnval;
-	}*/
 	
 	boolean setTwitterAccessTokenAndSecret(String station, String designation, String access_token, String access_token_secret)
 	{
@@ -2089,49 +2107,117 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	JSONObject setFacebookAccessTokenAndExpires(String station, String designation, String access_token, long expires_timestamp)
+	boolean setFacebookAccessTokenExpiresAndUID(String station, String designation, String access_token, long expires_timestamp, long fb_uid)
 	{
-		JSONObject return_jo = new JSONObject();
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
 		try
 		{
-			ResultSet rs = null;
-			Connection con = null;
-			Statement stmt = null;
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_access_token", access_token);
+				rs.updateLong("facebook_access_token_expires", expires_timestamp);
+				rs.updateLong("facebook_uid", fb_uid);
+				rs.updateRow();
+				returnval = true;
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
 			try
 			{
-				con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
-				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
-				while(rs.next())
-				{
-					rs.updateString("facebook_access_token", access_token);
-					rs.updateLong("facebook_access_token_expires", expires_timestamp);
-					rs.updateRow();
-				}
-				return_jo.put("response_status", "success");
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
-			{
-				sqle.printStackTrace();
-				return_jo.put("response_status", "error");
-				return_jo.put("message", sqle.getMessage());
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 			}
-			finally
+		}  	
+		return returnval;
+	}
+	
+	boolean setFacebookAccountIdNameAndAccessToken(String station, String designation, long id_long, String name, String account_access_token)
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			if(rs.next())
 			{
-				try
-				{
-					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-				}
-				catch(SQLException sqle)
-				{ 
-					System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				}
-			}  	
-		}	
-		catch (JSONException e) {
-			e.printStackTrace();
+				rs.updateString("facebook_account_access_token", account_access_token);
+				rs.updateString("facebook_account_name", name);
+				rs.updateLong("facebook_account_id", id_long);
+				rs.updateRow();
+				returnval = true;
+			}
 		}
-		return return_jo;
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+	
+	String getFacebookAccessToken(String station, String designation)
+	{
+		String returnval = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			if(rs.next())
+			{
+				if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
+				{
+					returnval = rs.getString("facebook_access_token");
+				}
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
 	}
 	
 	boolean resetAllLastAlerts(String station)
@@ -2260,5 +2346,95 @@ public class Endpoint extends HttpServlet {
 		}
 		return jsonresponse;
 	}
+	
+	public JSONObject getFacebookProfile(String station, String access_token)
+	{
+		JSONObject jsonresponse = new JSONObject();
+		
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet request = new HttpGet("https://graph.facebook.com/me?access_token=" + access_token);
+			HttpResponse response;
+			
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				jsonresponse = new JSONObject(text);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
+	public JSONArray getFacebookAccounts(String station, String access_token)
+	{
+		JSONArray jsonresponse = new JSONArray();
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet request = new HttpGet("https://graph.facebook.com/me/accounts?access_token=" + access_token);
+			HttpResponse response;
+			
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				System.out.println("Endpoint.getFacebookAccounts(): response to https://graph.facebook.com/me/accounts?access_token=" + access_token + "=" + text);
+				JSONObject jo = new JSONObject(text);
+				jsonresponse = jo.getJSONArray("data");
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
+	public boolean isNumeric(String incoming_string) // only works for whole numbers, positive and negative
+	{
+		  int x=0;
+		  while(x < incoming_string.length())
+		  {
+			  if((x==0 && incoming_string.substring(0,1).equals("-")) ||  // OK if first element is "-"
+					  incoming_string.substring(x,x+1).equals("0") || incoming_string.substring(x,x+1).equals("1") ||
+					  incoming_string.substring(x,x+1).equals("2") || incoming_string.substring(x,x+1).equals("3") ||
+					  incoming_string.substring(x,x+1).equals("4") || incoming_string.substring(x,x+1).equals("5") ||
+					  incoming_string.substring(x,x+1).equals("6") || incoming_string.substring(x,x+1).equals("7") ||
+					  incoming_string.substring(x,x+1).equals("8") || incoming_string.substring(x,x+1).equals("9"))
+			  {
+				  // ok
+			  }
+			  else
+			  {
+				  return false;
+			  }
+			  x++;
+		  }
+		  return true;
+	}	
 	
 }

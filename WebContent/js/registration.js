@@ -209,13 +209,13 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "<div style=\"font-size:16px;font-weight:bold\">";
 	        		mds = mds + "<table style=\"margin-left:auto;margin-right:20px;border-spacing:10px\">";
 	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td colspan=4 style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "		<td colspan=5 style=\"vertical-align:top;text-align:left\">";
 	        		mds = mds + "			<span style=\"color:blue;font-weight:bold\">BLUE</span> = account is linked</span><br>";
 	        		mds = mds + "			<span style=\"color:red;font-weight:bold\">RED</span> = account is not linked</span><br>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;\" colspan=4>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;\" colspan=5>";
 	        		mds = mds + "			<hr>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
@@ -224,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Acct type</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Twitter</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Facebook</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">FB brand page</td>";
 	        		mds = mds + "	</tr>";
 	        		designations.sort(function(a,b){
 	        			aa = a.acct_type;
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        			if(designations[a].acct_type === "person" && !first_person_encountered)
 	        			{
 	        				mds = mds + "	<tr>";
-	        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;\" colspan=4>";
+	        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;\" colspan=5>";
 	        				mds = mds + "			<hr>";
 	        				mds = mds + "		</td>";
 	        				mds = mds + "	</tr>";
@@ -261,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Acct type</td>";
 	        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Twitter</td>";
 	        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Facebook</td>";
+	        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">FB brand page</td>";
 	        				mds = mds + "	</tr>";
 	        				first_person_encountered = true;
 	        			}
@@ -289,6 +291,28 @@ document.addEventListener('DOMContentLoaded', function () {
 	        				mds = mds + " 			<span style=\"color:blue\">facebook</span>";
 	        			else
 	        				mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_facebook_link\" style=\"color:red\">facebook</a>";
+	        			mds = mds + "		</td>";
+	        			mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        			if(designations[a].facebook_connected && designations[a].facebook_connected === "yes")
+	        			{
+	        				if(designations[a].facebook_accounts.length > 0)
+	        				{
+	        					mds = mds + " 			<table>";
+	        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
+		        				{	
+		        					mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
+		        				}
+	        					mds = mds + " 			</table>";
+	        				}
+	        				else
+	        				{
+	        					mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_facebook_link\" style=\"color:red\">no accts detected</a>";
+	        				}
+	        			}
+	        			else
+	        			{
+	        				mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_facebook_link\" style=\"color:red\">link fb first</a>";
+	        			}
 	        			mds = mds + "		</td>";
 	        			mds = mds + "	</tr>";
 	        		}	
@@ -340,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        					var randomnumber=Math.floor(Math.random()*1000000);
 	        					docCookies.setItem("state", randomnumber+"", 31536e3);
 	        					docCookies.setItem("designation", event.data.value1, 31536e3);
-	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.hoozon.tv/registration.html&scope=publish_actions&state=" + randomnumber;
+	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.hoozon.tv/registration.html&scope=publish_actions,manage_pages&state=" + randomnumber;
 	        					/*var oauth_token = null;
 	        					$.ajax({
 	        						type: 'GET',
@@ -373,6 +397,43 @@ document.addEventListener('DOMContentLoaded', function () {
 	        						return false;
 	        					}
 	        				);
+	        			
+	        			if(designations[a].facebook_accounts.length > 0)
+        				{
+        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
+	        				{	
+	        					$("#" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation},
+		        					function (event) {
+	        							alert(event.data.id);
+	        							$.ajax({
+	    	        						type: 'GET',
+	    	        						url: endpoint,
+	    	        						data: {
+	    	        				            method: "setFacebookAccountInfo",
+	    	        				            designation: event.data.designation,
+	    	        				            id: event.data.id
+	    	        						},
+	    	        				        dataType: 'json',
+	    	        				        async: false,
+	    	        				        success: function (data, status) {
+	    	        				        	if (data.response_status == "error")
+	    	        				        		$("#message_div").html("error setting designated account.");
+	    	        				        	else
+	    	        				        	{
+	    	        				        		$("#message_div").html("Designated account is now set. Thanks!");
+	    	        				        	}
+	    	        				        }
+	    	        				        ,
+	    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	    	        				        	$("#message_div").html("ajax error");
+	    	        				            console.log(textStatus, errorThrown);
+	    	        				        }
+	    	        					});
+	        						}
+	        					);
+	        				}
+        				}
+	        			
 	        		}
 	        	}
 	        }
