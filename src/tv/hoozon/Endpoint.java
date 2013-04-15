@@ -127,7 +127,7 @@ public class Endpoint extends HttpServlet {
 						{
 							con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 							stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-							rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getLong("timestamp_in_seconds") + "' limit 0,1");
+							rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getLong("timestamp_in_seconds") + "' LIMIT 1,1");
 							double currentavgscore = 0.0;
 							double reporter_total = 0.0;
 							JSONArray all_scores_ja = null;
@@ -196,7 +196,6 @@ public class Endpoint extends HttpServlet {
 								if(frame_processing_jo.has("alert_triggered") && frame_processing_jo.getString("alert_triggered").equals("yes"))
 								{
 									jsonresponse.put("alert_triggered", "yes");
-									
 									jsonresponse.put("alert_designation", frame_processing_jo.getString("designation"));
 									if(frame_processing_jo.has("twitter_handle"))
 									{
@@ -214,6 +213,8 @@ public class Endpoint extends HttpServlet {
 										{
 											jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
 											jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
+											long twitter_alert_id = createAlertInDB("wkyt", "twitter", frame_processing_jo.getString("designation"), jo.getString("image_name")); 
+											jsonresponse.put("twitter_alert_id", twitter_alert_id);
 										}
 										
 										if(facebook_stuff != null)
@@ -221,6 +222,8 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
 											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
 											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
+											long fb_alert_id = createAlertInDB("wkyt", "facebook", frame_processing_jo.getString("designation"), jo.getString("image_name")); 
+											jsonresponse.put("facebook_alert_id", fb_alert_id);
 										}
 									}
 									jsonresponse.put("alert_display_name", frame_processing_jo.getString("display_name"));
@@ -1174,6 +1177,63 @@ public class Endpoint extends HttpServlet {
 							{	
 								Long ts_long = new Long(ts);
 								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
+								//JSONObject frame_processing_jo = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
+								
+								if(jsonresponse.has("alert_triggered") && jsonresponse.getString("alert_triggered").equals("yes"))
+								{
+									System.out.println("fpj has alert_triggered=yes");
+									if(jsonresponse.has("twitter_handle"))
+									{
+										System.out.println("fpj has twitter handle");
+										jsonresponse.put("alert_twitter_handle", jsonresponse.getString("twitter_handle"));
+										
+										//**********************************************
+										// FIXME!!!! This is just for testing the tat and tats retrieval by the remote daemon
+										JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master");
+										JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master");
+										//**********************************************
+										
+										if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
+												&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
+												&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
+										{
+											System.out.println("twitter_stuff response_status= success");
+											jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
+											jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
+											long twitter_alert_id = createAlertInDB("wkyt", "twitter", jsonresponse.getString("designation"), getDatestringFromTimestampInSeconds(ts_long)+".jpg"); 
+											jsonresponse.put("twitter_alert_id", twitter_alert_id);
+										}
+										
+										if(facebook_stuff != null)
+										{
+											System.out.println("twitter_stuff response_status != null");
+											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
+											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
+											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
+											long fb_alert_id = createAlertInDB("wkyt", "facebook", jsonresponse.getString("designation"), getDatestringFromTimestampInSeconds(ts_long)+".jpg"); 
+											jsonresponse.put("facebook_alert_id", fb_alert_id);
+										}
+									}
+									jsonresponse.put("alert_display_name", jsonresponse.getString("display_name"));
+								    
+									/*
+									SimpleEmailer se = new SimpleEmailer();
+									try {
+										se.sendMail("Alert fired for " + frame_processing_jo.getString("designation"), "http://hoozon-wkyt-alertimgs.s3-website-us-east-1.amazonaws.com/" + jo.getString("image_name"), "cyrus7580@gmail.com", "info@crasher.com");
+										jsonresponse.put("message", "Scores entered. Alert email sent.");
+									} catch (MessagingException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+										System.out.println("failed to send alert message=" + e.getMessage());
+										jsonresponse.put("message", "Scores entered. Exception trying to send mail, though. message=" + e.getMessage());
+									}*/
+								}
+								else
+								{
+									System.out.println("fpj does not have alert_triggered=yes");
+									jsonresponse.put("alert_triggered", "no");
+									jsonresponse.put("message", "Scores entered. No alert.");
+								} 
 							}
 						}
 						else
@@ -2200,6 +2260,49 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
+	long createAlertInDB(String station, String social_type, String designation, String image_name)
+	{
+		long returnval = -1L;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			System.out.println("INSERT INTO alerts (`social_type`,`created_by`,`image_name`,`livestream_url`,`station`) "
+	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')");
+			stmt.executeUpdate(
+	                    "INSERT INTO alerts (`social_type`,`created_by`,`image_name`,`livestream_url`,`station`) "
+	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')",
+	                    Statement.RETURN_GENERATED_KEYS);
+			
+		    rs = stmt.getGeneratedKeys();
+
+		    if (rs.next()) {
+		        returnval = rs.getLong(1);
+		    } else {
+		    	System.out.println("Endpoint.createAlertInDB(): error getting auto_increment value from row just entered.");
+		    }
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
+		
 	String getFacebookAccessToken(String station, String designation)
 	{
 		String returnval = null;

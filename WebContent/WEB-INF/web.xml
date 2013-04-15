@@ -17,4 +17,12 @@
               <servlet-name>Endpoint</servlet-name>
               <url-pattern>/endpoint</url-pattern>
           </servlet-mapping>
+           <servlet>
+              <servlet-name>RedirectServlet</servlet-name>
+              <servlet-class>tv.hoozon.RedirectServlet</servlet-class>
+          </servlet>
+          <servlet-mapping>
+              <servlet-name>RedirectServlet</servlet-name>
+              <url-pattern>/livestream</url-pattern>
+          </servlet-mapping>
 </web-app>

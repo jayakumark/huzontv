@@ -624,18 +624,6 @@ document.addEventListener('DOMContentLoaded', function () {
 					return;
 				});
 		
-		/*
-		$("#function8_go_button").click(
-				function () {
-					$("#results_div").html("");
-					$("#chart1").html("");
-					var datestring = $('#function8_ts_input').val();
-					var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-					var ts = d.getTime()/1000;
-					// end, ma_modifier, single_modifier, alert_waiting_period, moving_average_window
-					simulateNewFrame(ts,  $('#function8_mamodifier_input').val(), $('#function8_singlemodifier_input').val(), $('#function8_awp_input').val(), $('#function8_maw_input').val());
-				});*/
-		
 		$("#function4_go_button").click(
 				function () {
 					$("#alerts_div").html("");
@@ -655,6 +643,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					var alert_triggered = false;
 					while(current_ts <= end)
 					{
+						alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 							current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -663,6 +652,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							setTimeout(function(){
 								while(current_ts <= end)
 								{
+									alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 										current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -671,6 +661,7 @@ document.addEventListener('DOMContentLoaded', function () {
 										setTimeout(function(){
 											while(current_ts <= end)
 											{
+												alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 													current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -679,6 +670,7 @@ document.addEventListener('DOMContentLoaded', function () {
 													setTimeout(function(){
 														while(current_ts <= end)
 														{
+															alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -687,6 +679,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																setTimeout(function(){
 																	while(current_ts <= end)
 																	{
+																		alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																			current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -695,6 +688,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																			setTimeout(function(){
 																				while(current_ts <= end)
 																				{
+																					alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																						current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -1355,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 });
 
-function simulateNewFrame(ts, ma_modifier, single_modifier, awp, mawindow)
+function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 {
 	var hoozon_admin_auth = docCookies.getItem("hoozon_admin_auth"); // this should always be here since this function can't be called without it. 
 	var alert_triggered = false;

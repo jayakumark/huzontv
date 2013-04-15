@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        					var randomnumber=Math.floor(Math.random()*1000000);
 	        					docCookies.setItem("state", randomnumber+"", 31536e3);
 	        					docCookies.setItem("designation", event.data.value1, 31536e3);
-	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.hoozon.tv/registration.html&scope=publish_actions,manage_pages&state=" + randomnumber;
+	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.hoozon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
 	        				
 	        						return false;
 	        					}
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        				{	
 		        					$("#" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation},
 			        					function (event) {
-		        							alert(event.data.id);
+		        							//alert(event.data.id);
 		        							$.ajax({
 		    	        						type: 'GET',
 		    	        						url: endpoint,
