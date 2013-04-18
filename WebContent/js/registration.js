@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	else if(typeof hoozon_auth === undefined || hoozon_auth === null || hoozon_auth === "")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">Please enter the password you were provided. </span>");
-		var mds = "<input type=password id=\"hoozon_auth_input\"> <input type=button id=\"hoozon_auth_go_button\" value=\"go\">";
+		var mds = "<table><tr><td style=\"vertical-align:middle\">Password: </td><td style=\"vertical-align:middle\"><input type=password id=\"hoozon_auth_input\"></td><td style=\"vertical-align:middle\"><input type=button id=\"hoozon_auth_go_button\" value=\"go\"></td></tr></table>";
 		$("#main_td").html(mds);
 		$("#hoozon_auth_go_button").click(function () {
 				//docCookies.setItem("hoozon_auth", $("#hoozon_auth_input").val(), 31536e3);
@@ -302,8 +302,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	        						mds = mds + " 			<table> <!-- 1 -->";
 		        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
 			        				{
+		        						// <span style=\"color:red\">
 		        						if((designations[a].facebook_account_id+"") === designations[a].facebook_accounts[b].id)
-		        							mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio checked id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td style=\"color:blue\">" + designations[a].facebook_accounts[b].name + "</td></tr>";
+		        							mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio checked id=\"" + designations[a].designation + "_" + designations[a].facebook_accounts[b].id + "_radio\"></td><td style=\"color:blue\">" + designations[a].facebook_accounts[b].name + "</td></tr>";
 		        						else	
 		        						{
 		        							// do nothing. Don't need to display all this person's accounts to everyone
@@ -317,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        						mds = mds + " 			<table> <!-- 2 -->";
 		        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
 			        				{
-		        						mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
+		        						mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].designation + "_" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
 			        				}
 		        					mds = mds + " 			</table>";
 	        					}	
@@ -326,12 +327,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	        				}
 	        				else
 	        				{
-	        					mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_facebook_link\" style=\"color:red\">no accts detected</a>";
+	        					mds = mds + " 			<span style=\"color:red\">no accts detected</span>";
 	        				}
 	        			}
 	        			else
 	        			{
-	        				mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_facebook_link\" style=\"color:red\">link fb first</a>";
+	        				mds = mds + " 			<span style=\"color:red\">link fb first</span>";
 	        			}
 	        			mds = mds + "		</td>";
 	        			mds = mds + "	</tr>";
@@ -396,14 +397,14 @@ document.addEventListener('DOMContentLoaded', function () {
 	        				{
 	        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
 		        				{	
-		        					$("#" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation},
+		        					$("#" + designations[a].designation + "_" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation, name: designations[a].facebook_accounts[b].name},
 			        					function (event) {
-		        							//alert(event.data.id);
+		        							//alert("Setting subaccount for parent account: designation=" + event.data.designation + " fb_name=" + event.data.name + " fb_id=" + event.data.id);
 		        							$.ajax({
 		    	        						type: 'GET',
 		    	        						url: endpoint,
 		    	        						data: {
-		    	        				            method: "setFacebookAccountInfo",
+		    	        				            method: "setFacebookSubAccountInfo",
 		    	        				            designation: event.data.designation,
 		    	        				            id: event.data.id
 		    	        						},
@@ -411,10 +412,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		    	        				        async: false,
 		    	        				        success: function (data, status) {
 		    	        				        	if (data.response_status == "error")
-		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account.</span>");
+		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
 		    	        				        	else
 		    	        				        	{
 		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Designated account is now set. Thanks! (Your non-selected pages will be hidden to others.)</span>");
+		    	        				        		window.location.reload();
 		    	        				        	}
 		    	        				        }
 		    	        				        ,

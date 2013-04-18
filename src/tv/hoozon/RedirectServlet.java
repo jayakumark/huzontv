@@ -62,7 +62,11 @@ public class RedirectServlet extends HttpServlet {
 			else
 			{
 				String ip_address = request.getRemoteAddr();
-				String referrer = request.getHeader("REFERRER");
+				String referrer = request.getHeader("referer");
+				if(referrer == null)
+				{
+					referrer = "";
+				}
 				try
 				{
 					@SuppressWarnings("unused")

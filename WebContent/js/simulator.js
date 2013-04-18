@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "			<table style=\"border-spacing:3px\">";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-		mds = mds + "						<b>Function 1:</b> Get all still frames in a certain calendar/date time (in seconds) range.";
+		mds = mds + "						<b>Function 1:</b> Get all still frames in a range (inclusive).";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "			<table style=\"border-spacing:3px\">";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-		mds = mds + "						<b>Function 2:</b> Get all frames for designation above auto-generated homogeneity threshold";
+		mds = mds + "						<b>Function 2:</b> Get all frames for designation above auto-generated homogeneity threshold (inclusive)";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "			<table style=\"border-spacing:3px\">";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-		mds = mds + "						<b>Function 3:</b> Graph one designee over time.";
+		mds = mds + "						<b>Function 3:</b> Graph one designee over time (inclusive)";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "			<table style=\"border-spacing:3px\">";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-		mds = mds + "						<b>Function 4:</b> Simulate alerts for a given time range:";
+		mds = mds + "						<b>Function 4:</b> Simulate alerts for a given time range (inclusive)";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "			<table style=\"border-spacing:3px\">";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-		mds = mds + "						<b>Function 5:</b> Get list of missing frames.";
+		mds = mds + "						<b>Function 5:</b> Get list of missing frames (inclusive)";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "			<table style=\"border-spacing:3px\">";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-		mds = mds + "						<b>Function 6:</b> Get alerts for a given timeframe:";
+		mds = mds + "						<b>Function 6:</b> Get alerts for a given timeframe (inclusive)";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        async: true,
 					        success: function (data, status) {
 					        	if (data.response_status == "error")
-					        		$("#results_div").html("error");
+					        		$("#results_div").html("error message=" + data.message);
 					        	else
 					        	{
 					        		if(data.frames.length > 100000)
@@ -448,7 +448,10 @@ document.addEventListener('DOMContentLoaded', function () {
 					        		{
 					        			for(var x = 0; x < data.frames.length; x++)
 					        			{
-					        				rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\"><img src=http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + " style=\"width:200px;height:113px\"></div>";
+					        				rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
+					        				rds = rds + "<img src=http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + " style=\"width:250px;height:141px\">";
+					        				rds = rds + "<br>" + data.frames[x].datestring;
+					        				rds = rds + "</div>";
 					        			}
 					        			$("#results_div").html(rds);
 					        		}
@@ -508,8 +511,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					        				for(var x = 0; x < data.frames.length; x++)
 					        				{
 					        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
-					        					rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
-					        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + "\" style=\"width:200px;height:113px\">";
+					        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
+					        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + "\" style=\"width:250px;height:141px\">";
 					        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
 					        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
 					        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
@@ -567,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        		$("#results_div").html("error");
 					        	else if (data.response_status == "success")
 					        	{
-					        		alert("success");
+					        		//alert("success");
 					        		if(data.frames.length > 100000)
 					        		{
 					        			$("#results_div").html("too many results. Try again.");
@@ -643,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					var alert_triggered = false;
 					while(current_ts <= end)
 					{
-						alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+						//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 							current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -652,7 +655,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							setTimeout(function(){
 								while(current_ts <= end)
 								{
-									alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+									//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 										current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -661,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function () {
 										setTimeout(function(){
 											while(current_ts <= end)
 											{
-												alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+												//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 													current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -670,7 +673,7 @@ document.addEventListener('DOMContentLoaded', function () {
 													setTimeout(function(){
 														while(current_ts <= end)
 														{
-															alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+															//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -679,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																setTimeout(function(){
 																	while(current_ts <= end)
 																	{
-																		alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+																		//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																			current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -688,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																			setTimeout(function(){
 																				while(current_ts <= end)
 																				{
-																					alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+																					//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
 																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
 																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																						current_ts = alert_triggered; // alert_triggered is the next valid frame
@@ -1281,7 +1284,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        		$("#results_div").html("error");
 					        	else
 					        	{
-					        		alert("response_status=success");
+					        		//alert("response_status=success");
 					        		if(data.alert_frames)
 				        			{	
 					        			data.alert_frames.sort(function(a,b){
@@ -1289,20 +1292,25 @@ document.addEventListener('DOMContentLoaded', function () {
 					        				b = b.timestamp_in_seconds;
 					        				return a - b;
 					        			});
+					        			
 				        				for(var x = 0; x < data.alert_frames.length; x++)
 				        				{
-				        					rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
+				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 					        				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-					        				rds = rds + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.alert_frames[x].image_name + "\" style=\"width:200px;height:113px\">";
+					        				rds = rds + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.alert_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
 					        				rds = rds + "<br>datestring:" + data.alert_frames[x].datestring;
-					        				rds = rds + "<br>des:" + data.alert_frames[x].designation;
-					        				rds = rds + "<br>frame score:" + data.alert_frames[x].score;
-					        				rds = rds + "<br>ma score:" + data.alert_frames[x].moving_average;
-					        				rds = rds + "<br>des h-score:" + data.alert_frames[x].homogeneity_score;
-					        				rds = rds + "<br>des ma thres:" + data.alert_frames[x].ma_threshold;
+					        				rds = rds + "<br>designation:" + data.alert_frames[x].designation;
+					        				rds = rds + "<br>score for des:" + data.alert_frames[x].score;
+					        				rds = rds + "<br>ma[0] score:" + data.alert_frames[x].moving_average;
+					        				rds = rds + "<br>max_moving_average:" + data.alert_frames[x].max_moving_average;
+					        				rds = rds + "<br>mma index:" + data.alert_frames[x].max_moving_average_index;
+					        				rds = rds + "<br>des homogeneity:" + data.alert_frames[x].homogeneity_score;
 					        				rds = rds + "<br>des single thresh:" + data.alert_frames[x].single_threshold;
+					        				rds = rds + "<br>des ma thres:" + data.alert_frames[x].ma_threshold;
 					        				rds = rds + "<br>2nd pl des:" + data.alert_frames[x].secondplace_designation;
 					        				rds = rds + "<br>2nd pl score:" + data.alert_frames[x].secondplace_score;
+					        				rds = rds + "<br>score_of_last frame_in_window:" + data.alert_frames[x].score_of_last_frame_in_window;
+					        				rds = rds + "<br>window_index_of_max_score:" + data.alert_frames[x].window_index_of_max_score;
 					        				rds = rds + "</div>";
 				        				}
 				        			}
@@ -1315,18 +1323,22 @@ document.addEventListener('DOMContentLoaded', function () {
 					        			});
 				        				for(var x = 0; x < data.delta_suppressed_frames.length; x++)
 				        				{
-				        					rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
+				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 					        				//rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-					        				rds = rds + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.delta_suppressed_frames[x].image_name + "\" style=\"width:200px;height:113px\">";
+					        				rds = rds + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.delta_suppressed_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
 					        				rds = rds + "<br>datestring:" + data.delta_suppressed_frames[x].datestring;
-					        				rds = rds + "<br>des:" + data.delta_suppressed_frames[x].designation;
-					        				rds = rds + "<br>frame score:" + data.delta_suppressed_frames[x].score;
-					        				rds = rds + "<br>ma score:" + data.delta_suppressed_frames[x].moving_average;
-					        				rds = rds + "<br>des h-score:" + data.delta_suppressed_frames[x].homogeneity_score;
-					        				rds = rds + "<br>des ma thres:" + data.delta_suppressed_frames[x].ma_threshold;
+					        				rds = rds + "<br>designation:" + data.delta_suppressed_frames[x].designation;
+					        				rds = rds + "<br>score for des:" + data.delta_suppressed_frames[x].score;
+					        				rds = rds + "<br>ma[0] score:" + data.delta_suppressed_frames[x].moving_average;
+					        				rds = rds + "<br>max_moving_average:" + data.delta_suppressed_frames[x].max_moving_average;
+					        				rds = rds + "<br>mma index:" + data.delta_suppressed_frames[x].max_moving_average_index;
+					        				rds = rds + "<br>des homogeneity:" + data.delta_suppressed_frames[x].homogeneity_score;
 					        				rds = rds + "<br>des single thresh:" + data.delta_suppressed_frames[x].single_threshold;
+					        				rds = rds + "<br>des ma thres:" + data.delta_suppressed_frames[x].ma_threshold;
 					        				rds = rds + "<br>2nd pl des:" + data.delta_suppressed_frames[x].secondplace_designation;
 					        				rds = rds + "<br>2nd pl score:" + data.delta_suppressed_frames[x].secondplace_score;
+					        				rds = rds + "<br>score_of_last frame_in_window:" + data.delta_suppressed_frames[x].score_of_last_frame_in_window;
+					        				rds = rds + "<br>window_index_of_max_score:" + data.delta_suppressed_frames[x].window_index_of_max_score;
 					        				rds = rds + "</div>";
 				        				}
 					        		}
@@ -1380,58 +1392,95 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 	        	}
 	        	else
 	        	{
-	        		if(data.frames.length > 100000)
-	        		{
-	        			alert("too many results");
-	        			$("#results_div").html("too many results. Try again.");
-	        		}	
-	        		else
-	        		{
-	        			/*var max_score = 0;
-	        			var max_designation = "";
-	        			for(var c = 0; c < data.designation_averages.length; c++)
-	        			{
-	        				if(data.designation_averages[c].average > max_score)
-	        				{
-	        					max_score = data.designation_averages[c].average;
-	        					max_designation = data.designation_averages[c].designation;
-	        				}
-	        			}	
-	        			for(var x = 0; x < data.frames.length; x++)
-	        			{
-	        				d = new Date(data.frames[x].timestamp_in_seconds *1000);
-	        				rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
-        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[data.frames.length -1].image_name + "\" style=\"width:200px;height:113px\">";
-        					rds = rds + "<br>" + d.toString();
-        					rds = rds + "</div>";
-	        			}
-	        			rds = rds + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
-	        			rds = rds + "<br>max designation for this frame:" + max_designation;
-    					rds = rds + "<br>max designation score for this frame:" + max_score;
-    					rds = rds + "<br>alert_triggered:" + data.alert_triggered;
-    					rds = rds + "</div>";
-	        			$("#results_div").html(rds);*/
+	        		
+	        			/*jsonresponse.put("alert_triggered", "yes");
+						jsonresponse.put("designation", max_designation);
+						jsonresponse.put("designation_moving_average_over_window", max_avg);
+						jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
+						jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
+						jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
+						twitter_handle = getTwitterHandle("wkyt",max_designation);
+						if(twitter_handle != null)
+						{
+							jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
+							JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
+							if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
+									&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
+									&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
+							{
+								jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
+								jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
+								long twitter_alert_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_for_frame_with_highest_score_across_window); 
+								jsonresponse.put("twitter_alert_id", twitter_alert_id);
+								//jsonresponse.put("twitter_message_firstperson", getMessage("wkyt", frame_processing_jo.getString("designation"), "twitter", "firstperson", jo.getLong("timestamp_in_seconds")));
+							}
+						}
+						 
+						JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master"); //FIXME
+						if(facebook_stuff != null)
+						{
+							jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
+							jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
+							jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
+							long fb_alert_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_for_frame_with_highest_score_across_window); 
+							jsonresponse.put("facebook_alert_id", fb_alert_id);
+						}
+						
+						jsonresponse.put("designation_display_name", getDisplayName("wkyt",max_designation));
+						jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
+						jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
+						jsonresponse.put("designation_single_threshold", max_homogeneity_double * single_modifier_double);
+						jsonresponse.put("datestring_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long));
+						jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
+						jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
+						jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_for_frame_with_highest_score_across_window);
+*/
+	        			alert("retrieving info for ts:" + ts);
 	        			if(data.alert_triggered === "yes")
 	        			{
-	        				//alert("alert triggered");
+	        				alert("alert triggered");
 	        				var alertstring = "";
-	        				d = new Date(data.frames[data.frames.length -1].timestamp_in_seconds *1000);
-	        				alertstring = alertstring + "<div style=\"border: 1px black solid;width:200px;display:inline-block;\">";
+	        				alertstring = alertstring + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 	        				alertstring = alertstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[data.frames.length -1].image_name + "\" style=\"width:200px;height:113px\">";
-	        				alertstring = alertstring + "<br>" + d.format();
-	        				alertstring = alertstring + "<br>des:" + data.designation;
-	        				alertstring = alertstring + "<br>frame score:" + data.score;
-	        				alertstring = alertstring + "<br>ma score:" + data.moving_average;
-	        				alertstring = alertstring + "<br>des h-score:" + data.homogeneity_score;
-	        				alertstring = alertstring + "<br>des ma thres:" + data.ma_threshold;
-	        				alertstring = alertstring + "<br>des single thresh:" + data.single_threshold;
-	        				alertstring = alertstring + "<br>alert_triggered:" + data.alert_triggered;
+	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.image_name_of_frame_with_highest_score_in_window + "\" style=\"width:250px;height:141px\">";
+	        				alertstring = alertstring + "<br>datestring_of_frame_with_highest_score_in_window: " + data.datestring_of_frame_with_highest_score_in_window;
+	        				alertstring = alertstring + "<br>designation: " + data.designation;
+	        				alertstring = alertstring + "<br>designation_moving_average_over_window: " + data.designation_moving_average_over_window;
+	        				alertstring = alertstring + "<br>designation_score_for_last_frame_in_window: " + data.designation_score_for_last_frame_in_window;
+	        				alertstring = alertstring + "<br>designation_highest_frame_score_in_window: " + data.designation_highest_frame_score_in_window;
+	        				alertstring = alertstring + "<br>index_of_designation_highest_frame_score_in_window: " + data.index_of_designation_highest_frame_score_in_window;
+	        				if(data.designation_twitter_handle)
+	        				{
+	        					alertstring = alertstring + "<br>designation_twitter_handle: " + data.designation_twitter_handle;
+	        					//alertstring = alertstring + "<br>twitter_access_token:" + data.twitter_access_token;
+	        					//alertstring = alertstring + "<br>twitter_access_token_secret:" + data.twitter_access_token_secret;
+	        					alertstring = alertstring + "<br>twitter_redirect_id: " + data.twitter_redirect_id;
+	        				}
+	        				if(data.facebook_account_id)
+	        				{
+	        					alertstring = alertstring + "<br>facebook_account_id: " + data.facebook_account_id;
+	        					//alertstring = alertstring + "<br>facebook_account_access_token:" + data.facebook_account_access_token;
+	        					alertstring = alertstring + "<br>facebook_account_name: " + data.facebook_account_name;
+	        					alertstring = alertstring + "<br>facebook_redirect_id: " + data.facebook_redirect_id;
+	        				}	
+	        				alertstring = alertstring + "<br>designation_display_name: " + data.designation_display_name;
+	        				alertstring = alertstring + "<br>designation_homogeneity_score: " + data.designation_homogeneity_score;
+	        				alertstring = alertstring + "<br>designation_moving_average_threshold: " + data.designation_moving_average_threshold;
+	        				alertstring = alertstring + "<br>designation_single_threshold: " + data.designation_single_threshold;
+	        				alertstring = alertstring + "<br>datestring_of_last_frame_in_window: " + data.datestring_of_last_frame_in_window;
+	        				alertstring = alertstring + "<br>datestring_of_frame_with_highest_score_in_window: " + data.datestring_of_frame_with_highest_score_in_window;
+	        				alertstring = alertstring + "<br>image_name_of_last_frame_in_window: " + data.image_name_of_last_frame_in_window;
+	        				alertstring = alertstring + "<br>image_name_of_frame_with_highest_score_in_window: " + data.image_name_of_frame_with_highest_score_in_window;
+	        				
 	        				alertstring = alertstring + "</div>";
 	        				$("#results_div").append(alertstring);
 	        				alert_triggered = true;
 	        			}	
-	        		}
+	        			else
+	        			{
+	        				alert("no alert triggered");
+	        			}
+	        		
 	        	}
 	        }
 	        ,

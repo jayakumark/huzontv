@@ -20,44 +20,18 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
-import java.util.UUID;
 
-import javax.mail.MessagingException;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.DefaultHttpClientConnection;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.params.SyncBasicHttpParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpProcessor;
-import org.apache.http.protocol.HttpRequestExecutor;
-import org.apache.http.protocol.ImmutableHttpProcessor;
-import org.apache.http.protocol.RequestConnControl;
-import org.apache.http.protocol.RequestContent;
-import org.apache.http.protocol.RequestExpectContinue;
-import org.apache.http.protocol.RequestTargetHost;
-import org.apache.http.protocol.RequestUserAgent;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -131,12 +105,7 @@ public class Endpoint extends HttpServlet {
 							double currentavgscore = 0.0;
 							double reporter_total = 0.0;
 							JSONArray all_scores_ja = null;
-							JSONArray all_deviations_ja = null;
-							JSONArray all_deviation_squares_ja = null;
-							double sum_of_deviation_squares = 0.0;
-							double stddev_double = 0.0;
-							double total_score = 0.0;
-							double average_of_all_scores = 0.0;
+						
 							if(!rs.next())
 							{	
 								rs.moveToInsertRow();
@@ -149,7 +118,7 @@ public class Endpoint extends HttpServlet {
 									{
 										reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 										all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
-										total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+										//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 									}
 									currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
 									rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
@@ -160,99 +129,31 @@ public class Endpoint extends HttpServlet {
 								rs.updateString("image_name", jo.getString("image_name"));
 								rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
 								
-								System.out.println("total of all scores=" + total_score);
-								average_of_all_scores = total_score / all_scores_ja.length();
-								System.out.println("average score of each comparison=" + average_of_all_scores);
-																	
-								all_deviations_ja = new JSONArray();
-								all_deviation_squares_ja = new JSONArray();
-								// 2. get all deviations
-								sum_of_deviation_squares = 0.0;
-								for(int s = 0; s < all_scores_ja.length(); s++)
-								{
-									all_deviations_ja.put(all_scores_ja.getDouble(s) - average_of_all_scores);
-									all_deviation_squares_ja.put(all_deviations_ja.getDouble(s) * all_deviations_ja.getDouble(s));
-									sum_of_deviation_squares = sum_of_deviation_squares + all_deviation_squares_ja.getDouble(s);
-								}
-								double temp = sum_of_deviation_squares / (all_scores_ja.length() -1);
-								stddev_double = Math.sqrt(temp);							  
-								
-								System.out.println("**** stddev=" + stddev_double);
-								rs.updateDouble("average_score", average_of_all_scores);
-								rs.updateDouble("stddev", stddev_double);
-								
 								rs.insertRow();
 								rs.close();
 								stmt.close();
 								con.close();
-								jsonresponse.put("response_status", "success");
-								JSONObject frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 3600);
-								if(frame_processing_jo.getString("response_status").equals("error") && frame_processing_jo.has("error_code") && (frame_processing_jo.getString("error_code").equals("100")))
+								jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200);
+								if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
 								{
 									// missing a frame, wait 2 seconds, try again.
 									Thread.sleep(2000);
-									frame_processing_jo = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 3600);
-								}
-								if(frame_processing_jo.has("alert_triggered") && frame_processing_jo.getString("alert_triggered").equals("yes"))
-								{
-									jsonresponse.put("alert_triggered", "yes");
-									jsonresponse.put("alert_designation", frame_processing_jo.getString("designation"));
-									if(frame_processing_jo.has("twitter_handle"))
+									jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200);
+									if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
 									{
-										jsonresponse.put("alert_twitter_handle", frame_processing_jo.getString("twitter_handle"));
-										
-										//**********************************************
-										// FIXME!!!! This is just for testing the tat and tats retrieval by the remote daemon
-										JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master");
-										JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master");
-										//**********************************************
-										
-										if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
-												&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
-												&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
-										{
-											jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
-											jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
-											long twitter_alert_id = createAlertInDB("wkyt", "twitter", frame_processing_jo.getString("designation"), jo.getString("image_name")); 
-											jsonresponse.put("twitter_alert_id", twitter_alert_id);
-										}
-										
-										if(facebook_stuff != null)
-										{
-											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
-											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
-											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
-											long fb_alert_id = createAlertInDB("wkyt", "facebook", frame_processing_jo.getString("designation"), jo.getString("image_name")); 
-											jsonresponse.put("facebook_alert_id", fb_alert_id);
-										}
+										// still missing a frame, wait 2 seconds, try again.
+										Thread.sleep(2000);
+										jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200);
 									}
-									jsonresponse.put("alert_display_name", frame_processing_jo.getString("display_name"));
-								    
-									/*
-									SimpleEmailer se = new SimpleEmailer();
-									try {
-										se.sendMail("Alert fired for " + frame_processing_jo.getString("designation"), "http://hoozon-wkyt-alertimgs.s3-website-us-east-1.amazonaws.com/" + jo.getString("image_name"), "cyrus7580@gmail.com", "info@crasher.com");
-										jsonresponse.put("message", "Scores entered. Alert email sent.");
-									} catch (MessagingException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-										System.out.println("failed to send alert message=" + e.getMessage());
-										jsonresponse.put("message", "Scores entered. Exception trying to send mail, though. message=" + e.getMessage());
-									}*/
 								}
-								else
-								{
-									jsonresponse.put("alert_triggered", "no");
-									jsonresponse.put("message", "Scores entered. No alert.");
-								} 
-								
 							}
-							/*else
+							else
 							{
 								jsonresponse.put("response_status", "error");
 								jsonresponse.put("alert_triggered", "no");
 								jsonresponse.put("message", "Duplicate frame.");
-							}*/
+							}
+							/*
 							else // a row already exists... overwrite.
 							{
 								all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
@@ -264,7 +165,7 @@ public class Endpoint extends HttpServlet {
 									{
 										reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 										all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
-										total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+										//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 									}
 									currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
 									rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
@@ -275,27 +176,6 @@ public class Endpoint extends HttpServlet {
 								rs.updateString("image_name", jo.getString("image_name"));
 								rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
 								
-								System.out.println("total of all scores=" + total_score);
-								average_of_all_scores = total_score / all_scores_ja.length();
-								System.out.println("average score of each comparison=" + average_of_all_scores);
-																	
-								all_deviations_ja = new JSONArray();
-								all_deviation_squares_ja = new JSONArray();
-								// 2. get all deviations
-								sum_of_deviation_squares = 0.0;
-								for(int s = 0; s < all_scores_ja.length(); s++)
-								{
-									all_deviations_ja.put(all_scores_ja.getDouble(s) - average_of_all_scores);
-									all_deviation_squares_ja.put(all_deviations_ja.getDouble(s) * all_deviations_ja.getDouble(s));
-									sum_of_deviation_squares = sum_of_deviation_squares + all_deviation_squares_ja.getDouble(s);
-								}
-								double temp = sum_of_deviation_squares / (all_scores_ja.length() -1);
-								stddev_double = Math.sqrt(temp);							  
-								
-								System.out.println("**** stddev=" + stddev_double);
-								rs.updateDouble("average_score", average_of_all_scores);
-								rs.updateDouble("stddev", stddev_double);
-								
 								rs.updateRow();
 								rs.close();
 								stmt.close();
@@ -303,7 +183,7 @@ public class Endpoint extends HttpServlet {
 								jsonresponse.put("response_status", "success");
 								jsonresponse.put("alert_triggered", "no");
 								jsonresponse.put("message", "Scores should be UPDATED now.");
-							}
+							}*/
 						}
 						catch(SQLException sqle)
 						{
@@ -349,6 +229,7 @@ public class Endpoint extends HttpServlet {
 		{
 			out.println("{ \"error\": { \"message\": \"JSONException caught in Endpoint\" } }");
 			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
+			jsone.printStackTrace();
 		}	
 		return;
 	}
@@ -544,7 +425,15 @@ public class Endpoint extends HttpServlet {
 											fb_uid = fb_profile_jo.getLong("id");
 											Calendar cal = Calendar.getInstance();
 											cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-											cal.add(Calendar.SECOND, Integer.parseInt( preliminary_jsonresponse.getString("expires")));
+											String expires = preliminary_jsonresponse.getString("expires");
+											int expires_in_seconds = 0;
+											if(expires == null || expires.isEmpty()) // this seems to happen when the user has already given the fb permission but is re-linking the account for whatever reason 
+											{
+												expires_in_seconds = 5184000; // FIXME? Defaulting to 60 days may not be the right behavior. 
+											}
+											else
+												expires_in_seconds = Integer.parseInt(expires);
+											cal.add(Calendar.SECOND, expires_in_seconds);
 											long expires_timestamp = cal.getTimeInMillis() / 1000;
 											boolean successful = setFacebookAccessTokenExpiresAndUID("wkyt", designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
 											if(successful)
@@ -618,7 +507,7 @@ public class Endpoint extends HttpServlet {
 						jsonresponse = getUserTwitterAccessTokenAndSecret("wkyt", designation);
 					}
 				}
-				else if (method.equals("setFacebookAccountInfo")) // sets the designated journalist page for this user
+				else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
 				{
 					String designation = request.getParameter("designation");
 					String id = request.getParameter("id");
@@ -634,33 +523,56 @@ public class Endpoint extends HttpServlet {
 					}
 					else
 					{	
-						JSONArray fbaccounts_ja = getFacebookAccounts("wkyt", getFacebookAccessToken("wkyt",designation));
-						String name = "";
-						String account_access_token = "";
-						long id_long = 0L;
-						boolean successful = false;
-						for(int x =0; x < fbaccounts_ja.length(); x++)
+						// 1. get fb access token for this designation
+						// 2. get the accounts associated with this facebook access token
+						// 3. loop through these accounts, looking for an id that equals the incoming subaccount id
+						// 4. Once found, get the name of the sub account
+						// 5. Get the access token for the account
+						// 6. set the facebook subaccount id, name and access_token for the designation
+						String facebook_access_token =  getFacebookAccessToken("wkyt",designation);
+						if(facebook_access_token == null)
 						{
-							if(fbaccounts_ja.getJSONObject(x).getLong("id") == (new Long(Long.parseLong(id)).longValue()))
-							{
-								name = fbaccounts_ja.getJSONObject(x).getString("name");
-								account_access_token = fbaccounts_ja.getJSONObject(x).getString("access_token");
-								id_long =  (new Long(Long.parseLong(id)).longValue());
-								successful = setFacebookAccountIdNameAndAccessToken("wkyt", designation, id_long, name, account_access_token);
-							}
-						}
-						if(successful)
-						{
-							jsonresponse.put("response_status", "success");
+							jsonresponse.put("message", "Could not retrieve fb access token for designation " + designation + ". Has the FB account been linked yet?");
+							jsonresponse.put("response_status", "error");
 						}
 						else
-						{
-							jsonresponse.put("message", "There was an error trying to set the FB account id name and access_token for this user");
-							jsonresponse.put("response_status", "error");
+						{	
+							JSONArray fbsubaccounts_ja = getFacebookSubAccounts("wkyt", facebook_access_token);
+							if(fbsubaccounts_ja == null)
+							{
+								jsonresponse.put("message", "Could not retrieve subaccounts for " + designation + ". Has the main FB account been linked yet? Does the parent account have sub accounts?");
+								jsonresponse.put("response_status", "error");
+							}
+							else
+							{
+								String name = "";
+								String subaccount_access_token = "";
+								long id_long = 0L;
+								boolean successful = false;
+								for(int x =0; x < fbsubaccounts_ja.length(); x++)
+								{
+									if(fbsubaccounts_ja.getJSONObject(x).getLong("id") == (new Long(Long.parseLong(id)).longValue()))
+									{
+										name = fbsubaccounts_ja.getJSONObject(x).getString("name");
+										subaccount_access_token = fbsubaccounts_ja.getJSONObject(x).getString("access_token");
+										id_long =  (new Long(Long.parseLong(id)).longValue());
+										successful = setFacebookSubAccountIdNameAndAccessToken("wkyt", designation, id_long, name, subaccount_access_token);
+									}
+								}
+								if(successful)
+								{
+									jsonresponse.put("response_status", "success");
+								}
+								else
+								{
+									jsonresponse.put("message", "There was an error trying to set the FB account id name and access_token for this user");
+									jsonresponse.put("response_status", "error");
+								}
+							}
 						}
 					}
 				}
-				else if (method.equals("getFrames"))
+				else if (method.equals("getFrames")) // inclusive
 				{
 					String admin_password = request.getParameter("hoozon_admin_auth");
 					if(admin_password == null)
@@ -691,7 +603,7 @@ public class Endpoint extends HttpServlet {
 								{
 									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 									stmt = con.createStatement();
-									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
+									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ")"); // get the frames in the time range
 									rs.last();
 									jsonresponse.put("frames_processed", rs.getRow());  // get a row count
 									rs.beforeFirst(); // go back to the beginning for parsing
@@ -702,6 +614,7 @@ public class Endpoint extends HttpServlet {
 										current_frame_jo = new JSONObject();
 										current_frame_jo.put("image_name", rs.getString("image_name"));
 										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
+										current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getInt("timestamp_in_seconds")));
 										frames_ja.put(current_frame_jo);
 									}
 									jsonresponse.put("response_status", "success");
@@ -776,8 +689,8 @@ public class Endpoint extends HttpServlet {
 									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 									System.out.println("2");
 									stmt = con.createStatement();
-									System.out.println("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ") ORDER BY timestamp_in_seconds ASC");
-									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ") ORDER BY timestamp_in_seconds ASC"); // get the frames in the time range
+									System.out.println("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ") ORDER BY timestamp_in_seconds ASC");
+									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ") ORDER BY timestamp_in_seconds ASC"); // get the frames in the time range
 									System.out.println("4");
 									rs.last();
 									System.out.println("5");
@@ -867,7 +780,7 @@ public class Endpoint extends HttpServlet {
 								{
 									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 									stmt = con.createStatement();
-									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + ")"); // get the frames in the time range
+									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ")"); // get the frames in the time range
 									rs.last();
 									jsonresponse.put("frames_processed", rs.getRow());  // get a row count
 									rs.beforeFirst(); // go back to the beginning for parsing
@@ -1006,7 +919,7 @@ public class Endpoint extends HttpServlet {
 											
 											con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 											stmt = con.createStatement();
-											rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds < " + end + " AND timestamp_in_seconds > " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
+											rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
 											rs.last();
 											jsonresponse.put("frames_processed", rs.getRow());  // get a row count
 											rs.beforeFirst(); // go back to the beginning for parsing
@@ -1138,7 +1051,7 @@ public class Endpoint extends HttpServlet {
 							{	
 								long begin_long = Long.parseLong(begin);
 								long end_long = Long.parseLong(end);
-								jsonresponse  = getAlertFrames(begin_long, end_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period, delta_double);
+								jsonresponse  = getAlertFrames2(begin_long, end_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period, delta_double);
 							}
 						}
 						else
@@ -1178,7 +1091,7 @@ public class Endpoint extends HttpServlet {
 								Long ts_long = new Long(ts);
 								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
 								//JSONObject frame_processing_jo = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
-								
+								/*
 								if(jsonresponse.has("alert_triggered") && jsonresponse.getString("alert_triggered").equals("yes"))
 								{
 									System.out.println("fpj has alert_triggered=yes");
@@ -1215,25 +1128,14 @@ public class Endpoint extends HttpServlet {
 										}
 									}
 									jsonresponse.put("alert_display_name", jsonresponse.getString("display_name"));
-								    
-									/*
-									SimpleEmailer se = new SimpleEmailer();
-									try {
-										se.sendMail("Alert fired for " + frame_processing_jo.getString("designation"), "http://hoozon-wkyt-alertimgs.s3-website-us-east-1.amazonaws.com/" + jo.getString("image_name"), "cyrus7580@gmail.com", "info@crasher.com");
-										jsonresponse.put("message", "Scores entered. Alert email sent.");
-									} catch (MessagingException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-										System.out.println("failed to send alert message=" + e.getMessage());
-										jsonresponse.put("message", "Scores entered. Exception trying to send mail, though. message=" + e.getMessage());
-									}*/
+								   
 								}
 								else
 								{
 									System.out.println("fpj does not have alert_triggered=yes");
 									jsonresponse.put("alert_triggered", "no");
 									jsonresponse.put("message", "Scores entered. No alert.");
-								} 
+								} */
 							}
 						}
 						else
@@ -1366,6 +1268,13 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
+	
+	// I think the difference between 1 and 2 is supposed to be that #1 looks for single frames above the single index and then tests 
+	// if the moving average of the previous maw_int frames (+ current) is greater than the ma_thresh, if so alert.
+	// #2 is supposed to look for single frames above thresh and then find the maximum ma over the window frontwards and backwards.
+	// FIXME I don't think it's working correctly, though. Check out 20130415_232700 to 20130415_232900. 
+	// Since a single frame is above single thresh and the ma behind it is above thresh, then alert should fire for rob bromley, but doesn't.
+	
 	JSONObject getAlertFrames(long begin_long, long end_long, String station, int moving_average_window_int, double ma_modifier_double, double single_modifier_double, int alert_waiting_period, double delta_double)
 	{
 		JSONArray alert_frames_ja = new JSONArray();
@@ -1386,9 +1295,6 @@ public class Endpoint extends HttpServlet {
 			double current_homogeneity;
 			String current_designation;
 			double current_delta = 0.0;
-			double lowest_score_in_window = 2.0;
-			long ts_of_highest_score_in_window = 0L;
-			double highest_score_in_window = 0.0;
 			try
 			{
 				for(int x = 0; x < dnh_ja.length(); x++)
@@ -1399,22 +1305,21 @@ public class Endpoint extends HttpServlet {
 					con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 					stmt = con.createStatement();
 					// search database for X frames
-					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + begin_long + " AND timestamp_in_seconds <= " + end_long + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_seconds ASC"); 
+					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds >= " + begin_long + " AND timestamp_in_seconds <= " + end_long + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_seconds ASC"); 
 					while(rs.next())
 					{
-						lowest_score_in_window = 2.0;
 						ts = rs.getLong("timestamp_in_seconds");
 						stmt2 = con.createStatement();
-						rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts + ")");
+						rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds >= " + (ts - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts + ")");
 						total = 0;
-						
+
 						// this is a pure moving average
 						while(rs2.next())
 						{
 							total = total + rs2.getDouble(current_designation + "_avg");
 						}
 						ma_over_window = total / moving_average_window_int;
-						
+
 						// this is a moving average minus the lowest frame across the window.
 						/*while(rs2.next())
 						{
@@ -1423,11 +1328,6 @@ public class Endpoint extends HttpServlet {
 							if(rs2.getDouble(current_designation + "_avg") < lowest_score_in_window)
 								lowest_score_in_window = rs2.getDouble(current_designation + "_avg");
 							
-							//if(rs2.getDouble(current_designation + "_avg") > highest_score_in_window)
-							//{
-							//	highest_score_in_window = rs2.getDouble(current_designation + "_avg");
-							//	ts_of_highest_score_in_window = rs2.getLong("timestamp_in_seconds");
-							//}
 							total = total + rs2.getDouble(current_designation + "_avg");
 						}
 						ma_over_window = (total - lowest_score_in_window) / (moving_average_window_int - 1);*/
@@ -1448,7 +1348,7 @@ public class Endpoint extends HttpServlet {
 								}
 							}
 							current_delta = rs.getDouble(current_designation + "_avg") - max_avg;
-							
+
 							if(current_delta > delta_double)
 							{	
 								current_frame_jo = new JSONObject();
@@ -1477,6 +1377,188 @@ public class Endpoint extends HttpServlet {
 								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
 								current_frame_jo.put("twitter_handle", getTwitterHandle("wkyt",current_designation));
 								current_frame_jo.put("moving_average", ma_over_window);
+								current_frame_jo.put("homogeneity_score", current_homogeneity);
+								current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
+								current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
+								current_frame_jo.put("secondplace_designation", max_designation);
+								current_frame_jo.put("secondplace_score", max_avg);
+								delta_suppressed_frames_ja.put(current_frame_jo);
+							}
+						}
+					}
+				}
+				jsonresponse.put("response_status", "success");
+				if(alert_frames_ja.length() > 0)
+					jsonresponse.put("alert_frames", alert_frames_ja);
+				if(delta_suppressed_frames_ja.length() > 0)
+					jsonresponse.put("delta_suppressed_frames", delta_suppressed_frames_ja);
+
+			}
+			catch(SQLException sqle)
+			{
+				jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+				jsonresponse.put("response_status", "error");
+				sqle.printStackTrace();
+			}
+			finally
+			{
+				try
+				{
+					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				}
+				catch(SQLException sqle)
+				{ 
+					jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
+				}
+			}   
+		}
+		catch(JSONException jsone)
+		{
+			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
+		}	
+		return jsonresponse;
+	}
+	
+	JSONObject getAlertFrames2(long begin_long, long end_long, String station, int maw_int, double ma_modifier_double, double single_modifier_double, int alert_waiting_period, double delta_double)
+	{
+		JSONArray alert_frames_ja = new JSONArray();
+		JSONObject jsonresponse = new JSONObject();
+		JSONObject current_frame_jo = new JSONObject();
+		JSONArray delta_suppressed_frames_ja = new JSONArray();
+		try
+		{
+			JSONArray dnh_ja = getDesignationsAndHomogeneities(station); // get the designations and homogeneities for WKYT
+			Connection con = null;
+			Statement stmt = null;
+			ResultSet rs = null;
+			Statement stmt2 = null;
+			ResultSet rs2 = null;
+			long ts = 0L;
+			double total = 0.0;
+			double[] mas = new double[maw_int];
+			double[] scores = new double[2*maw_int - 1]; // 5 makes a window of 9, 10 makes a window of 19, etc
+			double current_homogeneity;
+			String current_designation;
+			double current_delta = 0.0;
+			double ma_over_window = 0.0;
+			try
+			{
+				for(int x = 0; x < dnh_ja.length(); x++)
+				{
+					current_homogeneity = dnh_ja.getJSONObject(x).getDouble("homogeneity");
+					current_designation = dnh_ja.getJSONObject(x).getString("designation");
+					// get frames where this designation crosses the single frame threshold
+					con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+					stmt = con.createStatement();
+					// search database for X frames
+					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds >= " + begin_long + " AND timestamp_in_seconds <= " + end_long + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_seconds ASC"); 
+					while(rs.next())
+					{
+						ts = rs.getLong("timestamp_in_seconds");
+						stmt2 = con.createStatement();
+						rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts - maw_int) + " AND timestamp_in_seconds < " + (ts + maw_int) + ")");
+						total = 0;
+						
+						// so what we're doing here is we've got a single frame with a single score above the single thresh.
+						// we want to check the moving average on all sides of this frame to get the max moving average
+						//	                **
+						//	                **  **      **  **
+						//              **  **  **  **  **  **
+						//  **      **  **  **  **  **  **  **
+						//  **  **  **  **  **  **  **  **  **
+						// [16][17][18][19][20][21][22][23][24]   ([20] == the frame above the single threshold, 5 frame moving average int ) 
+						//  --  --  --  --  -- 						<- moving average [0]
+						//      --  --  --  --  --  				<- moving average [1]
+						//          --  --  --  --  --  			<- moving average [2]
+						//              --  --  --  --  --  		<- moving average [3]
+						//                  --  --  --  --  -- 		<- moving average [4]
+						//
+						// Now, test the ma threshold against the max ma over the full window
+						// (Previously, we were looking for [20] and then calculating ma[0] only.)
+						
+						int i = 0;
+						while(rs2.next())
+						{
+							scores[i] = rs2.getDouble(current_designation + "_avg"); // fill up the scores array with the 0 through 2*maw_int - 1
+							total = total + scores[i]; // the running total of the last maw_int frames
+							if(i >= (maw_int - 1)) // if we've reached target frame (e.g. [20] in the example above)
+							{
+								mas[i-(maw_int-1)] = total / maw_int; // then mas[0] = target average of last maw_int scores; 
+								total = total - scores[i-(maw_int-1)]; // remove the score at the front of this window from the moving total (i.e. get sum of 4 instead of 5)
+							}
+							i++;
+						}
+						
+						System.out.print("Scores array:");
+						for(int s = 0; s < scores.length; s++)
+						{
+							System.out.print("[" + scores[s] + "]");
+						}
+						System.out.println();
+						double max_moving_avg = 0.0;
+						int max_moving_avg_index = 0;
+						System.out.print("Mas array   :");
+						for(int m = 0; m < mas.length; m++)
+						{
+							System.out.print("[" + mas[m] + "]");
+							if(mas[m] > max_moving_avg)
+							{
+								max_moving_avg_index = m;
+								max_moving_avg = mas[m];
+							}
+						}
+						System.out.println();
+						ma_over_window = mas[0];
+						
+						if(max_moving_avg > (current_homogeneity * ma_modifier_double))
+						{	
+							double max_avg = 0.0;
+							String max_designation = "";
+							for(int y = 0; y < dnh_ja.length(); y++)
+							{
+								if(!dnh_ja.getJSONObject(y).getString("designation").equals(current_designation))
+								{
+									if(rs.getDouble(dnh_ja.getJSONObject(y).getString("designation") + "_avg") > max_avg)
+									{
+										max_avg = rs.getDouble(dnh_ja.getJSONObject(y).getString("designation") + "_avg");
+										max_designation = dnh_ja.getJSONObject(y).getString("designation");
+									}
+								}
+							}
+							current_delta = rs.getDouble(current_designation + "_avg") - max_avg;
+							
+							if(current_delta > delta_double)
+							{	
+								current_frame_jo = new JSONObject();
+								current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
+								current_frame_jo.put("designation", current_designation);
+								current_frame_jo.put("image_name", rs.getString("image_name"));
+								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
+								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
+								current_frame_jo.put("twitter_handle", getTwitterHandle("wkyt",current_designation));
+								current_frame_jo.put("moving_average", ma_over_window);
+								current_frame_jo.put("max_moving_average", max_moving_avg);
+								current_frame_jo.put("max_moving_average_index", max_moving_avg_index);
+								current_frame_jo.put("homogeneity_score", current_homogeneity);
+								current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
+								current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
+								current_frame_jo.put("secondplace_designation", max_designation);
+								current_frame_jo.put("secondplace_score", max_avg);
+								alert_frames_ja.put(current_frame_jo);
+								break; // only get one frame per designation right now FIXME
+							}
+							else
+							{
+								current_frame_jo = new JSONObject();
+								current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
+								current_frame_jo.put("designation", current_designation);
+								current_frame_jo.put("image_name", rs.getString("image_name"));
+								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
+								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
+								current_frame_jo.put("twitter_handle", getTwitterHandle("wkyt",current_designation));
+								current_frame_jo.put("moving_average", ma_over_window);
+								current_frame_jo.put("max_moving_average", max_moving_avg);
+								current_frame_jo.put("max_moving_average_index", max_moving_avg_index);
 								current_frame_jo.put("homogeneity_score", current_homogeneity);
 								current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
 								current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
@@ -1527,7 +1609,7 @@ public class Endpoint extends HttpServlet {
 		 * 
 		 * 1. It gets X frames, cycles through them, putting together a JSONArray of X frames with timestamp, image name and scores object for each frame.  (see structure below)
 		 * 2. It then cycles through the designations array getting an average score for each designation over the window, creating a designation_averages_ja and finding the max avg
-		 * 3. If the max average is greater than the moving average threshold for that person and the last frame is greater than the raw threshold for that person
+		 * 3. If the max average is greater than the moving average threshold for that person and <strike>the last frame</strike> any frame in the window is greater than the singlethresh... 
 		 * 4. then respond with all the information about that frame.
 		 * 
 		 */
@@ -1553,8 +1635,6 @@ public class Endpoint extends HttpServlet {
 					{
 						jsonresponse.put("message", "No frames for this entire window. Returning with next_frame.");
 						jsonresponse.put("response_status", "error");
-						long next_frame = getNextFrame(ts_long);
-						jsonresponse.put("next_frame", next_frame);
 					}
 					else if(rs.getRow() < moving_average_window_int) // missing a frame
 					{
@@ -1564,118 +1644,191 @@ public class Endpoint extends HttpServlet {
 					}
 					else // had all X frames
 					{	
-						rs.beforeFirst(); // go back to the beginning for parsing
-						JSONArray frames_ja = new JSONArray();
-						JSONObject current_frame_jo = null;
-						JSONObject current_frame_scores_jo = null;
-						/*
-						
-						{
-							"response_status": "success",
-							"frames":
-								[
-									{
-										"timestamp_in_seconds": 12312312,
-										"image_name": "url",
-										"scores":
-											{
-												"person_a": .984332,
-												"person_b": .3423423
-												...
-											}
-									}
-									...											
-								],
-							"averages":
-								[
-									{
-										"designation": "person_a",
-										"average": .9754
-									},
-									{
-										"designation": "person_b",
-										"average": .5432
-									},
-									...
-								]
-						}
-						
-						*/
-						while(rs.next()) // get one row
-						{
-							current_frame_jo = new JSONObject();
-							current_frame_jo.put("image_name", rs.getString("image_name"));
-							current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
-							current_frame_scores_jo = new JSONObject();
-							for(int x = 0; x < dnh_ja.length(); x++)
+						// check the ts frame. One of the designations' average scores has to be above their single threshold to continue. If not, quick failure.
+							rs.beforeFirst(); // go back to the beginning for parsing
+							JSONArray frames_ja = new JSONArray();
+							JSONObject current_frame_jo = null;
+							JSONObject current_frame_scores_jo = null;
+							/*
+							
 							{
-								current_frame_scores_jo.put(dnh_ja.getJSONObject(x).getString("designation"), rs.getDouble(dnh_ja.getJSONObject(x).getString("designation") + "_avg"));
+								"response_status": "success",
+								"frames":
+									[
+										{
+											"timestamp_in_seconds": 12312312,
+											"image_name": "url",
+											"scores":
+												{
+													"person_a": .984332,
+													"person_b": .3423423
+													...
+												}
+										}
+										...											
+									],
+								"averages":
+									[
+										{
+											"designation": "person_a",
+											"average": .9754
+										},
+										{
+											"designation": "person_b",
+											"average": .5432
+										},
+										...
+									]
 							}
-							current_frame_jo.put("scores", current_frame_scores_jo);
-							frames_ja.put(current_frame_jo);
-						}
-						
-						/*
-						(designation_averages_ja)
-						[
-							{ "designation" : "guy_mcperson", "average": .4345 },
-							{ "designation" : "suzi_cue", "average": .6555 }
-							...
-						]
-						*/
-						double person_total = 0.0;
-						double person_avg = 0.0;
-						JSONArray designation_averages_ja = new JSONArray();
-						JSONObject jo = new JSONObject();
-						double max_avg = 0.0;
-						String max_designation = "";
-						for(int x = 0; x < dnh_ja.length(); x++)
-						{
-							jo = new JSONObject();
-							person_total = 0.0;
-							for(int j = 0; j < frames_ja.length(); j++)
-							{	
-								person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(dnh_ja.getJSONObject(x).getString("designation"));
-							}
-							person_avg = person_total/frames_ja.length();
-							jo.put("designation", dnh_ja.getJSONObject(x).getString("designation"));
-							jo.put("average", person_avg);
-							if(person_avg > max_avg)
+							*/
+							// convert the maw_int frames into a jsonarray called frames_ja
+							while(rs.next()) // get one row
 							{
-								max_avg = person_avg;
-								max_designation = dnh_ja.getJSONObject(x).getString("designation");
-							}
-							designation_averages_ja.put(jo);
-						}
-														
-						String twitter_handle = null;
-						double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
-						if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
-						{
-							if(frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation) > (max_homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
-							{
-								long last_alert = getLastAlert("wkyt", max_designation);
-								if((ts_long - last_alert) > alert_waiting_period)
+								current_frame_jo = new JSONObject();
+								current_frame_jo.put("image_name", rs.getString("image_name"));
+								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
+								current_frame_scores_jo = new JSONObject();
+								for(int x = 0; x < dnh_ja.length(); x++)
 								{
-									jsonresponse.put("alert_triggered", "yes");
-									jsonresponse.put("score", frames_ja.getJSONObject(frames_ja.length() -1).getJSONObject("scores").getDouble(max_designation));
-									jsonresponse.put("designation", max_designation);
-									twitter_handle = getTwitterHandle("wkyt",max_designation);
-									if(twitter_handle != null)
+									current_frame_scores_jo.put(dnh_ja.getJSONObject(x).getString("designation"), rs.getDouble(dnh_ja.getJSONObject(x).getString("designation") + "_avg"));
+								}
+								current_frame_jo.put("scores", current_frame_scores_jo);
+								frames_ja.put(current_frame_jo);
+							}
+							
+							/*
+							(designation_averages_ja)
+							[
+								{ "designation" : "guy_mcperson", "average": .4345 },
+								{ "designation" : "suzi_cue", "average": .6555 }
+								...
+							]
+							*/
+							
+							// compute the window averages for each designation
+							double person_total = 0.0;
+							double person_avg = 0.0;
+							JSONArray designation_averages_ja = new JSONArray(); // this is a simple jsonarray where we will put {"designation":"some_des","average":0.342} objects
+							JSONObject jo = new JSONObject();
+							double max_avg = 0.0;
+							String max_designation = "";
+							for(int x = 0; x < dnh_ja.length(); x++) // for each designation/homogeneity pair
+							{
+								jo = new JSONObject();
+								person_total = 0.0;							// the total for the current designation starts off as 0
+								for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
+								{	
+									person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(dnh_ja.getJSONObject(x).getString("designation")); // add to the total for this person
+								}
+								person_avg = person_total/frames_ja.length();
+								jo.put("designation", dnh_ja.getJSONObject(x).getString("designation"));
+								jo.put("average", person_avg);
+								if(person_avg > max_avg)
+								{
+									max_avg = person_avg;
+									max_designation = dnh_ja.getJSONObject(x).getString("designation");
+								}
+								designation_averages_ja.put(jo);
+							}
+							
+							// max_avg is now set to the highest average found for the designations
+							// max_designation is set to the designation of whomever that max_avg belonged to
+																			
+							String twitter_handle = null;
+							double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
+							if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
+							{
+								// FIXME The above logic may not be right. It's conceivable that the max_avg is the highest, but not the most signficant.
+								// For instance, let's say the max avg is .9 but for that person, their homogeneity is .999
+								// There could be another avg that is .89 while their homogeneity is .895. 
+								// This is probably a minor concern since these should be canceled out by delta-checking anyway.
+								
+								// at this point we know the following:
+								// (a) the value of the highest moving average across the window
+								// (b) who that highest moving average belongs to
+								// we need to know (c) the maximum single frame score for the designation over the previous maw_int-1 frames
+								// and (d) for c, does that pass the designation's single thresh?
+
+								// so, loop through the frames and check the scores for the designation
+								double max_frame_score_for_designation_with_max_average = 0.0;
+								int window_index_of_max_score_for_designation_with_max_average = 0;
+								long timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = 0L;
+								String image_name_for_frame_with_highest_score_across_window = "";
+								double currentscore = 0.0;
+								for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
+								{	
+									currentscore = frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(max_designation);
+									if(currentscore > max_frame_score_for_designation_with_max_average)
 									{
-										jsonresponse.put("twitter_handle", getTwitterHandle("wkyt",max_designation));
+										max_frame_score_for_designation_with_max_average = currentscore;
+										window_index_of_max_score_for_designation_with_max_average = j;
+										timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = frames_ja.getJSONObject(j).getLong("timestamp_in_seconds");
+										image_name_for_frame_with_highest_score_across_window = frames_ja.getJSONObject(j).getString("image_name");
 									}
-									jsonresponse.put("display_name", getDisplayName("wkyt",max_designation));
-									jsonresponse.put("moving_average", max_avg);
-									jsonresponse.put("homogeneity_score", max_homogeneity_double);
-									jsonresponse.put("ma_threshold", max_homogeneity_double * ma_modifier_double);
-									jsonresponse.put("single_threshold", max_homogeneity_double * single_modifier_double);
-									jsonresponse.put("timestamp_in_seconds", frames_ja.getJSONObject(frames_ja.length() -1).getLong("timestamp_in_seconds"));
-									jsonresponse.put("datestring", getDatestringFromTimestampInSeconds(frames_ja.getJSONObject(frames_ja.length() -1).getLong("timestamp_in_seconds")));
-									setLastAlert("wkyt", max_designation, ts_long);
+								}
+								double designation_score_for_last_frame_in_window = currentscore;
+								// now we additionally know:
+								// (c) the maximum single frame score for the designation, the index of that frame within the window, the name of the image, and the timestamp of it
+								// need to know: (d) does that score cross the single frame threshold?
+								if(max_frame_score_for_designation_with_max_average > (max_homogeneity_double * single_modifier_double)) 
+								{
+									// (d) yes it does
+									long last_alert = getLastAlert("wkyt", max_designation);
+									
+									if((ts_long - last_alert) > alert_waiting_period)
+									{
+										jsonresponse.put("alert_triggered", "yes");
+										jsonresponse.put("designation", max_designation);
+										jsonresponse.put("designation_moving_average_over_window", max_avg);
+										jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
+										jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
+										jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
+										twitter_handle = getTwitterHandle("wkyt",max_designation);
+										if(twitter_handle != null)
+										{
+											jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
+											JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
+											if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
+													&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
+													&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
+											{
+												jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
+												jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
+												long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_for_frame_with_highest_score_across_window); 
+												jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
+												//jsonresponse.put("twitter_message_firstperson", getMessage("wkyt", frame_processing_jo.getString("designation"), "twitter", "firstperson", jo.getLong("timestamp_in_seconds")));
+											}
+										}
+										 
+										JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master"); //FIXME
+										if(facebook_stuff != null)
+										{
+											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
+											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
+											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
+											long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_for_frame_with_highest_score_across_window); 
+											jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
+										}
+										
+										jsonresponse.put("designation_display_name", getDisplayName("wkyt",max_designation));
+										jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
+										jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
+										jsonresponse.put("designation_single_threshold", max_homogeneity_double * single_modifier_double);
+										jsonresponse.put("datestring_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long));
+										jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
+										jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
+										jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_for_frame_with_highest_score_across_window);
+
+										setLastAlert("wkyt", max_designation, ts_long);
+									}
+									else
+									{
+										jsonresponse.put("alert_triggered", "no");
+									}
 								}
 								else
-								{
+								{ 
+									// (d) no it doesn't
 									jsonresponse.put("alert_triggered", "no");
 								}
 							}
@@ -1683,14 +1836,9 @@ public class Endpoint extends HttpServlet {
 							{
 								jsonresponse.put("alert_triggered", "no");
 							}
-						}
-						else
-						{
-							jsonresponse.put("alert_triggered", "no");
-						}
-						jsonresponse.put("designation_averages", designation_averages_ja);
-						jsonresponse.put("response_status", "success");
-						jsonresponse.put("frames", frames_ja);
+							//jsonresponse.put("designation_averages", designation_averages_ja);
+							jsonresponse.put("response_status", "success");
+							//jsonresponse.put("frames", frames_ja);
 					}
 				}
 				catch(SQLException sqle)
@@ -1723,6 +1871,7 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
+	/*
 	long getNextFrame(long inc_ts)
 	{
 		long next_frame = -1L;
@@ -1734,7 +1883,7 @@ public class Endpoint extends HttpServlet {
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			// get next frame in database, up to one day from now.
-			rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds>" + inc_ts + " AND timestamp_in_seconds<" + (inc_ts + 86400) + ") limit 1"); 
+			rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + inc_ts + " AND timestamp_in_seconds < " + (inc_ts + 86400) + ") limit 1"); 
 			if(rs.next())
 			{
 				next_frame = rs.getLong("timestamp_in_seconds");
@@ -1757,7 +1906,7 @@ public class Endpoint extends HttpServlet {
 			}
 		}  	
 		return next_frame; // -1L indicates no frame found
-	}
+	}*/
 	
 	JSONArray getDesignations(String station)
 	{
@@ -1873,7 +2022,7 @@ public class Endpoint extends HttpServlet {
 					if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
 					{
 						jo.put("facebook_connected", "yes");
-						JSONArray fbaccounts_ja = getFacebookAccounts("wkyt", rs.getString("facebook_access_token"));
+						JSONArray fbaccounts_ja = getFacebookSubAccounts("wkyt", rs.getString("facebook_access_token"));
 						if(fbaccounts_ja != null)
 							jo.put("facebook_accounts", fbaccounts_ja);
 						JSONObject selected_fb_account_jo = getSelectedFacebookAccount("wkyt", rs.getString("designation"));
@@ -2222,7 +2371,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	boolean setFacebookAccountIdNameAndAccessToken(String station, String designation, long id_long, String name, String account_access_token)
+	boolean setFacebookSubAccountIdNameAndAccessToken(String station, String designation, long id_long, String name, String subaccount_access_token)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -2235,7 +2384,7 @@ public class Endpoint extends HttpServlet {
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			if(rs.next())
 			{
-				rs.updateString("facebook_account_access_token", account_access_token);
+				rs.updateString("facebook_account_access_token", subaccount_access_token);
 				rs.updateString("facebook_account_name", name);
 				rs.updateLong("facebook_account_id", id_long);
 				rs.updateRow();
@@ -2582,7 +2731,7 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
-	public JSONArray getFacebookAccounts(String station, String access_token)
+	public JSONArray getFacebookSubAccounts(String station, String access_token)
 	{
 		JSONArray jsonresponse = new JSONArray();
 		try
@@ -2601,7 +2750,7 @@ public class Endpoint extends HttpServlet {
 				while ((line = rd.readLine()) != null) {
 					text = text + line;
 				} 
-				System.out.println("Endpoint.getFacebookAccounts(): response to https://graph.facebook.com/me/accounts?access_token=" + access_token + "=" + text);
+				System.out.println("Endpoint.getFacebookSubAccounts(): response to https://graph.facebook.com/me/accounts?access_token=" + access_token + "=" + text);
 				JSONObject jo = new JSONObject(text);
 				jsonresponse = jo.getJSONArray("data");
 			} catch (ClientProtocolException e) {
@@ -2638,5 +2787,21 @@ public class Endpoint extends HttpServlet {
 		  }
 		  return true;
 	}	
+	
+	private String[] earlymorning_greetings = {"Good morning", "Morning", "Rise and shine", "It's early"};
+	private String[] morning_greetings = {"Good morning", "Morning"};
+	private String[] objects = {"Central Kentucky", "Lexington", "folks", "viewers", "commonwealth"};
+
+	
+	String getMessage(String station, String designation, String social_type, String phrasing, long timestamp_in_seconds)
+	{
+		String returnval = "";
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		cal.setTimeInMillis(timestamp_in_seconds * 1000);
+				
+		
+		return returnval;
+	}
 	
 }
