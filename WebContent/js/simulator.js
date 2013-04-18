@@ -1410,7 +1410,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 							{
 								jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
 								jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
-								long twitter_alert_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_for_frame_with_highest_score_across_window); 
+								long twitter_alert_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
 								jsonresponse.put("twitter_alert_id", twitter_alert_id);
 								//jsonresponse.put("twitter_message_firstperson", getMessage("wkyt", frame_processing_jo.getString("designation"), "twitter", "firstperson", jo.getLong("timestamp_in_seconds")));
 							}
@@ -1422,7 +1422,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 							jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
 							jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
 							jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
-							long fb_alert_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_for_frame_with_highest_score_across_window); 
+							long fb_alert_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
 							jsonresponse.put("facebook_alert_id", fb_alert_id);
 						}
 						
@@ -1433,7 +1433,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 						jsonresponse.put("datestring_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long));
 						jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
 						jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
-						jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_for_frame_with_highest_score_across_window);
+						jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
 */
 	        			alert("retrieving info for ts:" + ts);
 	        			if(data.alert_triggered === "yes")

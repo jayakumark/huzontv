@@ -1753,7 +1753,7 @@ public class Endpoint extends HttpServlet {
 								double max_frame_score_for_designation_with_max_average = 0.0;
 								int window_index_of_max_score_for_designation_with_max_average = 0;
 								long timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = 0L;
-								String image_name_for_frame_with_highest_score_across_window = "";
+								String image_name_of_frame_with_highest_score_in_window = "";
 								double currentscore = 0.0;
 								for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
 								{	
@@ -1763,7 +1763,7 @@ public class Endpoint extends HttpServlet {
 										max_frame_score_for_designation_with_max_average = currentscore;
 										window_index_of_max_score_for_designation_with_max_average = j;
 										timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = frames_ja.getJSONObject(j).getLong("timestamp_in_seconds");
-										image_name_for_frame_with_highest_score_across_window = frames_ja.getJSONObject(j).getString("image_name");
+										image_name_of_frame_with_highest_score_in_window = frames_ja.getJSONObject(j).getString("image_name");
 									}
 								}
 								double designation_score_for_last_frame_in_window = currentscore;
@@ -1794,7 +1794,7 @@ public class Endpoint extends HttpServlet {
 											{
 												jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
 												jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
-												long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_for_frame_with_highest_score_across_window); 
+												long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
 												jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
 												//jsonresponse.put("twitter_message_firstperson", getMessage("wkyt", frame_processing_jo.getString("designation"), "twitter", "firstperson", jo.getLong("timestamp_in_seconds")));
 											}
@@ -1806,7 +1806,7 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
 											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
 											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
-											long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_for_frame_with_highest_score_across_window); 
+											long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
 											jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
 										}
 										
@@ -1817,7 +1817,7 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("datestring_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long));
 										jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
 										jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
-										jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_for_frame_with_highest_score_across_window);
+										jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
 
 										setLastAlert("wkyt", max_designation, ts_long);
 									}
