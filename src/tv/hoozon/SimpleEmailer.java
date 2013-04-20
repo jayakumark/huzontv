@@ -26,11 +26,6 @@ public class SimpleEmailer {
 	  final String password = "AunSYtfjq3D1p7KQq0iV71kULV4bQAkrahDaO2l3vxJ6";
 
 	  Properties props = new Properties();
-	 
-	  /*props.put("mail.smtp.auth", "true");
-	  props.put("mail.smtp.starttls.enable", "true");
-	  props.put("mail.smtp.host", "outbound.mailhop.org");
-	  props.put("mail.smtp.port", "25");*/
 	  
 	  props.put("mail.smtp.auth", "true");
 	  props.put("mail.smtp.starttls.enable", "true");
@@ -61,7 +56,7 @@ public class SimpleEmailer {
 	  
 		SimpleEmailer se = new SimpleEmailer();
 		try {
-			se.sendMail("hoozon subj", "hoozon body", "cyrus7580@gmail.com", "info@crasher.com");
+			se.sendMail("hoozon subj", "hoozon body", "cyrus7580@gmail.com", "info@hoozon.tv");
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

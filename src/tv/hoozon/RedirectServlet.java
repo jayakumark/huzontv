@@ -70,7 +70,7 @@ public class RedirectServlet extends HttpServlet {
 				try
 				{
 					@SuppressWarnings("unused")
-					boolean successful = putRedirectHitInDB(alert_object.getString("station"), Long.parseLong(id), referrer, ip_address);
+					boolean successful = putRedirectHitInDB(alert_object.getString("station"), Long.parseLong(id), referrer, ip_address, alert_object.getString("designation"));
 				}
 				catch(JSONException jsone)
 				{
@@ -111,7 +111,7 @@ public class RedirectServlet extends HttpServlet {
 					return_jo.put("social_type", rs.getString("social_type"));
 					return_jo.put("image_name", rs.getString("image_name"));
 					return_jo.put("creation_timestamp", rs.getTimestamp("creation_timestamp"));
-					return_jo.put("created_by", rs.getString("created_by"));
+					return_jo.put("designation", rs.getString("designation"));
 					return_jo.put("station", rs.getString("station"));
 					return_jo.put("livestream_url", rs.getString("livestream_url"));
 				} catch (JSONException e) {
@@ -140,7 +140,7 @@ public class RedirectServlet extends HttpServlet {
 	}
 	
 	
-	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address)
+	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -150,13 +150,10 @@ public class RedirectServlet extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("Endpoint.createAlertInDB(): SELECT * FROM redirects_" + station + " LIMIT 1");
-			rs = stmt.executeQuery("SELECT * FROM redirects_" + station + " LIMIT 1");
-			rs.moveToInsertRow();
-			rs.updateLong("alert_id", alert_id);
-			rs.updateString("referrer", referrer);
-			rs.updateString("ip_address", ip_address);
-			rs.insertRow();
+			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
+					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");
+			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
+					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");
 			returnval = true;
 		}
 		catch(SQLException sqle)

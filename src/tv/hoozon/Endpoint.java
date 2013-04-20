@@ -4,23 +4,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
+import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -190,8 +187,15 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
 							jsonresponse.put("response_status", "error");
 							sqle.printStackTrace();
+							
+							SimpleEmailer se = new SimpleEmailer();
+							try {
+								se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+							} catch (MessagingException e) {
+								e.printStackTrace();
+							}
+							
 						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 						finally
@@ -208,6 +212,13 @@ public class Endpoint extends HttpServlet {
 							catch(SQLException sqle)
 							{
 								jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
+								
+								SimpleEmailer se = new SimpleEmailer();
+								try {
+									se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when closing rs, stmt and con. message=" + sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+								} catch (MessagingException e) {
+									e.printStackTrace();
+								}
 							}
 						}  
 					}
@@ -625,6 +636,12 @@ public class Endpoint extends HttpServlet {
 									jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
 									jsonresponse.put("response_status", "error");
 									sqle.printStackTrace();
+									SimpleEmailer se = new SimpleEmailer();
+									try {
+										se.sendMail("SQLException in Endpoint getFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+									} catch (MessagingException e) {
+										e.printStackTrace();
+									}
 								}
 								finally
 								{
@@ -633,7 +650,15 @@ public class Endpoint extends HttpServlet {
 										if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 									}
 									catch(SQLException sqle)
-									{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+									{ 
+										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
+										SimpleEmailer se = new SimpleEmailer();
+										try {
+											se.sendMail("SQLException in Endpoint getFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+										} catch (MessagingException e) {
+											e.printStackTrace();
+										}
+									}
 								}   	
 							}
 						}
@@ -724,6 +749,13 @@ public class Endpoint extends HttpServlet {
 									jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
 									jsonresponse.put("response_status", "error");
 									sqle.printStackTrace();
+									jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
+									SimpleEmailer se = new SimpleEmailer();
+									try {
+										se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when getting frames. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+									} catch (MessagingException e) {
+										e.printStackTrace();
+									}
 								}
 								finally
 								{
@@ -732,7 +764,15 @@ public class Endpoint extends HttpServlet {
 										if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 									}
 									catch(SQLException sqle)
-									{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+									{ 
+										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
+										SimpleEmailer se = new SimpleEmailer();
+										try {
+											se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+										} catch (MessagingException e) {
+											e.printStackTrace();
+										}
+									}
 								}   	
 							}
 						}
@@ -743,7 +783,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("getFramesByDesignation"))
+				else if (method.equals("getFramesByDesignation")) // this uses the outdated "remove lowest in moving average window" algorithm. FIXME
 				{
 					String admin_password = request.getParameter("hoozon_admin_auth");
 					if(admin_password == null)
@@ -786,16 +826,10 @@ public class Endpoint extends HttpServlet {
 									rs.beforeFirst(); // go back to the beginning for parsing
 									JSONObject current_frame_jo = null;
 									JSONArray frames_ja = new JSONArray();
-									//JSONArray alertframes_ja = new JSONArray();
-									//int x = 0;
-									int y = 0;
-									//double sum_of_last_few_seconds = 0.0;
 									double total = 0.0;
 									double ma_over_window = 0.0;
 									double homogeneity_double = getHomogeneityScore("wkyt",designation);
 									double lowest_score_in_window = 2.0;
-									//int seconds_to_average_int = Integer.parseInt(mawindow);
-									//int frames_since_last_alert = alert_waiting_period + 1; // this makes it so an alert can go out immediately
 									while(rs.next())
 									{
 										current_frame_jo = new JSONObject();
@@ -818,44 +852,24 @@ public class Endpoint extends HttpServlet {
 											total = total + rs2.getDouble(designation + "_avg");
 										}
 										ma_over_window = (total - lowest_score_in_window) / (mawindow_int - 1);
-										/*y=0; sum_of_last_few_seconds = 0.0;
-										while(y < seconds_to_average_int)
-										{
-											if(y == 0)
-												rs.getDouble(designation + "_avg");
-											else
-											{	
-												if((x-y) >= 0)
-												{	
-													sum_of_last_few_seconds = sum_of_last_few_seconds + frames_ja.getJSONObject(x-y).getDouble("designation_score");
-												}
-											}
-											y++;
-										}*/
 										current_frame_jo.put("moving_average", ma_over_window);
 										frames_ja.put(current_frame_jo);
-										
-										/*if((sum_of_last_few_seconds / seconds_to_average_int) > (homogeneity_double * ma_modifier_double) && // the moving average is greater than the moving average threshold
-												frames_since_last_alert > alert_waiting_period &&  // it has been at least alert_waiting_period second since last alert
-												rs.getDouble(designation + "_avg") > (homogeneity_double * single_modifier_double)) // this frame's raw singular average is greater than single threshold
-										{
-											alertframes_ja.put(current_frame_jo);
-											frames_since_last_alert = 0;
-										}
-										frames_since_last_alert++;*/
-										//x++;
 									}
 									jsonresponse.put("response_status", "success");
 									if(frames_ja.length() > 0)
 										jsonresponse.put("frames", frames_ja);
-									//if(alertframes_ja.length() > 0)
-									//	jsonresponse.put("alertframes", alertframes_ja);
 								}
 								catch(SQLException sqle)
 								{
 									jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
 									jsonresponse.put("response_status", "error");
 									sqle.printStackTrace();
+									SimpleEmailer se = new SimpleEmailer();
+									try {
+										se.sendMail("SQLException in Endpoint getFramesByDesignation", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+									} catch (MessagingException e) {
+										e.printStackTrace();
+									}
 								}
 								finally
 								{
@@ -864,7 +878,15 @@ public class Endpoint extends HttpServlet {
 										if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (rs2  != null){ rs2.close(); } if (stmt2  != null) { stmt2.close(); } if (con != null) { con.close(); }
 									}
 									catch(SQLException sqle)
-									{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+									{ 
+										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
+										SimpleEmailer se = new SimpleEmailer();
+										try {
+											se.sendMail("SQLException in Endpoint getFramesByDesignation", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+										} catch (MessagingException e) {
+											e.printStackTrace();
+										}
+									}
 								}   	
 							}
 						}
@@ -995,6 +1017,12 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
 											jsonresponse.put("response_status", "error");
 											sqle.printStackTrace();
+											SimpleEmailer se = new SimpleEmailer();
+											try {
+												se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+											} catch (MessagingException e) {
+												e.printStackTrace();
+											}
 										}
 										finally
 										{
@@ -1003,7 +1031,15 @@ public class Endpoint extends HttpServlet {
 												if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 											}
 											catch(SQLException sqle)
-											{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+											{ 
+												jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
+												SimpleEmailer se = new SimpleEmailer();
+												try {
+													se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+												} catch (MessagingException e) {
+													e.printStackTrace();
+												}
+											}
 										}   	
 										
 									}
@@ -1090,52 +1126,6 @@ public class Endpoint extends HttpServlet {
 							{	
 								Long ts_long = new Long(ts);
 								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
-								//JSONObject frame_processing_jo = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
-								/*
-								if(jsonresponse.has("alert_triggered") && jsonresponse.getString("alert_triggered").equals("yes"))
-								{
-									System.out.println("fpj has alert_triggered=yes");
-									if(jsonresponse.has("twitter_handle"))
-									{
-										System.out.println("fpj has twitter handle");
-										jsonresponse.put("alert_twitter_handle", jsonresponse.getString("twitter_handle"));
-										
-										//**********************************************
-										// FIXME!!!! This is just for testing the tat and tats retrieval by the remote daemon
-										JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master");
-										JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master");
-										//**********************************************
-										
-										if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
-												&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
-												&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
-										{
-											System.out.println("twitter_stuff response_status= success");
-											jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
-											jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
-											long twitter_alert_id = createAlertInDB("wkyt", "twitter", jsonresponse.getString("designation"), getDatestringFromTimestampInSeconds(ts_long)+".jpg"); 
-											jsonresponse.put("twitter_alert_id", twitter_alert_id);
-										}
-										
-										if(facebook_stuff != null)
-										{
-											System.out.println("twitter_stuff response_status != null");
-											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
-											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
-											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
-											long fb_alert_id = createAlertInDB("wkyt", "facebook", jsonresponse.getString("designation"), getDatestringFromTimestampInSeconds(ts_long)+".jpg"); 
-											jsonresponse.put("facebook_alert_id", fb_alert_id);
-										}
-									}
-									jsonresponse.put("alert_display_name", jsonresponse.getString("display_name"));
-								   
-								}
-								else
-								{
-									System.out.println("fpj does not have alert_triggered=yes");
-									jsonresponse.put("alert_triggered", "no");
-									jsonresponse.put("message", "Scores entered. No alert.");
-								} */
 							}
 						}
 						else
@@ -1399,6 +1389,12 @@ public class Endpoint extends HttpServlet {
 				jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
 				jsonresponse.put("response_status", "error");
 				sqle.printStackTrace();
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getAlertFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 			finally
 			{
@@ -1409,6 +1405,12 @@ public class Endpoint extends HttpServlet {
 				catch(SQLException sqle)
 				{ 
 					jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint getAlertFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
 				}
 			}   
 		}
@@ -1581,6 +1583,12 @@ public class Endpoint extends HttpServlet {
 				jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
 				jsonresponse.put("response_status", "error");
 				sqle.printStackTrace();
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getAlertFrames2", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 			finally
 			{
@@ -1591,6 +1599,12 @@ public class Endpoint extends HttpServlet {
 				catch(SQLException sqle)
 				{ 
 					jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint getAlertFrames2", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
 				}
 			}   
 		}
@@ -1774,9 +1788,9 @@ public class Endpoint extends HttpServlet {
 								{
 									// (d) yes it does
 									long last_alert = getLastAlert("wkyt", max_designation);
-									
 									if((ts_long - last_alert) > alert_waiting_period)
 									{
+										setLastAlert("wkyt", max_designation, ts_long);
 										jsonresponse.put("alert_triggered", "yes");
 										jsonresponse.put("designation", max_designation);
 										jsonresponse.put("designation_moving_average_over_window", max_avg);
@@ -1796,7 +1810,9 @@ public class Endpoint extends HttpServlet {
 												jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
 												long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
 												jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
-												//jsonresponse.put("twitter_message_firstperson", getMessage("wkyt", frame_processing_jo.getString("designation"), "twitter", "firstperson", jo.getLong("timestamp_in_seconds")));
+												String message = getMessage("twitter", ts_long, twitter_redirect_id);
+												jsonresponse.put("twitter_message_firstperson", message);
+												boolean successful = updateAlertText(twitter_redirect_id, message);
 											}
 										}
 										 
@@ -1808,6 +1824,9 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
 											long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
 											jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
+											String message = getMessage("facebook", ts_long, facebook_redirect_id);
+											jsonresponse.put("facebook_message_firstperson",message);
+											boolean successful = updateAlertText(facebook_redirect_id, message);
 										}
 										
 										jsonresponse.put("designation_display_name", getDisplayName("wkyt",max_designation));
@@ -1818,8 +1837,6 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
 										jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
 										jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
-
-										setLastAlert("wkyt", max_designation, ts_long);
 									}
 									else
 									{
@@ -1843,9 +1860,15 @@ public class Endpoint extends HttpServlet {
 				}
 				catch(SQLException sqle)
 				{
-					jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
+					jsonresponse.put("message", "Error sqle.getMessage()=" + sqle.getMessage());
 					jsonresponse.put("response_status", "error");
 					sqle.printStackTrace();
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint processNewFrame", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
 				}
 				finally
 				{
@@ -1854,7 +1877,15 @@ public class Endpoint extends HttpServlet {
 						if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 					}
 					catch(SQLException sqle)
-					{ jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); }
+					{ 
+						jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
+						SimpleEmailer se = new SimpleEmailer();
+						try {
+							se.sendMail("SQLException in Endpoint processNewFrame", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+						} catch (MessagingException e) {
+							e.printStackTrace();
+						}
+					}
 				}   	
 				
 			}
@@ -1870,43 +1901,6 @@ public class Endpoint extends HttpServlet {
 		}	
 		return jsonresponse;
 	}
-	
-	/*
-	long getNextFrame(long inc_ts)
-	{
-		long next_frame = -1L;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			// get next frame in database, up to one day from now.
-			rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + inc_ts + " AND timestamp_in_seconds < " + (inc_ts + 86400) + ") limit 1"); 
-			if(rs.next())
-			{
-				next_frame = rs.getLong("timestamp_in_seconds");
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-			}
-		}  	
-		return next_frame; // -1L indicates no frame found
-	}*/
 	
 	JSONArray getDesignations(String station)
 	{
@@ -1927,6 +1921,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getDesignations", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 			return null;
 		}
 		finally
@@ -1938,6 +1938,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getDesignations", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 				return null;
 			}
 		}  	
@@ -1972,6 +1978,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getDesignationsAndHomogeneities", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 			return null;
 		}
 		finally
@@ -1983,6 +1995,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getDesignationsAndHomogeneities", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 				return null;
 			}
 		}  	
@@ -2054,6 +2072,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getDesignationsAndAccounts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 			return null;
 		}
 		finally
@@ -2065,6 +2089,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getDesignationsAndAccounts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 				return null;
 			}
 		}  	
@@ -2092,6 +2122,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getTwitterHandle", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2102,6 +2138,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getTwitterHandle", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2126,6 +2168,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getDisplayName", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2136,6 +2184,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getDisplayName", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2160,6 +2214,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getHomogeneityScore", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2170,6 +2230,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getHomogeneityScore", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2205,6 +2271,12 @@ public class Endpoint extends HttpServlet {
 				sqle.printStackTrace();
 				return_jo.put("response_status", "error");
 				return_jo.put("message", "could not find the specified user in the database");
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getUserTwitterAccessTokenAndSecret", "Couldn't find user in database. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 			finally
 			{
@@ -2214,7 +2286,13 @@ public class Endpoint extends HttpServlet {
 				}
 				catch(SQLException sqle)
 				{ 
-					System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+					System.out.println("Problem closing resultset, statement and/or connection to the database.");
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint getUserTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
 				}
 			}  	
 		}	
@@ -2243,6 +2321,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2253,6 +2337,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2280,6 +2370,12 @@ public class Endpoint extends HttpServlet {
 		{
 			sqle.printStackTrace();
 			returnval = false;
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2290,6 +2386,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2318,6 +2420,12 @@ public class Endpoint extends HttpServlet {
 		{
 			sqle.printStackTrace();
 			returnval = false;
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2328,6 +2436,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2356,6 +2470,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2366,6 +2486,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2394,6 +2520,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2404,6 +2536,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2419,10 +2557,10 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO alerts (`social_type`,`created_by`,`image_name`,`livestream_url`,`station`) "
+			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_name`,`livestream_url`,`station`) "
 	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')");
 			stmt.executeUpdate(
-	                    "INSERT INTO alerts (`social_type`,`created_by`,`image_name`,`livestream_url`,`station`) "
+	                    "INSERT INTO alerts (`social_type`,`designation`,`image_name`,`livestream_url`,`station`) "
 	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')",
 	                    Statement.RETURN_GENERATED_KEYS);
 			
@@ -2437,6 +2575,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint createAlertInDB", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2447,6 +2591,60 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint createAlertInDB", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
+	}
+	
+	boolean updateAlertText(long id_long, String actual_text)
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id_long='" + id_long + "'"); 
+			if(rs.next())
+			{
+				rs.updateString("actual_text", actual_text);
+				rs.updateRow();
+				returnval = true;
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint updateAlertText", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2474,6 +2672,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getFacebookAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2484,6 +2688,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getFacebookAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2519,6 +2729,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2528,7 +2744,13 @@ public class Endpoint extends HttpServlet {
 			}
 			catch(SQLException sqle)
 			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				System.out.println("Problem closing resultset, statement and/or connection to the database.");
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return return_jo;
@@ -2556,6 +2778,12 @@ public class Endpoint extends HttpServlet {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2566,6 +2794,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2593,6 +2827,12 @@ public class Endpoint extends HttpServlet {
 		{
 			sqle.printStackTrace();
 			returnval = false;
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint resetAllLastAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -2603,6 +2843,12 @@ public class Endpoint extends HttpServlet {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint resetAllLastAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}  	
 		return returnval;
@@ -2790,17 +3036,92 @@ public class Endpoint extends HttpServlet {
 	
 	private String[] earlymorning_greetings = {"Good morning", "Morning", "Rise and shine", "It's early"};
 	private String[] morning_greetings = {"Good morning", "Morning"};
-	private String[] objects = {"Central Kentucky", "Lexington", "folks", "viewers", "commonwealth"};
-
+	private String[] afternoon_greetings = {"Good afternoon", "Afternoon"};
+	private String[] evening_greetings = {"Good evening", "Evening"};
+	private String[] generic_greetings = {"Hello", "Greetings", "Hey"};
+	private String[] objects = {"Lexington", "Bluegrass", "everyone", "folks", "viewers"};
+	private String[] blurbs_before_link = {"Tune in or live stream here"};
 	
-	String getMessage(String station, String designation, String social_type, String phrasing, long timestamp_in_seconds)
+	
+	String getMessage(String social_type, long timestamp_in_seconds, long redirect_id)
 	{
 		String returnval = "";
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 		cal.setTimeInMillis(timestamp_in_seconds * 1000);
-				
+		ArrayList<String> greeting_choices = new ArrayList<String>();
+		if(cal.get(Calendar.HOUR_OF_DAY) < 7)
+		{	
+			for(int x = 0; x < earlymorning_greetings.length; x++)
+				greeting_choices.add(earlymorning_greetings[x]);
+			for(int x = 0; x < morning_greetings.length; x++)
+				greeting_choices.add(morning_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+		else if(cal.get(Calendar.HOUR_OF_DAY) < 12)
+		{	
+			for(int x = 0; x < morning_greetings.length; x++)
+				greeting_choices.add(morning_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+		else if(cal.get(Calendar.HOUR_OF_DAY) < 18)
+		{	
+			for(int x = 0; x < afternoon_greetings.length; x++)
+				greeting_choices.add(afternoon_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+		else if(cal.get(Calendar.HOUR_OF_DAY) < 24)
+		{	
+			for(int x = 0; x < evening_greetings.length; x++)
+				greeting_choices.add(evening_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+			
+		ArrayList<String> object_choices = new ArrayList<String>();
+		{
+			for(int x = 0; x < objects.length; x++)
+				object_choices.add(objects[x]);
+		}
 		
+		ArrayList<String> blurb_before_link_choices = new ArrayList<String>();
+		{
+			for(int x = 0; x < blurbs_before_link.length; x++)
+				blurb_before_link_choices.add(blurbs_before_link[x]);
+		}
+		
+		Random random = new Random();
+		int greetings_index = random.nextInt(greeting_choices.size()+2);
+		int objects_index = random.nextInt(object_choices.size()+1);
+		int blurb_index = random.nextInt(blurb_before_link_choices.size()+1);
+		int hour = cal.get(Calendar.HOUR);
+		int minute = cal.get(Calendar.MINUTE);
+		String minutestring = (new Integer(minute)).toString();
+		if(minutestring.length() < 2)
+			minutestring = "0" + minutestring;
+		String am_or_pm_string = "";
+		if(cal.get(Calendar.AM_PM) == 0)
+			am_or_pm_string = " AM";
+		else
+			am_or_pm_string = " PM";
+		String ts_string = hour + ":" + minutestring + am_or_pm_string;
+		if(social_type.equals("facebook"))
+		{
+			if(greetings_index == greeting_choices.size())
+				returnval = "Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+			else
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+		}
+		else if(social_type.equals("twitter"))
+		{
+			if(greetings_index == greeting_choices.size())
+				returnval = "I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;   
+			else
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+		}
 		return returnval;
 	}
 	
