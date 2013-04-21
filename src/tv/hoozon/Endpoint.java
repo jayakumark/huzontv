@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
@@ -615,8 +616,6 @@ public class Endpoint extends HttpServlet {
 								ResultSet rs = null;
 								Connection con = null;
 								Statement stmt = null;
-								int x = 0;
-								double total = 0;
 								try
 								{
 									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
@@ -713,8 +712,6 @@ public class Endpoint extends HttpServlet {
 								ResultSet rs = null;
 								Connection con = null;
 								Statement stmt = null;
-								int x = 0;
-								double total = 0; 
 								System.out.println("1");
 								try
 								{
@@ -1342,7 +1339,17 @@ public class Endpoint extends HttpServlet {
 						{
 							if(social_type.equals("facebook"))
 							{
-								// delete with facebook
+								boolean successful = deleteFacebookPost(designation, id);
+								if(successful)
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("response_from_facebook", "true");
+								}
+								else
+								{
+									jsonresponse.put("message", "Error. Could not delete from facebook. Unknown error. Try using graph api explorer instead.");
+									jsonresponse.put("response_status", "error");
+								}
 							}
 							else if(social_type.equals("twitter"))
 							{
@@ -1933,6 +1940,7 @@ public class Endpoint extends HttpServlet {
 										if(twitter_handle != null)
 										{
 											jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
+											
 											JSONObject twitter_stuff = getTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
 											if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
 													&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
@@ -1951,7 +1959,7 @@ public class Endpoint extends HttpServlet {
 											}
 										}
 										 
-										JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master"); //FIXME
+										JSONObject facebook_stuff = getFacebookSubAccount("wkyt", "hoozon_master"); //FIXME
 										if(facebook_stuff != null)
 										{
 											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
@@ -2209,7 +2217,7 @@ public class Endpoint extends HttpServlet {
 						JSONArray fbaccounts_ja = getFacebookSubAccounts("wkyt", rs.getString("facebook_access_token"));
 						if(fbaccounts_ja != null)
 							jo.put("facebook_accounts", fbaccounts_ja);
-						JSONObject selected_fb_account_jo = getSelectedFacebookAccount("wkyt", rs.getString("designation"));
+						JSONObject selected_fb_account_jo = getFacebookSubAccount("wkyt", rs.getString("designation"));
 						if(selected_fb_account_jo != null)
 						{
 							jo.put("facebook_account_id", selected_fb_account_jo.getLong("facebook_account_id"));
@@ -2858,7 +2866,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	JSONObject getSelectedFacebookAccount(String station, String designation)
+	JSONObject getFacebookSubAccount(String station, String designation)
 	{
 		JSONObject return_jo = null;
 		ResultSet rs = null;
@@ -3390,6 +3398,31 @@ public class Endpoint extends HttpServlet {
 		//		returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}
 		return returnval;
+	}
+	
+	public boolean deleteFacebookPost(String designation, String item_id)
+	{
+		 boolean successful = false;
+		try {
+			HttpClient httpClient = new DefaultHttpClient();
+			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + getFacebookSubAccount("wkyt", designation).getString("facebook_account_access_token"));
+			HttpResponse response = httpClient.execute(hd);
+			int statusCode = response.getStatusLine().getStatusCode();
+	        successful = statusCode == 200 ? true : false;
+			//String responseBody = EntityUtils.toString(response.getEntity());
+			//System.out.println("Endpoint.deleteFacebookPost(): responsebody=" + responseBody);
+			//response_from_facebook = new JSONObject(responseBody);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        return successful;
 	}
 	
 }
