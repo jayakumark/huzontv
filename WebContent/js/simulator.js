@@ -188,7 +188,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			url: endpoint,
 			data: {
 	            method: "getDesignations",
-	            station: "wkyt"      
+	            station: "wkyt",
+	            active_scope: "active", // active, inactive, all
+	            person_or_master_scope: "all", // person, master, all
+	            hoozon_admin_auth: hoozon_admin_auth
 			},
 	        dataType: 'json',
 	        async: false,
@@ -299,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function3_mawindow_input\" value=\"4\" size=4>";
+		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function3_mawindow_input\" value=\"5\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
 		mds = mds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130409_050000\">";
@@ -328,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"4\" size=4>";
+		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
 		mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
@@ -386,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "						MA Thresh Modifier: <input type=\"text\" id=\"function6_mamodifier_input\" value=\".67\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function6_mawindow_input\" value=\"4\" size=4>";
+		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function6_mawindow_input\" value=\"5\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
 		mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"7200\" size=4>";
@@ -407,6 +410,57 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "			</table>";
+		mds = mds + "		</td>";
+		mds = mds + "	</tr>";
+		mds = mds + "	<tr>";
+		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+		mds = mds + "			<table style=\"border-spacing:3px\">";
+		mds = mds + "				<tr>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+		mds = mds + "						<b>Function 7:</b> Get fired alerts for time range (inclusive)";
+		mds = mds + "					</td>";
+		mds = mds + "				</tr>";
+		mds = mds + "				<tr>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "						Begin: <input type=\"text\" id=\"function7_begin_input\" size=13 value=\"20130409_050000\">";
+		mds = mds + "					</td>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "						End: <input type=\"text\" id=\"function7_end_input\" value=\"20130409_060000\" size=13>";
+		mds = mds + "					</td>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "   					<input id=\"function7_go_button\" type=button value=\"GO\">";
+		mds = mds + "					</td>";
+		mds = mds + "				</tr>";
+		mds = mds + "			</table>";
+		mds = mds + "		</td>";
+		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+		mds = mds + "			<table style=\"border-spacing:3px\">";
+		mds = mds + "				<tr>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
+		mds = mds + "						<b>Function 8:</b> Delete an alert";
+		mds = mds + "					</td>";
+		mds = mds + "				</tr>";
+		mds = mds + "				<tr>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "						Designation: <select id=\"function8_designation_select\">";
+		for(var a = 0; a < designations.length; a++)
+		{
+			mds = mds + "						<option value=\"" + designations[a] + "\">" + designations[a] + "</option>";
+		}	
+		mds = mds + "							</select>";
+		mds = mds + "					</td>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "						Type: <input type=\"text\" id=\"function8_social_type_input\" size=13 value=\"twitter\">";
+		mds = mds + "					</td>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "						Item ID: <input type=\"text\" id=\"function8_id_input\" value=\"\" size=13>";
+		mds = mds + "					</td>";
+		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "   					<input id=\"function8_go_button\" type=button value=\"GO\">";
+		mds = mds + "					</td>";
+		mds = mds + "				</tr>";
+		mds = mds + "			</table>";
+		mds = mds + "		</td>";
 		mds = mds + "		</td>";
 		mds = mds + "	</tr>";
 		mds = mds + "</table>";
@@ -567,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        async: true,
 					        success: function (data, status) {
 					        	if (data.response_status == "error")
-					        		$("#results_div").html("error");
+					        		$("#results_div").html("error message=" + data.message);
 					        	else if (data.response_status == "success")
 					        	{
 					        		//alert("success");
@@ -1223,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        async: false,
 					        success: function (data, status) {
 					        	if (data.response_status == "error")
-					        		$("#results_div").html("error");
+					        		$("#results_div").html("error message=" + data.message);
 					        	else
 					        	{
 					        		if(data.missing_frames_timestamps.length > 100000)
@@ -1281,7 +1335,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        async: false,
 					        success: function (data, status) {
 					        	if (data.response_status == "error")
-					        		$("#results_div").html("error");
+					        		$("#results_div").html("error message=" + data.message);
 					        	else
 					        	{
 					        		//alert("response_status=success");
@@ -1347,6 +1401,124 @@ document.addEventListener('DOMContentLoaded', function () {
 				        				rds = rds + data.frames_processed[x] + "<br>";
 				        			}*/
 				        			$("#results_div").html(rds);
+					        	}
+					        }
+					        ,
+					        error: function (XMLHttpRequest, textStatus, errorThrown) {
+					        	$("#results_div").html("ajax error");
+					            console.log(textStatus, errorThrown);
+					        }
+						});
+					return;
+				});
+		
+		$("#function7_go_button").click(
+				function () {
+					$("#results_div").html("");
+					$("#chart1").html("");
+					var rds = "";
+					$.ajax({
+							type: 'GET',
+							url: endpoint,
+							data: {
+					            method: "getFiredAlerts",
+					            begin: $('#function7_begin_input').val(),             
+					            end: $('#function7_end_input').val(),
+					            hoozon_admin_auth: hoozon_admin_auth
+							},
+					        dataType: 'json',
+					        async: false,
+					        success: function (data, status) {
+					        	if (data.response_status == "error")
+					        		$("#results_div").html("error message=" + data.message);
+					        	else
+					        	{
+					        		rds = rds + "<table style=\"width:100%\">";
+					        		rds = rds + "<tr>";
+				        			rds = rds + "	<td>id";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>creation_timestamp";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>image_name";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>station";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>livestream_url";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>designation";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>social_type";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "	<td>actual_text";
+				        			rds = rds + "	</td>";
+				        			rds = rds + "</tr>";
+					        		for(var count = 0; count < data.fired_alerts.length; count++)
+					        		{
+					        			rds = rds + "<tr>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].id;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].creation_timestamp;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].image_name;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].station;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].livestream_url;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].designation;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].social_type;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "	<td>";
+					        			rds = rds + data.fired_alerts[count].actual_text;
+					        			rds = rds + "	</td>";
+					        			rds = rds + "</tr>";
+					        		}	
+					        		rds = rds + "</table>";
+					        		//rds = JSON.stringify(data.fired_alerts);
+					        		$("#results_div").html(rds);
+					        	}
+					        }
+					        ,
+					        error: function (XMLHttpRequest, textStatus, errorThrown) {
+					        	$("#results_div").html("ajax error");
+					            console.log(textStatus, errorThrown);
+					        }
+						});
+					return;
+				});
+		
+		$("#function8_go_button").click(
+				function () {
+					$("#results_div").html("");
+					$("#chart1").html("");
+					var rds = "";
+					$.ajax({
+							type: 'GET',
+							url: endpoint,
+							data: {
+					            method: "deleteAlert",
+					            designation: $('#function8_designation_select').val(),
+					            social_type: $('#function8_social_type_input').val(),             
+					            id: $('#function8_id_input').val(),
+					            hoozon_admin_auth: hoozon_admin_auth
+							},
+					        dataType: 'json',
+					        async: false,
+					        success: function (data, status) {
+					        	if (data.response_status == "error")
+					        		$("#results_div").html("error message=" + data.message);
+					        	else
+					        	{
+					        		rds = JSON.stringify(data);
+					        		$("#results_div").html(rds);
 					        	}
 					        }
 					        ,
@@ -1435,7 +1607,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 						jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
 						jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
 */
-	        			alert("retrieving info for ts:" + ts);
+	        			//alert("retrieving info for ts:" + ts);
 	        			if(data.alert_triggered === "yes")
 	        			{
 	        				alert("alert triggered");

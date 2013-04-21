@@ -130,17 +130,18 @@ public class Endpoint extends HttpServlet {
 								rs.close();
 								stmt.close();
 								con.close();
-								jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200);
+								boolean simulation = false;
+								jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200, simulation);
 								if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
 								{
 									// missing a frame, wait 2 seconds, try again.
 									Thread.sleep(2000);
-									jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200);
+									jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200, simulation);
 									if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
 									{
 										// still missing a frame, wait 2 seconds, try again.
 										Thread.sleep(2000);
-										jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200);
+										jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200, simulation);
 									}
 								}
 							}
@@ -504,10 +505,11 @@ public class Endpoint extends HttpServlet {
 						}
 					}		
 				}
-				else if (method.equals("getUserTwitterAcesssTokenAndSecret"))
+				/*else if (method.equals("getTwitterAcesssTokenAndSecret"))
 				{	
 					// FIXME this method needs some sort of protection against hacking (i.e. an ssl layer and an administrator password or something
 					String designation = request.getParameter("designation");
+					
 					if(designation == null)
 					{
 						jsonresponse.put("message", "This method requires a designation value.");
@@ -515,9 +517,14 @@ public class Endpoint extends HttpServlet {
 					}
 					else
 					{	
-						jsonresponse = getUserTwitterAccessTokenAndSecret("wkyt", designation);
+						JSONObject twit_jo = getTwitterAccessTokenAndSecret("wkyt", designation);
+						if(twit_jo != null)
+						{
+							jsonresponse = twit_jo;
+							jsonresponse.put("response_status", "success");
+						}
 					}
-				}
+				}*/
 				else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
 				{
 					String designation = request.getParameter("designation");
@@ -625,7 +632,7 @@ public class Endpoint extends HttpServlet {
 										current_frame_jo = new JSONObject();
 										current_frame_jo.put("image_name", rs.getString("image_name"));
 										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-										current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getInt("timestamp_in_seconds")));
+										current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getInt("timestamp_in_seconds")));
 										frames_ja.put(current_frame_jo);
 									}
 									jsonresponse.put("response_status", "success");
@@ -737,7 +744,7 @@ public class Endpoint extends HttpServlet {
 									{
 										current = it.next();
 										timestamps_ja.put(current);
-										datestrings_ja.put(getDatestringFromTimestampInSeconds(Long.parseLong(current)));
+										datestrings_ja.put(getLouisvilleDatestringFromTimestampInSeconds(Long.parseLong(current)));
 									}
 									System.out.println("DONE Looping through frames found in database and removing entries from timestamps treeset");
 									jsonresponse.put("missing_frames_timestamps", timestamps_ja);
@@ -950,7 +957,7 @@ public class Endpoint extends HttpServlet {
 											boolean all_others_below_delta = true;
 											double control_avg = 100;
 											double closest_avg = 0;
-											JSONArray designations = getDesignations("wkyt");
+											JSONArray designations = getDesignations("wkyt", "active", "person");
 											double challenge_avg = 0;
 											String closest_designation = "";
 											int delta_suppressions = 0;
@@ -1125,7 +1132,8 @@ public class Endpoint extends HttpServlet {
 							else // ts exists, proceed
 							{	
 								Long ts_long = new Long(ts);
-								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period);
+								boolean simulation = true;
+								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period, simulation);
 							}
 						}
 						else
@@ -1169,24 +1177,54 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getDesignations"))
 				{	
-					String station = request.getParameter("station"); // required
-					if(station == null || station.isEmpty()) // must always have the time range 
+					String password = request.getParameter("hoozon_admin_auth");
+					if(password == null)
 					{
-						jsonresponse.put("message", "station was null or empty.");
+						// check for designation validity FIXME
+						jsonresponse.put("message", "A password value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
-					else // station ok
+					else
 					{	
-						JSONArray designations_ja = getDesignations(station);
-						if(designations_ja == null)
+						if(password.equals("sanders.lov"))
 						{
-							jsonresponse.put("message", "Error getting designations from DB.");
-							jsonresponse.put("response_status", "error");
+							String station = request.getParameter("station"); // required
+							String active_scope = request.getParameter("active_scope");
+							String person_or_master_scope = request.getParameter("person_or_master_scope");
+							if(station == null || station.isEmpty()) // must always have the time range 
+							{
+								jsonresponse.put("message", "station was null or empty.");
+								jsonresponse.put("response_status", "error");
+							}
+							else if(active_scope == null || !(active_scope.equals("all") || active_scope.equals("active") || active_scope.equals("inactive"))) // must always have the time range 
+							{
+								jsonresponse.put("message", "active_scope was null or not \"all\",\"active\" or \"inactive\".");
+								jsonresponse.put("response_status", "error");
+							}
+							else if(person_or_master_scope == null || !(person_or_master_scope.equals("all") || person_or_master_scope.equals("person") || person_or_master_scope.equals("master"))) // must always have the time range 
+							{
+								jsonresponse.put("message", "person_or_master_scope was null or not \"all\",\"person\" or \"master\".");
+								jsonresponse.put("response_status", "error");
+							}
+							else // station ok
+							{	
+								JSONArray designations_ja = getDesignations(station, active_scope, person_or_master_scope);
+								if(designations_ja == null)
+								{
+									jsonresponse.put("message", "Error getting designations from DB.");
+									jsonresponse.put("response_status", "error");
+								}
+								else
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("designations", designations_ja);
+								}
+							}
 						}
 						else
 						{
-							jsonresponse.put("response_status", "success");
-							jsonresponse.put("designations", designations_ja);
+								jsonresponse.put("message", "Wrong admin password.");
+								jsonresponse.put("response_status", "error");
 						}
 					}
 				}
@@ -1234,6 +1272,99 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "Incorrect password.");
 							jsonresponse.put("response_status", "error");
+						}
+					}
+				}
+				else if (method.equals("getFiredAlerts"))
+				{	
+					String password = request.getParameter("hoozon_admin_auth");
+					
+					if(password == null)
+					{
+						// check for designation validity FIXME
+						jsonresponse.put("message", "A password value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						if(password.equals("sanders.lov"))
+						{
+							String begin = request.getParameter("begin"); // required
+							String end = request.getParameter("end"); // required
+							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
+							{
+								jsonresponse.put("message", "begin or end was empty.");
+								jsonresponse.put("response_status", "error");
+							}
+							else
+							{
+								JSONArray fired_alerts_ja = getFiredAlerts("wkyt", begin, end);
+								if(fired_alerts_ja == null)
+								{
+									jsonresponse.put("message", "Encountered error getting fired alerts");
+									jsonresponse.put("response_status", "error");
+								}
+								else
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("fired_alerts", fired_alerts_ja);
+								}
+							}
+						}
+						else
+						{
+							jsonresponse.put("message", "Wrong admin password");
+							jsonresponse.put("response_status", "error");
+						}
+					}
+				}
+				else if (method.equals("deleteAlert"))
+				{	
+					String password = request.getParameter("hoozon_admin_auth");
+					
+					if(password == null)
+					{
+						// check for designation validity FIXME
+						jsonresponse.put("message", "A password value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						String social_type = request.getParameter("social_type"); // required
+						String id = request.getParameter("id"); // required
+						String designation = request.getParameter("designation");
+						if(social_type == null || social_type.isEmpty() || id == null || id.isEmpty() || designation == null || designation.isEmpty()) // must always have the time range 
+						{
+							jsonresponse.put("message", "designation or id or social_type was empty.");
+							jsonresponse.put("response_status", "error");
+						}
+						else
+						{
+							if(social_type.equals("facebook"))
+							{
+								// delete with facebook
+							}
+							else if(social_type.equals("twitter"))
+							{
+								JSONObject twit_jo = getTwitterAccessTokenAndSecret("wkyt", designation);
+								if(twit_jo != null)
+								{	
+									Twitter twitter = new Twitter();
+									JSONObject response_from_twitter = twitter.deleteStatus(twit_jo.getString("twitter_access_token"), twit_jo.getString("twitter_access_token_secret"), id);
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("response_from_twitter", response_from_twitter);
+								}
+								else
+								{
+									jsonresponse.put("message", "Error. Could not get user twitter access token and secret");
+									jsonresponse.put("response_status", "error");
+								}
+							}
+							else
+							{
+								jsonresponse.put("message", "Error deleting alert. social_type must be twitter or facebook.");
+								jsonresponse.put("response_status", "error");
+							}
 						}
 					}
 				}
@@ -1342,7 +1473,7 @@ public class Endpoint extends HttpServlet {
 							if(current_delta > delta_double)
 							{	
 								current_frame_jo = new JSONObject();
-								current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
+								current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
 								current_frame_jo.put("designation", current_designation);
 								current_frame_jo.put("image_name", rs.getString("image_name"));
 								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
@@ -1360,7 +1491,7 @@ public class Endpoint extends HttpServlet {
 							else
 							{
 								current_frame_jo = new JSONObject();
-								current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
+								current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
 								current_frame_jo.put("designation", current_designation);
 								current_frame_jo.put("image_name", rs.getString("image_name"));
 								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
@@ -1532,7 +1663,7 @@ public class Endpoint extends HttpServlet {
 							if(current_delta > delta_double)
 							{	
 								current_frame_jo = new JSONObject();
-								current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
+								current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
 								current_frame_jo.put("designation", current_designation);
 								current_frame_jo.put("image_name", rs.getString("image_name"));
 								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
@@ -1552,7 +1683,7 @@ public class Endpoint extends HttpServlet {
 							else
 							{
 								current_frame_jo = new JSONObject();
-								current_frame_jo.put("datestring", getDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
+								current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
 								current_frame_jo.put("designation", current_designation);
 								current_frame_jo.put("image_name", rs.getString("image_name"));
 								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
@@ -1615,7 +1746,8 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
-	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, double ma_modifier_double, double single_modifier_double, int alert_waiting_period)
+	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, 
+			double ma_modifier_double, double single_modifier_double, int alert_waiting_period, boolean simulation)
 	{
 		
 		/* this function takes certain parameters and simulates what would happen if this were a realtime new 
@@ -1801,18 +1933,21 @@ public class Endpoint extends HttpServlet {
 										if(twitter_handle != null)
 										{
 											jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
-											JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
+											JSONObject twitter_stuff = getTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
 											if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
 													&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
 													&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
 											{
 												jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
 												jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
-												long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
-												jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
-												String message = getMessage("twitter", ts_long, twitter_redirect_id);
-												jsonresponse.put("twitter_message_firstperson", message);
-												boolean successful = updateAlertText(twitter_redirect_id, message);
+												if(!simulation)
+												{	
+													long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
+													jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
+													String message = getMessage("twitter", ts_long, twitter_redirect_id);
+													jsonresponse.put("twitter_message_firstperson", message);
+													boolean successful = updateAlertText(twitter_redirect_id, message);
+												}
 											}
 										}
 										 
@@ -1822,20 +1957,23 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
 											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
 											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
-											long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
-											jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
-											String message = getMessage("facebook", ts_long, facebook_redirect_id);
-											jsonresponse.put("facebook_message_firstperson",message);
-											boolean successful = updateAlertText(facebook_redirect_id, message);
+											if(!simulation)
+											{	
+												long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
+												jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
+												String message = getMessage("facebook", ts_long, facebook_redirect_id);
+												jsonresponse.put("facebook_message_firstperson",message);
+												boolean successful = updateAlertText(facebook_redirect_id, message);
+											}
 										}
 										
 										jsonresponse.put("designation_display_name", getDisplayName("wkyt",max_designation));
 										jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
 										jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
 										jsonresponse.put("designation_single_threshold", max_homogeneity_double * single_modifier_double);
-										jsonresponse.put("datestring_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long));
-										jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
-										jsonresponse.put("image_name_of_last_frame_in_window", getDatestringFromTimestampInSeconds(ts_long) + ".jpg");
+										jsonresponse.put("datestring_of_last_frame_in_window", getLouisvilleDatestringFromTimestampInSeconds(ts_long));
+										jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getLouisvilleDatestringFromTimestampInSeconds(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average));
+										jsonresponse.put("image_name_of_last_frame_in_window", getLouisvilleDatestringFromTimestampInSeconds(ts_long) + ".jpg");
 										jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
 									}
 									else
@@ -1902,7 +2040,7 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
-	JSONArray getDesignations(String station)
+	JSONArray getDesignations(String station, String active_scope, String person_or_master_scope)
 	{
 		JSONArray designations_ja = new JSONArray();
 		ResultSet rs = null;
@@ -1912,7 +2050,35 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=1 AND acct_type='person')"); 
+			
+			// active/inactive/all for both person and master types
+			if(active_scope.equals("active") && person_or_master_scope.equals("all"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE active=1");
+			else if(active_scope.equals("inactive") && person_or_master_scope.equals("all"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE active=0");
+			else if(active_scope.equals("all") && person_or_master_scope.equals("all"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station);
+			
+			// active/inactive/all for person types
+			else if(active_scope.equals("active") && person_or_master_scope.equals("person"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=1 AND acct_type='person')");
+			else if(active_scope.equals("inactive") && person_or_master_scope.equals("person"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=0 AND acct_type='person')");
+			else if(active_scope.equals("all") && person_or_master_scope.equals("person")) 
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE acct_type='person'");
+			
+			// active/inactive/all for master types
+			else if(active_scope.equals("active") && person_or_master_scope.equals("master"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=1 AND acct_type='master')");
+			else if(active_scope.equals("inactive") && person_or_master_scope.equals("master"))
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=0 AND acct_type='master')");
+			else if(active_scope.equals("all") && person_or_master_scope.equals("master")) 
+				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE acct_type='master'");
+			else
+			{
+				System.out.println("Endpoint.getDesignations(): Gobm probm. One of the active_scope values was wrong.");
+			}
+			
 			while(rs.next())
 			{
 				designations_ja.put(rs.getString("designation"));
@@ -2059,7 +2225,7 @@ public class Endpoint extends HttpServlet {
 					if(rs.getString("last_alert") != null)
 						jo.put("last_alert_timestamp", rs.getInt("last_alert"));
 					if(rs.getString("last_alert") != null)
-						jo.put("last_alert_datestring", getDatestringFromTimestampInSeconds(rs.getLong("last_alert")));
+						jo.put("last_alert_datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("last_alert")));
 					jo.put("homogeneity", rs.getDouble("homogeneity"));
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
@@ -2241,9 +2407,9 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	JSONObject getUserTwitterAccessTokenAndSecret(String station, String designation)
+	JSONObject getTwitterAccessTokenAndSecret(String station, String designation)
 	{
-		JSONObject return_jo = new JSONObject();
+		JSONObject return_jo = null;
 		try
 		{
 			ResultSet rs = null;
@@ -2256,24 +2422,17 @@ public class Endpoint extends HttpServlet {
 				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 				if(rs.next())
 				{
-					return_jo.put("response_status", "success");
+					return_jo = new JSONObject();
 					return_jo.put("twitter_access_token", rs.getString("twitter_access_token"));
 					return_jo.put("twitter_access_token_secret", rs.getString("twitter_access_token_secret"));
-				}
-				else
-				{
-					return_jo.put("response_status", "error");
-					return_jo.put("message", "could not find the specified user in the database");
 				}
 			}
 			catch(SQLException sqle)
 			{
 				sqle.printStackTrace();
-				return_jo.put("response_status", "error");
-				return_jo.put("message", "could not find the specified user in the database");
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getUserTwitterAccessTokenAndSecret", "Couldn't find user in database. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Couldn't find user in database. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2289,7 +2448,7 @@ public class Endpoint extends HttpServlet {
 					System.out.println("Problem closing resultset, statement and/or connection to the database.");
 					SimpleEmailer se = new SimpleEmailer();
 					try {
-						se.sendMail("SQLException in Endpoint getUserTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+						se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
 					} catch (MessagingException e) {
 						e.printStackTrace();
 					}
@@ -2299,7 +2458,7 @@ public class Endpoint extends HttpServlet {
 		catch (JSONException e) {
 			e.printStackTrace();
 		}
-			return return_jo;
+		return return_jo;
 	}
 	
 	long getLastAlert(String station, String designation)
@@ -2612,7 +2771,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id_long='" + id_long + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + id_long + "'"); 
 			if(rs.next())
 			{
 				rs.updateString("actual_text", actual_text);
@@ -2854,9 +3013,117 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	private long getTimestampInSecondsFromDatestring(String datestring)
+	JSONArray getFiredAlerts(String station, String begin, String end)
+	{
+		JSONArray returnval = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		
+		long begin_long = getTimestampInSecondsFromLouisvilleDatestring(begin); // this converts from local to epoch
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(begin_long * 1000); // set time from epoch value
+		cal.setTimeZone(TimeZone.getTimeZone("UTC")); // set the cal to UTC before retrieving values
+		String year = new Integer(cal.get(Calendar.YEAR)).toString();
+		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		String second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String begin_datestring_in_utc = year  + month + day + "_" + hour24 + minute + second;
+		
+		long end_long = getTimestampInSecondsFromLouisvilleDatestring(end); // this converts from local to epoch
+		cal = Calendar.getInstance();
+		cal.setTimeInMillis(end_long * 1000); // set time from epoch value
+		cal.setTimeZone(TimeZone.getTimeZone("UTC")); // set the cal to UTC before retrieving values
+		year = new Integer(cal.get(Calendar.YEAR)).toString();
+		month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String end_datestring_in_utc = year  + month + day + "_" + hour24 + minute + second;
+		
+		
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			System.out.println("Endpoint.getFiredAlerts(): SELECT * FROM alerts WHERE station='" + station + "' AND creation_timestamp BETWEEN STR_TO_DATE('" + begin_datestring_in_utc + "', '%Y%m%d_%H%i%s') AND STR_TO_DATE('" + end_datestring_in_utc + "', '%Y%m%d_%H%i%s')"); 
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE station='" + station + "' AND creation_timestamp BETWEEN STR_TO_DATE('" + begin_datestring_in_utc + "', '%Y%m%d_%H%i%s') AND STR_TO_DATE('" + end_datestring_in_utc + "', '%Y%m%d_%H%i%s')"); 
+			int x = 0;
+			JSONObject jo = new JSONObject();
+			while(rs.next())
+			{
+				if(x == 0)
+				{
+					returnval = new JSONArray();
+					x = 1;
+				}
+				jo = new JSONObject();
+				jo.put("id",rs.getLong("id"));
+				jo.put("social_type",rs.getString("social_type"));
+				jo.put("image_name",rs.getString("image_name"));
+				jo.put("creation_timestamp",rs.getTimestamp("creation_timestamp"));
+				jo.put("designation",rs.getString("designation"));
+				jo.put("station",rs.getString("station"));
+				jo.put("livestream_url",rs.getString("livestream_url"));
+				jo.put("actual_text",rs.getString("actual_text"));
+				returnval.put(jo);
+			}
+			if(x == 0)
+			{
+				System.out.println("Endpoint.getFiredAlerts(). no results");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			System.out.println("SQLException in Endpoint getFiredAlerts message=" +sqle.getMessage());
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getFiredAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getFiredAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
+	} 
+	
+	private long getTimestampInSecondsFromLouisvilleDatestring(String datestring)
 	{
 		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 		cal.set(Calendar.YEAR, Integer.parseInt(datestring.substring(0,4)));
 		cal.set(Calendar.MONTH, Integer.parseInt(datestring.substring(4,6)) - 1);
 		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(datestring.substring(6,8)));
@@ -2866,7 +3133,7 @@ public class Endpoint extends HttpServlet {
 		return (cal.getTimeInMillis()/1000);
 	}
 	
-	private String getDatestringFromTimestampInSeconds(long timestamp_in_seconds)
+	private String getLouisvilleDatestringFromTimestampInSeconds(long timestamp_in_seconds)
 	{
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
@@ -3040,7 +3307,7 @@ public class Endpoint extends HttpServlet {
 	private String[] evening_greetings = {"Good evening", "Evening"};
 	private String[] generic_greetings = {"Hello", "Greetings", "Hey"};
 	private String[] objects = {"Lexington", "Bluegrass", "everyone", "folks", "viewers"};
-	private String[] blurbs_before_link = {"Tune in or live stream here"};
+	private String[] blurbs_before_link = {"Tune in or watch the live stream here"};
 	
 	
 	String getMessage(String social_type, long timestamp_in_seconds, long redirect_id)
@@ -3110,17 +3377,17 @@ public class Endpoint extends HttpServlet {
 		String ts_string = hour + ":" + minutestring + am_or_pm_string;
 		if(social_type.equals("facebook"))
 		{
-			if(greetings_index == greeting_choices.size())
-				returnval = "Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
-			else
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+		//	if(greetings_index == greeting_choices.size())
+				returnval = "I am on air RIGHT NOW - " + ts_string + ". " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+		//	else
+			//	returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}
 		else if(social_type.equals("twitter"))
 		{
-			if(greetings_index == greeting_choices.size())
+			//if(greetings_index == greeting_choices.size())
 				returnval = "I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;   
-			else
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+		//	else
+		//		returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}
 		return returnval;
 	}
