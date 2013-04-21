@@ -1375,7 +1375,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("updateTwitterStatusID"))
+			/*	else if (method.equals("updateTwitterStatusID"))
 				{	
 					String designation = request.getParameter("designation");
 					String twitter_access_token = request.getParameter("twitter_access_token");
@@ -1395,7 +1395,7 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("response_status", "error");
 						}
 					}
-				}
+				}*/
 				else
 				{
 					jsonresponse.put("message", "Unknown method " + method); // we have already checked for null above
@@ -2398,6 +2398,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
+	/*
 	boolean updateTwitterStatusID(String station, String designation, String twitter_access_token, String twitter_alert_id, String twitter_item_id)
 	{
 		boolean returnval = false;
@@ -2469,7 +2470,7 @@ public class Endpoint extends HttpServlet {
 			}
 		}
 		return returnval;
-	}
+	}*/
 	
 	boolean setLastAlert(String station, String designation, long alert_ts)
 	{
