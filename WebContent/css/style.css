@@ -220,13 +220,14 @@ footer {
 	padding: 20px 0 20px 0;
 	border-top: 1px solid #eeeeed;
 	height: 18px;
+	
 }
 
 .teaser-page footer {
 	position: fixed;
 	bottom: 0;
 	width: 100%;
-	background: #fff;
+	background: #6b83a2;
 	outline: 5px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -235,7 +236,7 @@ footer {
 	margin: 0;
 	position: relative;
 	top: -3px;
-	color: #999996;
+	color: #fff;
 }
 
 .teaser-page footer p {
@@ -259,7 +260,7 @@ footer ul li {
 
 footer ul li a {
 	font-weight: normal;
-	color: #999996;
+	color: #fff;
 }
 
 footer ul li a:hover {

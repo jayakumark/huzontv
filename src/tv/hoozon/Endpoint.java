@@ -1942,7 +1942,7 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
 											
 											JSONObject twitter_stuff = getTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
-											if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
+											if(twitter_stuff != null
 													&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
 													&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
 											{
@@ -3369,9 +3369,9 @@ public class Endpoint extends HttpServlet {
 		}
 		
 		Random random = new Random();
-		int greetings_index = random.nextInt(greeting_choices.size()+2);
-		int objects_index = random.nextInt(object_choices.size()+1);
-		int blurb_index = random.nextInt(blurb_before_link_choices.size()+1);
+		int greetings_index = random.nextInt(greeting_choices.size());
+		int objects_index = random.nextInt(object_choices.size());
+		int blurb_index = random.nextInt(blurb_before_link_choices.size());
 		int hour = cal.get(Calendar.HOUR);
 		int minute = cal.get(Calendar.MINUTE);
 		String minutestring = (new Integer(minute)).toString();
@@ -3386,14 +3386,14 @@ public class Endpoint extends HttpServlet {
 		if(social_type.equals("facebook"))
 		{
 		//	if(greetings_index == greeting_choices.size())
-				returnval = "I am on air RIGHT NOW - " + ts_string + ". " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+				returnval = "I am on air RIGHT NOW - " + ts_string + ". Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		//	else
 			//	returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}
 		else if(social_type.equals("twitter"))
 		{
 			//if(greetings_index == greeting_choices.size())
-				returnval = "I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;   
+				returnval = "I'm on the air RIGHT NOW (" + ts_string + ") Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		//	else
 		//		returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}
