@@ -787,7 +787,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("getFramesByDesignation")) // this uses the outdated "remove lowest in moving average window" algorithm. FIXME
+				else if (method.equals("getFramesByDesignation")) 
 				{
 					String admin_password = request.getParameter("hoozon_admin_auth");
 					if(admin_password == null)
@@ -833,7 +833,7 @@ public class Endpoint extends HttpServlet {
 									double total = 0.0;
 									double ma_over_window = 0.0;
 									double homogeneity_double = getHomogeneityScore("wkyt",designation);
-									double lowest_score_in_window = 2.0;
+									//double lowest_score_in_window = 2.0;
 									while(rs.next())
 									{
 										current_frame_jo = new JSONObject();
@@ -846,16 +846,17 @@ public class Endpoint extends HttpServlet {
 										stmt2 = con.createStatement();
 										rs2 = stmt2.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + (rs.getInt("timestamp_in_seconds") - mawindow_int) + " AND timestamp_in_seconds <= " + rs.getInt("timestamp_in_seconds") + ")");
 										total = 0;
-										lowest_score_in_window = 2.0;
+										//lowest_score_in_window = 2.0;
 										while(rs2.next())
 										{
-											/** this removes the lowest score over the window, essentially throwing out an outlier to compensate for closed eyes, 
-											 * or other total failure to locate the face in an otherwise good stream of consistent images **/
-											if(rs2.getDouble(designation + "_avg") < lowest_score_in_window)
-												lowest_score_in_window = rs2.getDouble(designation + "_avg");
+											//* this removes the lowest score over the window, essentially throwing out an outlier to compensate for closed eyes, 
+											// * or other total failure to locate the face in an otherwise good stream of consistent images **
+											//if(rs2.getDouble(designation + "_avg") < lowest_score_in_window)
+											//	lowest_score_in_window = rs2.getDouble(designation + "_avg");
 											total = total + rs2.getDouble(designation + "_avg");
 										}
-										ma_over_window = (total - lowest_score_in_window) / (mawindow_int - 1);
+										//ma_over_window = (total - lowest_score_in_window) / (mawindow_int - 1);
+										ma_over_window = total / mawindow_int;
 										current_frame_jo.put("moving_average", ma_over_window);
 										frames_ja.put(current_frame_jo);
 									}
@@ -1656,6 +1657,7 @@ public class Endpoint extends HttpServlet {
 					}
 					else // had all X frames
 					{	
+						System.out.println("Endpoint.processNewFrame(): had all " + moving_average_window_int + " frames.");
 						// check the ts frame. One of the designations' average scores has to be above their single threshold to continue. If not, quick failure.
 							rs.beforeFirst(); // go back to the beginning for parsing
 							JSONArray frames_ja = new JSONArray();
@@ -1743,6 +1745,8 @@ public class Endpoint extends HttpServlet {
 								designation_averages_ja.put(jo);
 							}
 							
+							System.out.println("Endpoint.processNewFrame(): max_designation=" + max_designation + " and max_avg=" + max_avg);
+							
 							// max_avg is now set to the highest average found for the designations
 							// max_designation is set to the designation of whomever that max_avg belonged to
 																			
@@ -1750,6 +1754,7 @@ public class Endpoint extends HttpServlet {
 							double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
 							if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
 							{
+								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_designation=" + max_designation + " and max_avg=" + max_avg + " > " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh PAST THRESH");
 								// FIXME The above logic may not be right. It's conceivable that the max_avg is the highest, but not the most signficant.
 								// For instance, let's say the max avg is .9 but for that person, their homogeneity is .999
 								// There could be another avg that is .89 while their homogeneity is .895. 
@@ -1784,6 +1789,7 @@ public class Endpoint extends HttpServlet {
 								// need to know: (d) does that score cross the single frame threshold?
 								if(max_frame_score_for_designation_with_max_average > (max_homogeneity_double * single_modifier_double)) 
 								{
+									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " > " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh PAST THRESH");
 									// (d) yes it does
 									long last_alert = getLastAlert("wkyt", max_designation);
 									if((ts_long - last_alert) > alert_waiting_period)
@@ -1873,13 +1879,15 @@ public class Endpoint extends HttpServlet {
 									}
 								}
 								else
-								{ 
+								{
+									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " <= " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh");
 									// (d) no it doesn't
 									jsonresponse.put("alert_triggered", "no");
 								}
 							}
 							else
 							{
+								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_designation=" + max_designation + " and max_avg=" + max_avg + " <= " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh");
 								jsonresponse.put("alert_triggered", "no");
 							}
 							//jsonresponse.put("designation_averages", designation_averages_ja);
@@ -3330,6 +3338,8 @@ public class Endpoint extends HttpServlet {
 		int objects_index = random.nextInt(object_choices.size());
 		int blurb_index = random.nextInt(blurb_before_link_choices.size());
 		int hour = cal.get(Calendar.HOUR);
+		if(hour == 0)
+			hour = 12;
 		int minute = cal.get(Calendar.MINUTE);
 		String minutestring = (new Integer(minute)).toString();
 		if(minutestring.length() < 2)
@@ -3343,14 +3353,14 @@ public class Endpoint extends HttpServlet {
 		if(social_type.equals("facebook"))
 		{
 		//	if(greetings_index == greeting_choices.size())
-				returnval = "I am on air RIGHT NOW - " + ts_string + ". Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
+				returnval = "I am on air right now. " + ts_string + ". Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		//	else
 			//	returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}
 		else if(social_type.equals("twitter"))
 		{
 			//if(greetings_index == greeting_choices.size())
-				returnval = "I'm on the air RIGHT NOW (" + ts_string + ") Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
+				returnval = "I'm on the air right now (" + ts_string + ") Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		//	else
 		//		returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
 		}

@@ -1462,7 +1462,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        			rds = rds + data.fired_alerts[count].creation_timestamp;
 					        			rds = rds + "	</td>";
 					        			rds = rds + "	<td>";
-					        			rds = rds + data.fired_alerts[count].image_name;
+					        			rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.fired_alerts[count].image_name + "\" style=\"width:250px;height:141px\">";
 					        			rds = rds + "	</td>";
 					        			rds = rds + "	<td>";
 					        			rds = rds + data.fired_alerts[count].station;
