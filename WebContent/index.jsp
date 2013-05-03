@@ -4,6 +4,7 @@
 <head>
 	<link rel="stylesheet" type="text/css" href="css/style.css">
 	<link rel="icon" type="image/png" href="images/hoozon_logo_16x16.png" />
+	<script src="js/jquery-1.8.2.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 
@@ -20,18 +21,36 @@
 	<div class="outer">
 		<div class="middle">
 			<div class="inner">
-				<img src="/images/hoozon_retrotv_withglow_441x392.png" width="441" height="392">
+				<a href="#" id="main_link" style="font-size:30px;color:white"><img id="tv_normal" src="images/hoozon_retrotv_withglow_441x392.png" style="width:441px;height:392px;">
+				<img id="tv_qmark" src="images/hoozon_retrotv_withglowqmark_441x392.png" style="width:441px;height:392px;display:none"></a>
 			</div>
 		</div>
 	</div>
 	<footer>
 		<p>hoozon.tv &copy; 2013 Adkitech, LLC</p>
 		<ul>
+			<li><a href="whatis.html">About</a></li>
 			<li><a href="http://twitter.com/hoozontv">Twitter</a></li>
 			<li><a href="https://www.facebook.com/pages/hoozontv/531229596923718">Facebook</a></li>
 			<li><a href="contact.html">Contact</a></li>
 		</ul>
 	</footer>
+	<script>
+	$("#main_link").mouseover( function() {
+		$("#tv_normal").hide();
+		$("#tv_qmark").show();
+		return false;
+	});
+	$("#main_link").mouseout( function() {
+		$("#tv_normal").show();
+		$("#tv_qmark").hide();
+		return false;
+	});
+	$("#main_link").click( function() {
+		window.location = "whatis.html";
+		return false;
+	});
+	</script>
 	<!-- 
 <script type="text/javascript">
 
@@ -49,3 +68,4 @@
 </script>
  -->
 </body>
+</html>

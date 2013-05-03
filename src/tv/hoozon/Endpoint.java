@@ -132,17 +132,19 @@ public class Endpoint extends HttpServlet {
 								stmt.close();
 								con.close();
 								boolean simulation = false;
-								jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200, simulation);
+								int awp_facebook = 36000; // 10 hours
+								int awp_twitter = 7200; // 2 hours
+								jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, awp_twitter, awp_facebook, simulation);
 								if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
 								{
 									// missing a frame, wait 2 seconds, try again.
 									Thread.sleep(2000);
-									jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200, simulation);
+									jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, awp_twitter, awp_facebook, simulation);
 									if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
 									{
 										// still missing a frame, wait 2 seconds, try again.
 										Thread.sleep(2000);
-										jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, 7200, simulation);
+										jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, awp_twitter, awp_facebook, simulation);
 									}
 								}
 							}
@@ -805,7 +807,6 @@ public class Endpoint extends HttpServlet {
 							String designation = request.getParameter("designation");
 							double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
 							double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-							//int alert_waiting_period = (new Integer(request.getParameter("awp"))).intValue();
 							String mawindow = request.getParameter("mawindow");
 							int mawindow_int = Integer.parseInt(mawindow);
 							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
@@ -1077,7 +1078,8 @@ public class Endpoint extends HttpServlet {
 						if(admin_password.equals("sanders.lov"))
 						{
 							int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
-							int alert_waiting_period = Integer.parseInt(request.getParameter("awp"));
+							//int awp_twitter = Integer.parseInt(request.getParameter("awp_twitter"));
+						//	int awp_facebook = Integer.parseInt(request.getParameter("awp_facebook"));
 							double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
 							double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
 							String begin = request.getParameter("begin"); // required
@@ -1092,7 +1094,7 @@ public class Endpoint extends HttpServlet {
 							{	
 								long begin_long = Long.parseLong(begin);
 								long end_long = Long.parseLong(end);
-								jsonresponse  = getAlertFrames2(begin_long, end_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period, delta_double);
+								jsonresponse  = getAlertFrames2(begin_long, end_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, delta_double);
 							}
 						}
 						else
@@ -1118,7 +1120,8 @@ public class Endpoint extends HttpServlet {
 							// get the incoming parameters, the most important of which is the timestamp (ts) value
 							String ts = request.getParameter("ts"); // required
 							int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
-							int alert_waiting_period = Integer.parseInt(request.getParameter("awp"));
+							int awp_twitter = Integer.parseInt(request.getParameter("awp_twitter"));
+							int awp_facebook = Integer.parseInt(request.getParameter("awp_facebook"));
 							double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
 							double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
 							// is the ts empty? if so, bail.
@@ -1131,7 +1134,7 @@ public class Endpoint extends HttpServlet {
 							{	
 								Long ts_long = new Long(ts);
 								boolean simulation = true;
-								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, alert_waiting_period, simulation);
+								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, awp_twitter, awp_facebook, simulation);
 							}
 						}
 						else
@@ -1419,7 +1422,7 @@ public class Endpoint extends HttpServlet {
 	}
 	
 	
-	JSONObject getAlertFrames2(long begin_long, long end_long, String station, int maw_int, double ma_modifier_double, double single_modifier_double, int alert_waiting_period, double delta_double)
+	JSONObject getAlertFrames2(long begin_long, long end_long, String station, int maw_int, double ma_modifier_double, double single_modifier_double, double delta_double)
 	{
 		JSONArray alert_frames_ja = new JSONArray();
 		JSONObject jsonresponse = new JSONObject();
@@ -1614,7 +1617,7 @@ public class Endpoint extends HttpServlet {
 	}
 	
 	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, 
-			double ma_modifier_double, double single_modifier_double, int alert_waiting_period, boolean simulation)
+			double ma_modifier_double, double single_modifier_double, int awp_twitter, int awp_facebook, boolean simulation)
 	{
 		
 		/* this function takes certain parameters and simulates what would happen if this were a realtime new 
@@ -1790,17 +1793,15 @@ public class Endpoint extends HttpServlet {
 								if(max_frame_score_for_designation_with_max_average > (max_homogeneity_double * single_modifier_double)) 
 								{
 									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " > " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh PAST THRESH");
+									
 									// (d) yes it does
-									long last_alert = getLastAlert("wkyt", max_designation);
-									if((ts_long - last_alert) > alert_waiting_period)
+									long last_alert_twitter = getLastAlert("wkyt", max_designation, "twitter");
+									boolean alert_triggered_twitter = false;
+									if((ts_long - last_alert_twitter) > awp_twitter)
 									{
-										setLastAlert("wkyt", max_designation, ts_long);
-										jsonresponse.put("alert_triggered", "yes");
-										jsonresponse.put("designation", max_designation);
-										jsonresponse.put("designation_moving_average_over_window", max_avg);
-										jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
-										jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
-										jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
+										setLastAlert("wkyt", max_designation, ts_long, "twitter");
+										alert_triggered_twitter = true;
+										jsonresponse.put("alert_triggered_twitter", "yes");
 										twitter_handle = getTwitterHandle("wkyt",max_designation);
 										if(twitter_handle != null)
 										{
@@ -1835,7 +1836,17 @@ public class Endpoint extends HttpServlet {
 												}
 											}
 										}
-										 
+									}
+									
+									
+									long last_alert_facebook = getLastAlert("wkyt", max_designation, "facebook");
+									boolean alert_triggered_facebook = false;
+									System.out.println("Endpoint processNewFrame(): ts_long=" + ts_long + " last_alert_facebook=" + last_alert_facebook + " diff=" + (ts_long - last_alert_facebook) + " vs awp_facebook=" + awp_facebook);
+									if((ts_long - last_alert_facebook) > awp_facebook)
+									{	 
+										setLastAlert("wkyt", max_designation, ts_long, "facebook");
+										alert_triggered_facebook = true;
+										jsonresponse.put("alert_triggered_facebook", "yes");
 										JSONObject facebook_stuff = getFacebookSubAccount("wkyt", max_designation); 
 										if(facebook_stuff != null)
 										{
@@ -1863,7 +1874,19 @@ public class Endpoint extends HttpServlet {
 												}
 											}
 										}
-										
+									}
+									
+									// NOTE: The above is set up where "alert_triggered_[social_type]" can be set to "yes" even if the "[social_type]_stuff" is missing or invalid
+									// this is to note when an alert SHOULD have happened and update the database accordingly, even if the social account credentials are missing.
+									
+									if(alert_triggered_twitter || alert_triggered_facebook) // at least one of the two was true, add all the necessary information
+									{	
+										jsonresponse.put("alert_triggered", "yes");
+										jsonresponse.put("designation", max_designation);
+										jsonresponse.put("designation_moving_average_over_window", max_avg);
+										jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
+										jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
+										jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
 										jsonresponse.put("designation_display_name", getDisplayName("wkyt",max_designation));
 										jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
 										jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
@@ -2121,10 +2144,11 @@ public class Endpoint extends HttpServlet {
 						jo.put("facebook_connected", "no");
 					}
 					
-					if(rs.getString("last_alert") != null)
-						jo.put("last_alert_timestamp", rs.getInt("last_alert"));
-					if(rs.getString("last_alert") != null)
-						jo.put("last_alert_datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("last_alert")));
+					jo.put("last_alert_twitter", rs.getInt("last_alert_twitter"));
+					jo.put("last_alert_facebook", rs.getInt("last_alert_facebook"));
+					jo.put("last_alert_twitter_datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("last_alert_twitter")));
+					jo.put("last_alert_facebook_datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("last_alert_facebook")));
+
 					jo.put("homogeneity", rs.getDouble("homogeneity"));
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
@@ -2360,8 +2384,13 @@ public class Endpoint extends HttpServlet {
 		return return_jo;
 	}
 	
-	long getLastAlert(String station, String designation)
+	long getLastAlert(String station, String designation, String social_type)
 	{
+		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
+		{
+			System.out.println("Endpoint.getLastAlert: social type was not \"facebook\" or \"twitter\". returning -1L.");
+			return -1L;
+		}
 		long returnval = 0L;
 		ResultSet rs = null;
 		Connection con = null;
@@ -2373,7 +2402,10 @@ public class Endpoint extends HttpServlet {
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1) "); 
 			while(rs.next())
 			{
-				returnval = rs.getLong("last_alert");
+				if(social_type.equals("twitter"))
+					returnval = rs.getLong("last_alert_twitter");
+				else
+					returnval = rs.getLong("last_alert_facebook");
 			}
 		}
 		catch(SQLException sqle)
@@ -2480,8 +2512,13 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}*/
 	
-	boolean setLastAlert(String station, String designation, long alert_ts)
+	boolean setLastAlert(String station, String designation, long alert_ts, String social_type)
 	{
+		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
+		{
+			System.out.println("Endpoint.setLastAlert: social type was not \"facebook\" or \"twitter\". returning false.");
+			return false;
+		}
 		boolean returnval = false;
 		ResultSet rs = null;
 		Connection con = null;
@@ -2493,7 +2530,10 @@ public class Endpoint extends HttpServlet {
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
 			while(rs.next())
 			{
-				rs.updateLong("last_alert", alert_ts);
+				if(social_type.equals("facebook"))
+					rs.updateLong("last_alert_facebook", alert_ts);
+				else												// we can just say "else" because we checked value of social_type above
+					rs.updateLong("last_alert_twitter", alert_ts);
 				rs.updateRow();
 			}
 			returnval = true;
@@ -2950,7 +2990,8 @@ public class Endpoint extends HttpServlet {
 			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE active=1"); 
 			while(rs.next())
 			{
-				rs.updateLong("last_alert", 0);
+				rs.updateLong("last_alert_twitter", 0);
+				rs.updateLong("last_alert_facebook", 0);
 				rs.updateRow();
 			}
 			returnval = true;
@@ -3274,13 +3315,11 @@ public class Endpoint extends HttpServlet {
 		  return true;
 	}	
 	
-	private String[] earlymorning_greetings = {"Good morning", "Morning", "Rise and shine", "It's early"};
 	private String[] morning_greetings = {"Good morning", "Morning"};
 	private String[] afternoon_greetings = {"Good afternoon", "Afternoon"};
 	private String[] evening_greetings = {"Good evening", "Evening"};
-	private String[] generic_greetings = {"Hello", "Greetings", "Hey"};
-	private String[] objects = {"Lexington", "Bluegrass", "everyone", "folks", "viewers"};
-	private String[] blurbs_before_link = {"Tune in or watch the live stream here"};
+	private String[] generic_greetings = {"Hello", "Greetings"};
+	private String[] objects = {"Lexington", "Bluegrass", "Central Kentucky", "everyone", "folks", "viewers"};
 	
 	
 	String getMessage(String social_type, long timestamp_in_seconds, long redirect_id)
@@ -3290,16 +3329,7 @@ public class Endpoint extends HttpServlet {
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 		cal.setTimeInMillis(timestamp_in_seconds * 1000);
 		ArrayList<String> greeting_choices = new ArrayList<String>();
-		if(cal.get(Calendar.HOUR_OF_DAY) < 7)
-		{	
-			for(int x = 0; x < earlymorning_greetings.length; x++)
-				greeting_choices.add(earlymorning_greetings[x]);
-			for(int x = 0; x < morning_greetings.length; x++)
-				greeting_choices.add(morning_greetings[x]);
-			for(int x = 0; x < generic_greetings.length; x++)
-				greeting_choices.add(generic_greetings[x]);
-		}
-		else if(cal.get(Calendar.HOUR_OF_DAY) < 12)
+		if(cal.get(Calendar.HOUR_OF_DAY) < 12)
 		{	
 			for(int x = 0; x < morning_greetings.length; x++)
 				greeting_choices.add(morning_greetings[x]);
@@ -3322,21 +3352,12 @@ public class Endpoint extends HttpServlet {
 		}
 			
 		ArrayList<String> object_choices = new ArrayList<String>();
-		{
-			for(int x = 0; x < objects.length; x++)
-				object_choices.add(objects[x]);
-		}
-		
-		ArrayList<String> blurb_before_link_choices = new ArrayList<String>();
-		{
-			for(int x = 0; x < blurbs_before_link.length; x++)
-				blurb_before_link_choices.add(blurbs_before_link[x]);
-		}
+		for(int x = 0; x < objects.length; x++)
+			object_choices.add(objects[x]);
 		
 		Random random = new Random();
 		int greetings_index = random.nextInt(greeting_choices.size());
 		int objects_index = random.nextInt(object_choices.size());
-		int blurb_index = random.nextInt(blurb_before_link_choices.size());
 		int hour = cal.get(Calendar.HOUR);
 		if(hour == 0)
 			hour = 12;
@@ -3350,19 +3371,26 @@ public class Endpoint extends HttpServlet {
 		else
 			am_or_pm_string = " PM";
 		String ts_string = hour + ":" + minutestring + am_or_pm_string;
+		
+		int selector = random.nextInt(4);
+		
 		if(social_type.equals("facebook"))
 		{
-		//	if(greetings_index == greeting_choices.size())
-				returnval = "I am on air right now. " + ts_string + ". Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
-		//	else
-			//	returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". Im on the air RIGHT NOW \\(" + ts_string + "\\) " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+			if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
+				returnval = "I am on the air. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;  
+			else if (selector == 1) // no greeting, "we", "live", "catch" timestamp first
+				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;
+			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;
+			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id; 
 		}
 		else if(social_type.equals("twitter"))
 		{
-			//if(greetings_index == greeting_choices.size())
-				returnval = "I'm on the air right now (" + ts_string + ") Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;  
-		//	else
-		//		returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air RIGHT NOW (" + ts_string + ") " + blurb_before_link_choices.get(blurb_index) + ": hoozon.wkyt.com/livestream?id=" + redirect_id;  
+			if(selector == 0 || selector == 1)
+				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+			else if(selector == 2 || selector == 3)
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
 		}
 		return returnval;
 	}

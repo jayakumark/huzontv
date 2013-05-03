@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-		mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
+		mds = mds + "						AWP twitter: <input type=\"text\" id=\"function4_awp_twitter_input\" value=\"7200\" size=5>";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -345,9 +345,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130409_060000\" size=13><br>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-		mds = mds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
+		mds = mds + "						AWP facebook: <input type=\"text\" id=\"function4_awp_facebook_input\" value=\"36000\" size=5>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
+		mds = mds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "			</table>";
@@ -392,7 +393,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "						Moving Avg Window: <input type=\"text\" id=\"function6_mawindow_input\" value=\"5\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "					<td style=\"vertical-align:middle;text-align:left\">";
-		mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"7200\" size=4>";
+		// alert waiting periods should be separated, but this function doesn't actually use one
+		//mds = mds + "						Alert waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"7200\" size=4>";
 		mds = mds + "					</td>";
 		mds = mds + "				</tr>";
 		mds = mds + "				<tr>";
@@ -701,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					while(current_ts <= end)
 					{
 						//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 							current_ts = alert_triggered; // alert_triggered is the next valid frame
 						if(alert_triggered == true)
@@ -710,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function () {
 								while(current_ts <= end)
 								{
 									//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 										current_ts = alert_triggered; // alert_triggered is the next valid frame
 									if(alert_triggered == true)
@@ -719,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function () {
 											while(current_ts <= end)
 											{
 												//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 													current_ts = alert_triggered; // alert_triggered is the next valid frame
 												if(alert_triggered == true)
@@ -728,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function () {
 														while(current_ts <= end)
 														{
 															//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																current_ts = alert_triggered; // alert_triggered is the next valid frame
 															if(alert_triggered == true)
@@ -737,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																	while(current_ts <= end)
 																	{
 																		//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																			current_ts = alert_triggered; // alert_triggered is the next valid frame
 																		if(alert_triggered == true)
@@ -746,7 +748,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																				while(current_ts <= end)
 																				{
 																					//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																						current_ts = alert_triggered; // alert_triggered is the next valid frame
 																					if(alert_triggered == true)
@@ -754,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																						setTimeout(function(){
 																							while(current_ts <= end)
 																							{
-																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																									current_ts = alert_triggered; // alert_triggered is the next valid frame
 																								if(alert_triggered == true)
@@ -762,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																									setTimeout(function(){
 																										while(current_ts <= end)
 																										{
-																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																												current_ts = alert_triggered; // alert_triggered is the next valid frame
 																											if(alert_triggered == true)
@@ -770,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																												setTimeout(function(){
 																													while(current_ts <= end)
 																													{
-																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																															current_ts = alert_triggered; // alert_triggered is the next valid frame
 																														if(alert_triggered == true)
@@ -778,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																															setTimeout(function(){
 																																while(current_ts <= end)
 																																{
-																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																		current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																	if(alert_triggered == true)
@@ -786,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																		setTimeout(function(){
 																																			while(current_ts <= end)
 																																			{
-																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																					current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																				if(alert_triggered == true)
@@ -794,7 +796,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																					setTimeout(function(){
 																																						while(current_ts <= end)
 																																						{
-																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																								current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																							if(alert_triggered == true)
@@ -802,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																								setTimeout(function(){
 																																									while(current_ts <= end)
 																																									{
-																																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																										if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																											current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																										if(alert_triggered == true)
@@ -810,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																											setTimeout(function(){
 																																												while(current_ts <= end)
 																																												{
-																																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																													if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																														current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																													if(alert_triggered == true)
@@ -818,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																														setTimeout(function(){
 																																															while(current_ts <= end)
 																																															{
-																																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																	current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																if(alert_triggered == true)
@@ -826,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																	setTimeout(function(){
 																																																		while(current_ts <= end)
 																																																		{
-																																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																			if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																				current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																			if(alert_triggered == true)
@@ -834,7 +836,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																				setTimeout(function(){
 																																																					while(current_ts <= end)
 																																																					{
-																																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																							current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																						if(alert_triggered == true)
@@ -842,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																							setTimeout(function(){
 																																																								while(current_ts <= end)
 																																																								{
-																																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																										current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																									if(alert_triggered == true)
@@ -850,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																										setTimeout(function(){
 																																																											while(current_ts <= end)
 																																																											{
-																																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																													current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																												if(alert_triggered == true)
@@ -858,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																													setTimeout(function(){
 																																																														while(current_ts <= end)
 																																																														{
-																																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																															if(alert_triggered == true)
@@ -866,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																setTimeout(function(){
 																																																																	while(current_ts <= end)
 																																																																	{
-																																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																			current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																		if(alert_triggered == true)
@@ -874,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																			setTimeout(function(){
 																																																																				while(current_ts <= end)
 																																																																				{
-																																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																						current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																					if(alert_triggered == true)
@@ -882,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																						setTimeout(function(){
 																																																																							while(current_ts <= end)
 																																																																							{
-																																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																									current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																								if(alert_triggered == true)
@@ -890,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																									setTimeout(function(){
 																																																																										while(current_ts <= end)
 																																																																										{
-																																																																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																												current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																											if(alert_triggered == true)
@@ -898,7 +900,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																												setTimeout(function(){
 																																																																													while(current_ts <= end)
 																																																																													{
-																																																																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																															current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																														if(alert_triggered == true)
@@ -906,7 +908,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																															setTimeout(function(){
 																																																																																while(current_ts <= end)
 																																																																																{
-																																																																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																		current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																	if(alert_triggered == true)
@@ -914,7 +916,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																		setTimeout(function(){
 																																																																																			while(current_ts <= end)
 																																																																																			{
-																																																																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																					current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																				if(alert_triggered == true)
@@ -922,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																					setTimeout(function(){
 																																																																																						while(current_ts <= end)
 																																																																																						{
-																																																																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																								current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																							if(alert_triggered == true)
@@ -930,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																								setTimeout(function(){
 																																																																																									while(current_ts <= end)
 																																																																																									{
-																																																																																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																										if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																											current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																										if(alert_triggered == true)
@@ -938,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																											setTimeout(function(){
 																																																																																												while(current_ts <= end)
 																																																																																												{
-																																																																																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																													if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																														current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																													if(alert_triggered == true)
@@ -946,7 +948,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																														setTimeout(function(){
 																																																																																															while(current_ts <= end)
 																																																																																															{
-																																																																																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																	current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																if(alert_triggered == true)
@@ -954,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																	setTimeout(function(){
 																																																																																																		while(current_ts <= end)
 																																																																																																		{
-																																																																																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																			if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																				current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																			if(alert_triggered == true)
@@ -962,7 +964,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																				setTimeout(function(){
 																																																																																																					while(current_ts <= end)
 																																																																																																					{
-																																																																																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																							current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																						if(alert_triggered == true)
@@ -970,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																							setTimeout(function(){
 																																																																																																								while(current_ts <= end)
 																																																																																																								{
-																																																																																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																										current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																									if(alert_triggered == true)
@@ -978,7 +980,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																										setTimeout(function(){
 																																																																																																											while(current_ts <= end)
 																																																																																																											{
-																																																																																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																													current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																												if(alert_triggered == true)
@@ -986,7 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																													setTimeout(function(){
 																																																																																																														while(current_ts <= end)
 																																																																																																														{
-																																																																																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																																current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																															if(alert_triggered == true)
@@ -994,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																																setTimeout(function(){
 																																																																																																																	while(current_ts <= end)
 																																																																																																																	{
-																																																																																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																																			current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																																		if(alert_triggered == true)
@@ -1002,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																																			setTimeout(function(){
 																																																																																																																				while(current_ts <= end)
 																																																																																																																				{
-																																																																																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																																						current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																																					if(alert_triggered == true)
@@ -1010,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', function () {
 																																																																																																																						setTimeout(function(){
 																																																																																																																							while(current_ts <= end)
 																																																																																																																							{
-																																																																																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_input').val(), $('#function4_mawindow_input').val());
+																																																																																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
 																																																																																																																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
 																																																																																																																									current_ts = alert_triggered; // alert_triggered is the next valid frame
 																																																																																																																								if(alert_triggered == true)
@@ -1326,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            end: end,
 					            mamodifier: $('#function6_mamodifier_input').val(),
 					            singlemodifier: $('#function6_singlemodifier_input').val(),
-					            awp: $('#function6_awp_input').val(),
+					       //     awp: $('#function6_awp_input').val(),
 					            mawindow: $('#function6_mawindow_input').val(),
 					            delta:  $('#function6_delta_input').val(),
 					            hoozon_admin_auth: hoozon_admin_auth
@@ -1441,10 +1443,10 @@ document.addEventListener('DOMContentLoaded', function () {
 				        			rds = rds + "	</td>";
 				        			rds = rds + "	<td>image_name";
 				        			rds = rds + "	</td>";
-				        			rds = rds + "	<td>station";
+				        			/*rds = rds + "	<td>station";
 				        			rds = rds + "	</td>";
 				        			rds = rds + "	<td>livestream_url";
-				        			rds = rds + "	</td>";
+				        			rds = rds + "	</td>";*/
 				        			rds = rds + "	<td>designation";
 				        			rds = rds + "	</td>";
 				        			rds = rds + "	<td>social_type";
@@ -1464,12 +1466,12 @@ document.addEventListener('DOMContentLoaded', function () {
 					        			rds = rds + "	<td>";
 					        			rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.fired_alerts[count].image_name + "\" style=\"width:250px;height:141px\">";
 					        			rds = rds + "	</td>";
-					        			rds = rds + "	<td>";
+					        		/*  rds = rds + "	<td>";
 					        			rds = rds + data.fired_alerts[count].station;
 					        			rds = rds + "	</td>";
 					        			rds = rds + "	<td>";
 					        			rds = rds + data.fired_alerts[count].livestream_url;
-					        			rds = rds + "	</td>";
+					        			rds = rds + "	</td>";*/
 					        			rds = rds + "	<td>";
 					        			rds = rds + data.fired_alerts[count].designation;
 					        			rds = rds + "	</td>";
@@ -1533,7 +1535,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 });
 
-function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
+function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_facebook, mawindow)
 {
 	var hoozon_admin_auth = docCookies.getItem("hoozon_admin_auth"); // this should always be here since this function can't be called without it. 
 	var alert_triggered = false;
@@ -1546,7 +1548,8 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 	            ts: ts,
 	            mamodifier: mamodifier,
 	            singlemodifier: singlemodifier,
-	            awp: awp,
+	            awp_twitter: awp_twitter,
+	            awp_facebook: awp_facebook,
 	            mawindow: mawindow,
 	            hoozon_admin_auth: hoozon_admin_auth
 			},
@@ -1610,10 +1613,20 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp, mawindow)
 	        			//alert("retrieving info for ts:" + ts);
 	        			if(data.alert_triggered === "yes")
 	        			{
-	        				alert("alert triggered");
+	        				//alert("alert triggered");
 	        				var alertstring = "";
 	        				alertstring = alertstring + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-	        				alertstring = alertstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
+	        				alertstring = alertstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
+	        				alertstring = alertstring + "<tr>";
+	        				alertstring = alertstring + "		<td style=\"text-align:right;vertical-align:middle\">";
+	        				if(data.alert_triggered_twitter)
+	        					alertstring = alertstring + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
+	        				if(data.alert_triggered_facebook)
+	        					alertstring = alertstring + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
+	        				alertstring = alertstring + "		</td>";
+	        				alertstring = alertstring + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
+	        				alertstring = alertstring + "	</tr>";
+	        				alertstring = alertstring + "</table>";
 	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.image_name_of_frame_with_highest_score_in_window + "\" style=\"width:250px;height:141px\">";
 	        				alertstring = alertstring + "<br>datestring_of_frame_with_highest_score_in_window: " + data.datestring_of_frame_with_highest_score_in_window;
 	        				alertstring = alertstring + "<br>designation: " + data.designation;

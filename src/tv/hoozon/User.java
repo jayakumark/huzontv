@@ -24,7 +24,8 @@ public class User {
 	private String twitter_access_token_secret;
 	private boolean active;
 	private double homogeneity;
-	private long last_alert;
+	private long last_alert_twitter;
+	private long last_alert_facebook;
 	private long facebook_uid;
 	private String facebook_access_token;
 	private long facebook_access_token_expires;
@@ -75,8 +76,8 @@ public class User {
 				
 				active = rs.getBoolean("active");
 				homogeneity = rs.getDouble("homogeneity"); // will be set to zero if null
-				last_alert = rs.getLong("last_alert"); // default in DB is zero if no last_alert
-				
+				last_alert_twitter = rs.getLong("last_alert_twitter"); // default in DB is zero if no last_alert
+				last_alert_facebook = rs.getLong("last_alert_facebook"); // default in DB is zero if no last_alert
 				facebook_uid = rs.getLong("facebook_uid"); // will be set to zero if null
 				
 				if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
@@ -186,9 +187,14 @@ public class User {
 		return homogeneity;
 	}
 	
-	public long getLastAlert()
+	public long getLastAlertTwitter()
 	{
-		return last_alert;
+		return last_alert_twitter;
+	}
+	
+	public long getLastAlertFacebook()
+	{
+		return last_alert_facebook;
 	}
 	
 	public long getFacebookUID()
