@@ -468,6 +468,70 @@ document.addEventListener('DOMContentLoaded', function () {
 		mds = mds + "</table>";
 		$("#main_div").html(mds);
 		
+		alert('pushing scores');
+		var scores = []; //var moving_avg = [];
+		scores.push(6);
+		scores.push(20);
+		scores.push(19);
+		scores.push(18);
+		scores.push(10);
+		scores.push(17);
+		scores.push(8);
+		scores.push(4);
+		scores.push(18);
+		scores.push(21);
+		scores.push(20);
+		scores.push(11);
+		scores.push(64);
+		scores.push(4);
+		scores.push(38);
+		scores.push(173);
+		scores.push(129);
+		scores.push(137);
+		scores.push(79);
+		scores.push(80);
+		scores.push(47);
+		scores.push(54);
+		scores.push(64);
+		scores.push(50);
+		scores.push(45);
+		scores.push(44);
+		scores.push(71);
+		scores.push(39);
+		alert('plotting graph');
+		var plot1 = $.jqplot ('chart1', [scores],{
+			axes: {
+				yaxis: {
+		            min:0,max:200
+		        }
+			},
+			canvasOverlay: {
+				show: true,
+		       /* objects: [
+		                  {horizontalLine: {
+        			            name: 'pebbles',
+        			            y: 100,
+        			            lineWidth: 3,
+        			            color: 'rgb(100, 55, 124)',
+        			            shadow: true,
+        			            lineCap: 'butt',
+        			            xOffset: 0
+        			          }},  
+		          {dashedHorizontalLine: {
+		            name: 'bam-bam',
+		            y: (data.frames[0].homogeneity_score * $('#function3_mamodifier_input').val()),
+		            lineWidth: 4,
+		            dashPattern: [8, 16],
+		            lineCap: 'round',
+		            xOffset: '25',
+		            color: 'rgb(66, 98, 144)',
+		            shadow: false
+		          }}
+		        ]*/
+		      }
+		    });
+		alert('done showing graph');
+		
 		$("#function1_go_button").click(
 				function () {
 					$("#results_div").html("");

@@ -62,11 +62,126 @@ var endpoint = "https://www.hoozon.tv/endpoint";
 
 document.addEventListener('DOMContentLoaded', function () {
 	
-	var hoozon_auth = docCookies.getItem("hoozon_auth");
+	var twitter_handle = docCookies.getItem("twitter_handle");
+	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	if(location.protocol !== "https:")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.hoozon.tv/registration.html\">https://www.hoozon.tv/registration.html</a> instead.</span>");
 	}
+	else if(twitter_handle === null)
+	{
+		alert("twitter_handle === null");
+		var oauth_verifier = getParameterByName("oauth_verifier");
+		if(typeof oauth_verifier !== undefined && oauth_verifier != null && oauth_verifier !== "") // no twitter_handle cookie, but oauth_verifier is present, signifying response from twitter after user has granted access
+		{
+			alert("oauth_verifier !== null");
+			// this is a response from twitter after user has granted access
+			$.ajax({
+				type: 'GET',
+				url: endpoint,
+				data: {
+		            method: "getTwitterAccessTokenFromAuthorizationCode",
+		            oauth_verifier: oauth_verifier,
+		            oauth_token: getParameterByName("oauth_token")
+				},
+		        dataType: 'json',
+		        async: false,
+		        success: function (data, status) {
+		        	if (data.response_status == "error")
+		        	{
+		        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + " </span>");
+		        	}
+		        	else
+		        	{
+		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to hoozon.tv! Thanks! (reloading page)</span>");
+		        		docCookies.setItem("twitter_handle", data.twitter_handle, 31536e3);
+		        		docCookies.setItem("twitter_access_token", data.twitter_access_token, 31536e3);
+		        	}
+		        }
+		        ,
+		        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		        	$("#main_td").html("ajax error");
+		            console.log(textStatus, errorThrown);
+		        }
+			});
+		}	
+		else // no twitter_handle cookie, no oauth_verifier from twitter (signifying that the user is coming back from twitter with credentials)
+		{	
+			alert("oauth_verifier is undefined, null or empty");
+			$("#message_div").html("<span style=\"font-size:16;color:red\">Please log in with your Twitter account.</span>");
+			$("#main_div").html("<a href=\"#\" id=\"sign_in_with_twitter_link\">Sign in with Twitter</a>");
+			
+			$("#sign_in_with_twitter_link").click(
+				function (event) {
+					var oauth_token = null;
+					$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "startTwitterAuthentication"
+						},
+				        dataType: 'json',
+				        async: false,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        	{
+				        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + "</span>");
+				        	}
+				        	else
+				        	{
+				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Twitter authentication started...</span>");
+				        		//$("#main_div").html("");
+				        		oauth_token = data.oauth_token;
+				        		window.location.href = "https://api.twitter.com/oauth/authenticate?oauth_token=" + oauth_token;
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				return false;
+				}
+			);
+		}
+	}	
+	else if(twitter_handle !== null && twitter_access_token !== null)
+	{
+		alert("twitter_handle and twitter_access_token cookies !== null");
+		$.ajax({
+			type: 'GET',
+			url: endpoint,
+			data: {
+	            method: "getUser",
+	            twitter_handle: twitter_handle,
+	            twitter_access_token: twitter_access_token
+			},
+	        dataType: 'json',
+	        async: false,
+	        success: function (data, status) {
+	        	if (data.response_status == "error")
+	        	{
+	        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + "</span>");
+	        	}
+	        	else
+	        	{
+	        		$("#main_div").html(JSON.stringify(data));
+	        	}
+	        }
+	        ,
+	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+	            console.log(textStatus, errorThrown);
+	        }
+		});
+	}
+	else
+	{
+		alert("incorrect state");
+	}	
+	
+	/*
 	else if(typeof hoozon_auth === undefined || hoozon_auth === null || hoozon_auth === "")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">Please enter the password you were provided. </span>");
@@ -440,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	            console.log(textStatus, errorThrown);
 	        }
 		});
-	}
+	}*/
 	
 });
 	

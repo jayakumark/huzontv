@@ -273,129 +273,83 @@ public class Endpoint extends HttpServlet {
 					jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
 					jsonresponse.put("response_status", "error");
 				}
-				else if (method.equals("checkPassword"))
-				{
-					String password = request.getParameter("password");
-					if(password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(password.equals("firstnews72"))
-						{
-							jsonresponse.put("response_status", "success");
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect password.");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
 				else if (method.equals("startTwitterAuthentication"))
 				{
-					String password = request.getParameter("hoozon_auth");
-					if(password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(password.equals("firstnews72"))
-						{
-							String designation = request.getParameter("designation");
-							if(designation == null)
-							{
-								// check for designation validity FIXME
-								jsonresponse.put("message", "Please specify a valid designation");
-								jsonresponse.put("response_status", "error");
-							}
-							else
-							{	
-								Twitter twitter = new Twitter();
-								jsonresponse = twitter.startTwitterAuthentication();
-								/*if(jsonresponse.getString("response_status").equals("success"))
-								{
-									setOAuthToken("wkyt", designation, jsonresponse.getString("oauth_token"));
-								}*/
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect password.");
-							jsonresponse.put("response_status", "error");
-						}
-					}
+					Twitter twitter = new Twitter();
+					jsonresponse = twitter.startTwitterAuthentication();
 				}
 				else if (method.equals("getTwitterAccessTokenFromAuthorizationCode"))
 				{
-					String password = request.getParameter("hoozon_auth");
-					if(password == null)
+					String oauth_verifier = request.getParameter("oauth_verifier");
+					String oauth_token = request.getParameter("oauth_token");
+					if(oauth_verifier == null)
 					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
+						jsonresponse.put("message", "This method requires an oauth_verifier value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(oauth_token == null)
+					{
+						jsonresponse.put("message", "This method requires an oauth_token value.");
 						jsonresponse.put("response_status", "error");
 					}
 					else
 					{	
-						if(password.equals("firstnews72"))
+						// at this point the user has been sent to twitter with an initial request_token. They've been sent back
+						// to the registration page with an oauth_token and oauth_verifier. However, as they come back, we don't know who they are 
+						// except for this oauth_token we've seen before. Therefore, we've saved it above in startTwitterAuthentication
+						// and we need to search the DB for it to figure out who it belongs to.
+						//String designation = getDesignationFromOAuthToken("wkyt", oauth_token);
+						
+						Twitter twitter = new Twitter();
+						JSONObject preliminary_jsonresponse = new JSONObject();
+						preliminary_jsonresponse = twitter.getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
+						if(preliminary_jsonresponse.getString("response_status").equals("success"))
 						{
-							String oauth_verifier = request.getParameter("oauth_verifier");
-							String oauth_token = request.getParameter("oauth_token");
-							String designation = request.getParameter("designation");
-							if(oauth_verifier == null)
+							User user = new User(preliminary_jsonresponse.getString("screen_name"), "twitter_handle");
+							if(!user.isValid())
 							{
-								jsonresponse.put("message", "This method requires an oauth_verifier value.");
-								jsonresponse.put("response_status", "error");
-							}
-							else if(oauth_token == null)
-							{
-								jsonresponse.put("message", "This method requires an oauth_token value.");
+								jsonresponse.put("message", "The screen name returned by Twitter (" + preliminary_jsonresponse.getString("screen_name") + ") was not found in our database.");
 								jsonresponse.put("response_status", "error");
 							}
 							else
-							{	
-								// at this point the user has been sent to twitter with an initial request_token. They've been sent back
-								// to the registration page with an oauth_token and oauth_verifier. However, as they come back, we don't know who they are 
-								// except for this oauth_token we've seen before. Therefore, we've saved it above in startTwitterAuthentication
-								// and we need to search the DB for it to figure out who it belongs to.
-								//String designation = getDesignationFromOAuthToken("wkyt", oauth_token);
-								
-								String expected_twitter_handle = getTwitterHandle("wkyt", designation);
-								Twitter twitter = new Twitter();
-								JSONObject preliminary_jsonresponse = new JSONObject();
-								preliminary_jsonresponse = twitter.getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
-								if(preliminary_jsonresponse.getString("response_status").equals("success"))
-								{
-									if(!preliminary_jsonresponse.getString("screen_name").equals(expected_twitter_handle))
-									{
-										jsonresponse.put("message", "The screen name returned by Twitter (" + preliminary_jsonresponse.getString("screen_name") + ") did not match the expected value: " + expected_twitter_handle);
-										jsonresponse.put("response_status", "error");
-									}
-									else
-									{
-										setTwitterAccessTokenAndSecret("wkyt", designation, preliminary_jsonresponse.getString("access_token"), preliminary_jsonresponse.getString("access_token_secret"));
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("message", "The access_token and access_token_secret should be set in the database now.");
-									}
-								}
-								else
-								{
-									jsonresponse = preliminary_jsonresponse;
-								}
+							{
+								user.setTwitterAccessTokenAndSecret(preliminary_jsonresponse.getString("access_token"), preliminary_jsonresponse.getString("access_token_secret"));
+								//setTwitterAccessTokenAndSecret("wkyt", designation, preliminary_jsonresponse.getString("access_token"), preliminary_jsonresponse.getString("access_token_secret"));
+								jsonresponse.put("response_status", "success");
+								jsonresponse.put("message", "The access_token and access_token_secret should be set in the database now.");
+								jsonresponse.put("twitter_handle", preliminary_jsonresponse.getString("screen_name"));
+								jsonresponse.put("twitter_access_token", preliminary_jsonresponse.getString("access_token"));
 							}
 						}
 						else
 						{
-							jsonresponse.put("message", "Incorrect password.");
-							jsonresponse.put("response_status", "error");
+							jsonresponse = preliminary_jsonresponse;
 						}
-					}					
+					}
+				}
+				else if (method.equals("getUser"))
+				{
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "This method requires a twitter_handle value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "This method requires an twitter_access_token value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{
+						User user = new User(twitter_handle, "twitter_handle");
+						if(user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("user_jo", user.getJSONObject());
+						}
+					}
 				}
 				else if (method.equals("getFacebookAccessTokenFromAuthorizationCode"))
 				{
@@ -450,7 +404,7 @@ public class Endpoint extends HttpServlet {
 												expires_in_seconds = Integer.parseInt(expires);
 											cal.add(Calendar.SECOND, expires_in_seconds);
 											long expires_timestamp = cal.getTimeInMillis() / 1000;
-											boolean successful = setFacebookAccessTokenExpiresAndUID("wkyt", designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
+											boolean successful = setFacebookAccessTokenExpiresAndUID(designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
 											if(successful)
 											{	
 												jsonresponse.put("response_status", "success");
@@ -473,27 +427,6 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
 										jsonresponse.put("response_status", "error");
 									}
-									/*try
-									{
-										String fbat = getFacebookAccessToken("wkyt", designation);
-										if(fbat != null)
-											jsonresponse.put("facebook_access_token", fbat);
-										else
-											jsonresponse.put("facebook_access_token", "was null");
-										JSONObject fb_profile_jo = getFacebookProfile("wkyt", designation);
-										if(fb_profile_jo != null)
-											jsonresponse.put("facebook_profile", fb_profile_jo);
-										else
-											jsonresponse.put("facebook_profile", "was null");
-									
-										jsonresponse.put("response_from_facebook", preliminary_jsonresponse.getString("response_from_facebook"));
-										
-									}
-									catch(NumberFormatException nfe)
-									{
-										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " full preliminary_jsonresponse=" + preliminary_jsonresponse);
-										jsonresponse.put("response_status", "error");
-									}*/
 								}
 								else
 								{
@@ -508,26 +441,6 @@ public class Endpoint extends HttpServlet {
 						}
 					}		
 				}
-				/*else if (method.equals("getTwitterAcesssTokenAndSecret"))
-				{	
-					// FIXME this method needs some sort of protection against hacking (i.e. an ssl layer and an administrator password or something
-					String designation = request.getParameter("designation");
-					
-					if(designation == null)
-					{
-						jsonresponse.put("message", "This method requires a designation value.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						JSONObject twit_jo = getTwitterAccessTokenAndSecret("wkyt", designation);
-						if(twit_jo != null)
-						{
-							jsonresponse = twit_jo;
-							jsonresponse.put("response_status", "success");
-						}
-					}
-				}*/
 				else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
 				{
 					String designation = request.getParameter("designation");
@@ -550,7 +463,7 @@ public class Endpoint extends HttpServlet {
 						// 4. Once found, get the name of the sub account
 						// 5. Get the access token for the account
 						// 6. set the facebook subaccount id, name and access_token for the designation
-						String facebook_access_token =  getFacebookAccessToken("wkyt",designation);
+						String facebook_access_token =  getFacebookAccessToken(designation);
 						if(facebook_access_token == null)
 						{
 							jsonresponse.put("message", "Could not retrieve fb access token for designation " + designation + ". Has the FB account been linked yet?");
@@ -558,7 +471,7 @@ public class Endpoint extends HttpServlet {
 						}
 						else
 						{	
-							JSONArray fbsubaccounts_ja = getFacebookSubAccounts("wkyt", facebook_access_token);
+							JSONArray fbsubaccounts_ja = getFacebookSubAccounts(facebook_access_token);
 							if(fbsubaccounts_ja == null)
 							{
 								jsonresponse.put("message", "Could not retrieve subaccounts for " + designation + ". Has the main FB account been linked yet? Does the parent account have sub accounts?");
@@ -577,7 +490,7 @@ public class Endpoint extends HttpServlet {
 										name = fbsubaccounts_ja.getJSONObject(x).getString("name");
 										subaccount_access_token = fbsubaccounts_ja.getJSONObject(x).getString("access_token");
 										id_long =  (new Long(Long.parseLong(id)).longValue());
-										successful = setFacebookSubAccountIdNameAndAccessToken("wkyt", designation, id_long, name, subaccount_access_token);
+										successful = setFacebookSubAccountIdNameAndAccessToken(designation, id_long, name, subaccount_access_token);
 									}
 								}
 								if(successful)
@@ -833,7 +746,7 @@ public class Endpoint extends HttpServlet {
 									JSONArray frames_ja = new JSONArray();
 									double total = 0.0;
 									double ma_over_window = 0.0;
-									double homogeneity_double = getHomogeneityScore("wkyt",designation);
+									double homogeneity_double = getHomogeneityScore(designation);
 									//double lowest_score_in_window = 2.0;
 									while(rs.next())
 									{
@@ -933,7 +846,7 @@ public class Endpoint extends HttpServlet {
 								}
 								else // designation/numstddev ok
 								{
-									double homogeneity_double = getHomogeneityScore("wkyt",designation);
+									double homogeneity_double = getHomogeneityScore(designation);
 									double modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
 									double threshold = homogeneity_double * modifier_double;
 									double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
@@ -1357,7 +1270,7 @@ public class Endpoint extends HttpServlet {
 							}
 							else if(social_type.equals("twitter"))
 							{
-								JSONObject twit_jo = getTwitterAccessTokenAndSecret("wkyt", designation);
+								JSONObject twit_jo = getTwitterAccessTokenAndSecret(designation);
 								if(twit_jo != null)
 								{	
 									Twitter twitter = new Twitter();
@@ -1754,7 +1667,7 @@ public class Endpoint extends HttpServlet {
 							// max_designation is set to the designation of whomever that max_avg belonged to
 																			
 							String twitter_handle = null;
-							double max_homogeneity_double = getHomogeneityScore("wkyt", max_designation);
+							double max_homogeneity_double = getHomogeneityScore(max_designation);
 							if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
 							{
 								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_designation=" + max_designation + " and max_avg=" + max_avg + " > " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh PAST THRESH");
@@ -1795,11 +1708,11 @@ public class Endpoint extends HttpServlet {
 									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " > " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh PAST THRESH");
 									
 									// (d) yes it does
-									long last_alert_twitter = getLastAlert("wkyt", max_designation, "twitter");
+									long last_alert_twitter = getLastAlert(max_designation, "twitter");
 									boolean alert_triggered_twitter = false;
 									if((ts_long - last_alert_twitter) > awp_twitter)
 									{
-										setLastAlert("wkyt", max_designation, ts_long, "twitter");
+										setLastAlert(max_designation, ts_long, "twitter");
 										alert_triggered_twitter = true;
 										jsonresponse.put("alert_triggered_twitter", "yes");
 										twitter_handle = getTwitterHandle("wkyt",max_designation);
@@ -1807,7 +1720,7 @@ public class Endpoint extends HttpServlet {
 										{
 											jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
 											
-											JSONObject twitter_stuff = getTwitterAccessTokenAndSecret("wkyt", max_designation); 
+											JSONObject twitter_stuff = getTwitterAccessTokenAndSecret(max_designation); 
 											if(twitter_stuff != null
 													&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
 													&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
@@ -1839,15 +1752,15 @@ public class Endpoint extends HttpServlet {
 									}
 									
 									
-									long last_alert_facebook = getLastAlert("wkyt", max_designation, "facebook");
+									long last_alert_facebook = getLastAlert(max_designation, "facebook");
 									boolean alert_triggered_facebook = false;
 									System.out.println("Endpoint processNewFrame(): ts_long=" + ts_long + " last_alert_facebook=" + last_alert_facebook + " diff=" + (ts_long - last_alert_facebook) + " vs awp_facebook=" + awp_facebook);
 									if((ts_long - last_alert_facebook) > awp_facebook)
 									{	 
-										setLastAlert("wkyt", max_designation, ts_long, "facebook");
+										setLastAlert(max_designation, ts_long, "facebook");
 										alert_triggered_facebook = true;
 										jsonresponse.put("alert_triggered_facebook", "yes");
-										JSONObject facebook_stuff = getFacebookSubAccount("wkyt", max_designation); 
+										JSONObject facebook_stuff = getFacebookSubAccount(max_designation); 
 										if(facebook_stuff != null)
 										{
 											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
@@ -1975,27 +1888,27 @@ public class Endpoint extends HttpServlet {
 			
 			// active/inactive/all for both person and master types
 			if(active_scope.equals("active") && person_or_master_scope.equals("all"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE active=1");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND active=1)");
 			else if(active_scope.equals("inactive") && person_or_master_scope.equals("all"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE active=0");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND active=0) ");
 			else if(active_scope.equals("all") && person_or_master_scope.equals("all"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station);
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %') ");
 			
 			// active/inactive/all for person types
 			else if(active_scope.equals("active") && person_or_master_scope.equals("person"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=1 AND acct_type='person')");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND active=1 AND acct_type='person')");
 			else if(active_scope.equals("inactive") && person_or_master_scope.equals("person"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=0 AND acct_type='person')");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND active=0 AND acct_type='person')");
 			else if(active_scope.equals("all") && person_or_master_scope.equals("person")) 
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE acct_type='person'");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND acct_type='person')");
 			
 			// active/inactive/all for master types
 			else if(active_scope.equals("active") && person_or_master_scope.equals("master"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=1 AND acct_type='master')");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND active=1 AND acct_type='master')");
 			else if(active_scope.equals("inactive") && person_or_master_scope.equals("master"))
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE (active=0 AND acct_type='master')");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND active=0 AND acct_type='master')");
 			else if(active_scope.equals("all") && person_or_master_scope.equals("master")) 
-				rs = stmt.executeQuery("SELECT designation FROM people_" + station + " WHERE acct_type='master'");
+				rs = stmt.executeQuery("SELECT designation FROM people WHERE (stations like '% " + station + " %' AND acct_type='master')");
 			else
 			{
 				System.out.println("Endpoint.getDesignations(): Gobm probm. One of the active_scope values was wrong.");
@@ -2048,7 +1961,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people_" + station + " WHERE (active=1 AND acct_type='person')"); 
+			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people WHERE (stations like '% " + station + " %' AND active=1 AND acct_type='person')"); 
 			JSONObject jo = null;
 			while(rs.next())
 			{
@@ -2106,9 +2019,9 @@ public class Endpoint extends HttpServlet {
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			if(include_master)
-				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE active=1"); 
+				rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND active=1)"); 
 			else // only get people
-				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (active=1 AND acct_type='person')"); 
+				rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND active=1 AND acct_type='person')"); 
 			JSONObject jo = null;
 			while(rs.next())
 			{
@@ -2128,10 +2041,10 @@ public class Endpoint extends HttpServlet {
 					if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
 					{
 						jo.put("facebook_connected", "yes");
-						JSONArray fbaccounts_ja = getFacebookSubAccounts("wkyt", rs.getString("facebook_access_token"));
+						JSONArray fbaccounts_ja = getFacebookSubAccounts(rs.getString("facebook_access_token"));
 						if(fbaccounts_ja != null)
 							jo.put("facebook_accounts", fbaccounts_ja);
-						JSONObject selected_fb_account_jo = getFacebookSubAccount("wkyt", rs.getString("designation"));
+						JSONObject selected_fb_account_jo = getFacebookSubAccount(rs.getString("designation"));
 						if(selected_fb_account_jo != null)
 						{
 							jo.put("facebook_account_id", selected_fb_account_jo.getLong("facebook_account_id"));
@@ -2200,7 +2113,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1)"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND designation='" + designation + "' AND active=1)"); 
 			if(rs.next())
 			{
 				returnval = rs.getString("twitter_handle");
@@ -2248,7 +2161,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1)"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND designation='" + designation + "' AND active=1)"); 
 			if(rs.next())
 			{
 				returnval = rs.getString("display_name");
@@ -2284,7 +2197,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	double getHomogeneityScore(String station, String designation)
+	double getHomogeneityScore(String designation)
 	{
 		double returnval = 0.0;
 		ResultSet rs = null;
@@ -2294,7 +2207,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1)"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			while(rs.next())
 			{
 				returnval = rs.getDouble("homogeneity");
@@ -2330,7 +2243,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	JSONObject getTwitterAccessTokenAndSecret(String station, String designation)
+	JSONObject getTwitterAccessTokenAndSecret(String designation)
 	{
 		JSONObject return_jo = null;
 		try
@@ -2342,7 +2255,7 @@ public class Endpoint extends HttpServlet {
 			{
 				con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 				stmt = con.createStatement();
-				rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+				rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 				if(rs.next())
 				{
 					return_jo = new JSONObject();
@@ -2384,7 +2297,7 @@ public class Endpoint extends HttpServlet {
 		return return_jo;
 	}
 	
-	long getLastAlert(String station, String designation, String social_type)
+	long getLastAlert(String designation, String social_type)
 	{
 		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
 		{
@@ -2399,7 +2312,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE (designation='" + designation + "' AND active=1) "); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			while(rs.next())
 			{
 				if(social_type.equals("twitter"))
@@ -2512,7 +2425,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}*/
 	
-	boolean setLastAlert(String station, String designation, long alert_ts, String social_type)
+	boolean setLastAlert(String designation, long alert_ts, String social_type)
 	{
 		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
 		{
@@ -2527,7 +2440,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE AND designation='" + designation + "' "); 
 			while(rs.next())
 			{
 				if(social_type.equals("facebook"))
@@ -2569,57 +2482,9 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	boolean setTwitterAccessTokenAndSecret(String station, String designation, String access_token, String access_token_secret)
-	{
-		boolean returnval;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
-			while(rs.next())
-			{
-				rs.updateString("twitter_access_token", access_token);
-				rs.updateString("twitter_access_token_secret", access_token_secret);
-				rs.updateRow();
-			}
-			returnval = true;
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			returnval = false;
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
 	
-	boolean setFacebookAccessTokenExpiresAndUID(String station, String designation, String access_token, long expires_timestamp, long fb_uid)
+	
+	boolean setFacebookAccessTokenExpiresAndUID(String designation, String access_token, long expires_timestamp, long fb_uid)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -2629,7 +2494,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
 			{
 				rs.updateString("facebook_access_token", access_token);
@@ -2669,7 +2534,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	boolean setFacebookSubAccountIdNameAndAccessToken(String station, String designation, long id_long, String name, String subaccount_access_token)
+	boolean setFacebookSubAccountIdNameAndAccessToken(String designation, long id_long, String name, String subaccount_access_token)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -2679,7 +2544,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
 			{
 				rs.updateString("facebook_account_access_token", subaccount_access_token);
@@ -2822,7 +2687,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 		
-	String getFacebookAccessToken(String station, String designation)
+	String getFacebookAccessToken(String designation)
 	{
 		String returnval = null;
 		ResultSet rs = null;
@@ -2832,7 +2697,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			if(rs.next())
 			{
 				if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
@@ -2871,7 +2736,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	JSONObject getFacebookSubAccount(String station, String designation)
+	JSONObject getFacebookSubAccount(String designation)
 	{
 		JSONObject return_jo = null;
 		ResultSet rs = null;
@@ -2881,7 +2746,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			if(rs.next())
 			{
 				if(rs.getLong("facebook_account_id") != 0 && rs.getString("facebook_account_access_token") != null && rs.getString("facebook_account_name") != null)
@@ -2928,7 +2793,7 @@ public class Endpoint extends HttpServlet {
 		return return_jo;
 	}
 	
-	String getSelectedFacebookAccountAccessToken(String station, String designation)
+	String getSelectedFacebookAccountAccessToken(String designation)
 	{
 		String returnval = null;
 		ResultSet rs = null;
@@ -2938,7 +2803,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE designation='" + designation + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			if(rs.next())
 			{
 				if(rs.getLong("facebook_account_id") != 0 && rs.getString("facebook_account_access_token") != null && rs.getString("facebook_account_name") != null)
@@ -2977,6 +2842,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
+	// DANGEROUS!!!! This will reset all alerts for every active reporter at this station
 	boolean resetAllLastAlerts(String station)
 	{
 		boolean returnval;
@@ -2987,7 +2853,7 @@ public class Endpoint extends HttpServlet {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people_" + station + " WHERE active=1"); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE (station='" + station + "' AND active=1)"); 
 			while(rs.next())
 			{
 				rs.updateLong("last_alert_twitter", 0);
@@ -3258,7 +3124,7 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
-	public JSONArray getFacebookSubAccounts(String station, String access_token)
+	public JSONArray getFacebookSubAccounts(String access_token)
 	{
 		JSONArray jsonresponse = new JSONArray();
 		try
@@ -3400,7 +3266,7 @@ public class Endpoint extends HttpServlet {
 		 boolean successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
-			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + getFacebookSubAccount("wkyt", designation).getString("facebook_account_access_token"));
+			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + getFacebookSubAccount(designation).getString("facebook_account_access_token"));
 			HttpResponse response = httpClient.execute(hd);
 			int statusCode = response.getStatusLine().getStatusCode();
 	        successful = statusCode == 200 ? true : false;
