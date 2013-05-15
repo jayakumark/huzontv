@@ -1,4 +1,4 @@
-package tv.hoozon;
+package tv.huzon;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

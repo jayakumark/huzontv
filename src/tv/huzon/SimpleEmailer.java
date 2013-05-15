@@ -1,6 +1,6 @@
 //package mypackage1;
 
-package tv.hoozon;
+package tv.huzon;
 
 import java.util.Properties;
 

@@ -1,4 +1,4 @@
-package tv.hoozon;
+package tv.huzon;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,9 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
 <!DOCTYPE html>
-<title>hoozon.tv</title>
+<title>huzon.tv</title>
 <head>
 	<link rel="stylesheet" type="text/css" href="css/style.css">
-	<link rel="icon" type="image/png" href="images/hoozon_logo_16x16.png" />
+	<link rel="icon" type="image/png" href="images/huzon_logo_16x16.png" />
 	<script src="js/jquery-1.8.2.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
@@ -21,17 +21,17 @@
 	<div class="outer">
 		<div class="middle">
 			<div class="inner">
-				<a href="#" id="main_link" style="font-size:30px;color:white"><img id="tv_normal" src="images/hoozon_retrotv_withglow_441x392.png" style="width:441px;height:392px;">
-				<img id="tv_qmark" src="images/hoozon_retrotv_withglowqmark_441x392.png" style="width:441px;height:392px;display:none"></a>
+				<a href="#" id="main_link" style="font-size:30px;color:white"><img id="tv_normal" src="images/huzon_retrotv_withglow_441x392.png" style="width:441px;height:392px;">
+				<img id="tv_qmark" src="images/huzon_retrotv_withglowqmark_441x392.png" style="width:441px;height:392px;display:none"></a>
 			</div>
 		</div>
 	</div>
 	<footer>
-		<p>hoozon.tv &copy; 2013 Adkitech, LLC</p>
+		<p>huzon.tv &copy; 2013 Adkitech, LLC</p>
 		<ul>
 			<li><a href="whatis.html">About</a></li>
-			<li><a href="http://twitter.com/hoozontv">Twitter</a></li>
-			<li><a href="https://www.facebook.com/pages/hoozontv/531229596923718">Facebook</a></li>
+			<li><a href="http://twitter.com/huzontv">Twitter</a></li>
+			<li><a href="https://www.facebook.com/pages/huzontv/531229596923718">Facebook</a></li>
 			<li><a href="contact.html">Contact</a></li>
 		</ul>
 	</footer>
