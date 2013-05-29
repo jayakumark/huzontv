@@ -34,7 +34,7 @@ public class Station {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE call_letters='" + inc_call_letters + "'");
 			if(rs.next())
@@ -65,7 +65,7 @@ public class Station {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Station constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Station constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -81,7 +81,7 @@ public class Station {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Station constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Station constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}

@@ -12,8 +12,8 @@
  * The mask defaults to dateFormat.masks.default.
  */
 
-var endpoint = "https://www.hoozon.tv/endpoint";
-//var endpoint = "http://localhost:8080/hoozontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "http://localhost:8080/huzontv/endpoint";
 
 
 var docCookies = {
@@ -164,17 +164,17 @@ Date.prototype.format = function (mask, utc) {
 
 document.addEventListener('DOMContentLoaded', function () {
 	
-	var hoozon_admin_auth = docCookies.getItem("hoozon_admin_auth");
+	var huzon_admin_auth = docCookies.getItem("huzon_admin_auth");
 	if(location.protocol !== "https:")
 	{
-		$("#main_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.hoozon.tv/simulator.html\">https://www.hoozon.tv/simulator.html</a> instead.</span>");
+		$("#main_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.huzon.tv/simulator.html\">https://www.huzon.tv/simulator.html</a> instead.</span>");
 	}
-	else if(typeof hoozon_admin_auth === undefined || hoozon_admin_auth === null || hoozon_admin_auth === "")
+	else if(typeof huzon_admin_auth === undefined || huzon_admin_auth === null || huzon_admin_auth === "")
 	{
-		var mds = "<input type=password id=\"hoozon_admin_auth_input\"> <input type=button id=\"hoozon_admin_auth_go_button\" value=\"go\">";
+		var mds = "<input type=password id=\"huzon_admin_auth_input\"> <input type=button id=\"huzon_admin_auth_go_button\" value=\"go\">";
 		$("#main_div").html(mds);
-		$("#hoozon_admin_auth_go_button").click(function () {
-				docCookies.setItem("hoozon_admin_auth", $("#hoozon_admin_auth_input").val(), 31536e3);
+		$("#huzon_admin_auth_go_button").click(function () {
+				docCookies.setItem("huzon_admin_auth", $("#huzon_admin_auth_input").val(), 31536e3);
 				window.location.reload();
 				return false;
 				}
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	            station: "wkyt",
 	            active_scope: "active", // active, inactive, all
 	            person_or_master_scope: "all", // person, master, all
-	            hoozon_admin_auth: hoozon_admin_auth
+	            huzon_admin_auth: huzon_admin_auth
 			},
 	        dataType: 'json',
 	        async: false,
@@ -551,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            method: "getFrames",
 					            begin: begin,             
 					            end: end,
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: true,
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        			for(var x = 0; x < data.frames.length; x++)
 					        			{
 					        				rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-					        				rds = rds + "<img src=http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + " style=\"width:250px;height:141px\">";
+					        				rds = rds + "<img src=http://192.168.2.101/huzon_wkyt/" + data.frames[x].image_name + " style=\"width:250px;height:141px\">";
 					        				rds = rds + "<br>" + data.frames[x].datestring;
 					        				rds = rds + "</div>";
 					        			}
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            designation: $('#function2_designation_select').val(),
 					            singlemodifier: $('#function2_singlemodifier_input').val(),
 					            delta: $('#function2_delta_input').val(),
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: true,
@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        				{
 					        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
 					        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-					        					rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.frames[x].image_name + "\" style=\"width:250px;height:141px\">";
+					        					rds = rds + "<img src=\"http://192.168.2.101/huzon_wkyt/" + data.frames[x].image_name + "\" style=\"width:250px;height:141px\">";
 					        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
 					        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
 					        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            mamodifier: $('#function3_mamodifier_input').val(),
 					            singlemodifier: $('#function3_singlemodifier_input').val(),
 					            mawindow: $('#function3_mawindow_input').val(),
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: true,
@@ -1337,7 +1337,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            method: "getMissingFrames",
 					            begin: begin,             
 					            end: end  ,
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: false,
@@ -1395,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					       //     awp: $('#function6_awp_input').val(),
 					            mawindow: $('#function6_mawindow_input').val(),
 					            delta:  $('#function6_delta_input').val(),
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: false,
@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        				{
 				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 					        				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-					        				rds = rds + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.alert_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
+					        				rds = rds + "<br><img src=\"http://192.168.2.101/huzon_wkyt/" + data.alert_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
 					        				rds = rds + "<br>datestring:" + data.alert_frames[x].datestring;
 					        				rds = rds + "<br>designation:" + data.alert_frames[x].designation;
 					        				rds = rds + "<br>score for des:" + data.alert_frames[x].score;
@@ -1445,7 +1445,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        				{
 				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 					        				//rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-					        				rds = rds + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.delta_suppressed_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
+					        				rds = rds + "<br><img src=\"http://192.168.2.101/huzon_wkyt/" + data.delta_suppressed_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
 					        				rds = rds + "<br>datestring:" + data.delta_suppressed_frames[x].datestring;
 					        				rds = rds + "<br>designation:" + data.delta_suppressed_frames[x].designation;
 					        				rds = rds + "<br>score for des:" + data.delta_suppressed_frames[x].score;
@@ -1490,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            method: "getFiredAlerts",
 					            begin: $('#function7_begin_input').val(),             
 					            end: $('#function7_end_input').val(),
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: false,
@@ -1528,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					        			rds = rds + data.fired_alerts[count].creation_timestamp;
 					        			rds = rds + "	</td>";
 					        			rds = rds + "	<td>";
-					        			rds = rds + "<img src=\"http://192.168.2.101/hoozon_wkyt/" + data.fired_alerts[count].image_name + "\" style=\"width:250px;height:141px\">";
+					        			rds = rds + "<img src=\"http://192.168.2.101/huzon_wkyt/" + data.fired_alerts[count].image_name + "\" style=\"width:250px;height:141px\">";
 					        			rds = rds + "	</td>";
 					        		/*  rds = rds + "	<td>";
 					        			rds = rds + data.fired_alerts[count].station;
@@ -1574,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					            designation: $('#function8_designation_select').val(),
 					            social_type: $('#function8_social_type_input').val(),             
 					            id: $('#function8_id_input').val(),
-					            hoozon_admin_auth: hoozon_admin_auth
+					            huzon_admin_auth: huzon_admin_auth
 							},
 					        dataType: 'json',
 					        async: false,
@@ -1601,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_facebook, mawindow)
 {
-	var hoozon_admin_auth = docCookies.getItem("hoozon_admin_auth"); // this should always be here since this function can't be called without it. 
+	var huzon_admin_auth = docCookies.getItem("huzon_admin_auth"); // this should always be here since this function can't be called without it. 
 	var alert_triggered = false;
 	$("#alerts_div").html(ts);
 	$.ajax({
@@ -1615,7 +1615,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_faceb
 	            awp_twitter: awp_twitter,
 	            awp_facebook: awp_facebook,
 	            mawindow: mawindow,
-	            hoozon_admin_auth: hoozon_admin_auth
+	            huzon_admin_auth: huzon_admin_auth
 			},
 	        dataType: 'json',
 	        async: false,
@@ -1642,7 +1642,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_faceb
 						if(twitter_handle != null)
 						{
 							jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
-							JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","hoozon_master"); // FIXME
+							JSONObject twitter_stuff = getUserTwitterAccessTokenAndSecret("wkyt","huzon_master"); // FIXME
 							if(twitter_stuff.has("response_status") && twitter_stuff.getString("response_status").equals("success")
 									&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
 									&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
@@ -1655,7 +1655,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_faceb
 							}
 						}
 						 
-						JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "hoozon_master"); //FIXME
+						JSONObject facebook_stuff = getSelectedFacebookAccount("wkyt", "huzon_master"); //FIXME
 						if(facebook_stuff != null)
 						{
 							jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
@@ -1691,7 +1691,7 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_faceb
 	        				alertstring = alertstring + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
 	        				alertstring = alertstring + "	</tr>";
 	        				alertstring = alertstring + "</table>";
-	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/hoozon_wkyt/" + data.image_name_of_frame_with_highest_score_in_window + "\" style=\"width:250px;height:141px\">";
+	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/huzon_wkyt/" + data.image_name_of_frame_with_highest_score_in_window + "\" style=\"width:250px;height:141px\">";
 	        				alertstring = alertstring + "<br>datestring_of_frame_with_highest_score_in_window: " + data.datestring_of_frame_with_highest_score_in_window;
 	        				alertstring = alertstring + "<br>designation: " + data.designation;
 	        				alertstring = alertstring + "<br>designation_moving_average_over_window: " + data.designation_moving_average_over_window;
@@ -1743,14 +1743,14 @@ function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_faceb
 
 function resetAllLastAlerts(station)
 {
-	var hoozon_admin_auth = docCookies.getItem("hoozon_admin_auth"); // this should always be here since this function can't be called without it. 
+	var huzon_admin_auth = docCookies.getItem("huzon_admin_auth"); // this should always be here since this function can't be called without it. 
 	$.ajax({
 			type: 'GET',
 			url: endpoint,
 			data: {
 	            method: "resetAllLastAlerts",
 	            station: station,
-	            hoozon_admin_auth: hoozon_admin_auth
+	            huzon_admin_auth: huzon_admin_auth
 			},
 	        dataType: 'json',
 	        async: false,

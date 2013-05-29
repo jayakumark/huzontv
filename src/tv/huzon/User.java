@@ -50,7 +50,7 @@ public class User {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			String query_to_exec = "";
 			if(constructor_type.equals("twitter_handle"))
@@ -123,7 +123,7 @@ public class User {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in User constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in User constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -139,7 +139,7 @@ public class User {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in User constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in User constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -158,7 +158,7 @@ public class User {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT designation FROM people WHERE designation='" + designation + "'");
 			if(rs.next())
@@ -222,7 +222,7 @@ public class User {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in User constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in User constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -238,7 +238,7 @@ public class User {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in User constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in User constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -346,7 +346,7 @@ public class User {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE reporters like ' %" + designation + "% '");
 			while(rs.next())
@@ -359,7 +359,7 @@ public class User {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in User.getStationsAsReporter", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in User.getStationsAsReporter", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -375,7 +375,7 @@ public class User {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in User.getStationsAsReporter", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in User.getStationsAsReporter", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -392,7 +392,7 @@ public class User {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE administrators like ' %" + designation + "% '");
 			while(rs.next())
@@ -405,7 +405,7 @@ public class User {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in User.getStationsAsAdministrator", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in User.getStationsAsAdministrator", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -421,7 +421,7 @@ public class User {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in User.getStationsAsAdministrator", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in User.getStationsAsAdministrator", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -455,7 +455,7 @@ public class User {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -472,7 +472,7 @@ public class User {
 			returnval = false;
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -488,7 +488,7 @@ public class User {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}

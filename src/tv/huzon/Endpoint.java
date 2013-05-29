@@ -53,7 +53,7 @@ public class Endpoint extends HttpServlet {
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		System.out.println("tv.hoozon.Endpoint.doPost(): entering...");
+		System.out.println("tv.huzon.Endpoint.doPost(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
 		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
 		PrintWriter out = response.getWriter();
@@ -65,7 +65,7 @@ public class Endpoint extends HttpServlet {
 			// FIXME // this should eventually be secure to protect info. leaving insecure for now due to testing
 			/*if(!request.isSecure())
 			{
-				jsonresponse.put("message", "The hoozon.tv API endpoint must be communicated with securely.");
+				jsonresponse.put("message", "The huzon.tv API endpoint must be communicated with securely.");
 				jsonresponse.put("response_status", "error");
 			}
 			else
@@ -97,7 +97,7 @@ public class Endpoint extends HttpServlet {
 						Statement stmt = null;
 						try
 						{
-							con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+							con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 							stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 							rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getLong("timestamp_in_seconds") + "' LIMIT 1,1");
 							double currentavgscore = 0.0;
@@ -194,7 +194,7 @@ public class Endpoint extends HttpServlet {
 							
 							SimpleEmailer se = new SimpleEmailer();
 							try {
-								se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+								se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 							} catch (MessagingException e) {
 								e.printStackTrace();
 							}
@@ -219,7 +219,7 @@ public class Endpoint extends HttpServlet {
 								
 								SimpleEmailer se = new SimpleEmailer();
 								try {
-									se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when closing rs, stmt and con. message=" + sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+									se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when closing rs, stmt and con. message=" + sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 								} catch (MessagingException e) {
 									e.printStackTrace();
 								}
@@ -251,7 +251,7 @@ public class Endpoint extends HttpServlet {
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		System.out.println("tv.hoozon.Endpoint.doGet(): entering...");
+		System.out.println("tv.huzon.Endpoint.doGet(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
 		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
 		PrintWriter out = response.getWriter();
@@ -262,7 +262,7 @@ public class Endpoint extends HttpServlet {
 		{
 			if(!request.isSecure())
 			{
-				jsonresponse.put("message", "The hoozon.tv API endpoint must be communicated with securely.");
+				jsonresponse.put("message", "The huzon.tv API endpoint must be communicated with securely.");
 				jsonresponse.put("response_status", "error");
 			}
 			else
@@ -353,7 +353,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getFacebookAccessTokenFromAuthorizationCode"))
 				{
-					String password = request.getParameter("hoozon_auth");
+					String password = request.getParameter("huzon_auth");
 					if(password == null)
 					{
 						// check for designation validity FIXME
@@ -508,7 +508,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getFrames")) // inclusive
 				{
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -533,7 +533,7 @@ public class Endpoint extends HttpServlet {
 								Statement stmt = null;
 								try
 								{
-									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 									stmt = con.createStatement();
 									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ")"); // get the frames in the time range
 									rs.last();
@@ -559,7 +559,7 @@ public class Endpoint extends HttpServlet {
 									sqle.printStackTrace();
 									SimpleEmailer se = new SimpleEmailer();
 									try {
-										se.sendMail("SQLException in Endpoint getFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+										se.sendMail("SQLException in Endpoint getFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 									} catch (MessagingException e) {
 										e.printStackTrace();
 									}
@@ -575,7 +575,7 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
 										SimpleEmailer se = new SimpleEmailer();
 										try {
-											se.sendMail("SQLException in Endpoint getFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+											se.sendMail("SQLException in Endpoint getFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 										} catch (MessagingException e) {
 											e.printStackTrace();
 										}
@@ -592,7 +592,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getMissingFrames"))
 				{
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -630,7 +630,7 @@ public class Endpoint extends HttpServlet {
 								System.out.println("1");
 								try
 								{
-									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 									System.out.println("2");
 									stmt = con.createStatement();
 									System.out.println("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ") ORDER BY timestamp_in_seconds ASC");
@@ -671,7 +671,7 @@ public class Endpoint extends HttpServlet {
 									jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
 									SimpleEmailer se = new SimpleEmailer();
 									try {
-										se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when getting frames. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+										se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when getting frames. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 									} catch (MessagingException e) {
 										e.printStackTrace();
 									}
@@ -687,7 +687,7 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
 										SimpleEmailer se = new SimpleEmailer();
 										try {
-											se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+											se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 										} catch (MessagingException e) {
 											e.printStackTrace();
 										}
@@ -704,7 +704,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getFramesByDesignation")) 
 				{
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -736,7 +736,7 @@ public class Endpoint extends HttpServlet {
 								ResultSet rs2 = null;
 								try
 								{
-									con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 									stmt = con.createStatement();
 									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ")"); // get the frames in the time range
 									rs.last();
@@ -785,7 +785,7 @@ public class Endpoint extends HttpServlet {
 									sqle.printStackTrace();
 									SimpleEmailer se = new SimpleEmailer();
 									try {
-										se.sendMail("SQLException in Endpoint getFramesByDesignation", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+										se.sendMail("SQLException in Endpoint getFramesByDesignation", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 									} catch (MessagingException e) {
 										e.printStackTrace();
 									}
@@ -801,7 +801,7 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
 										SimpleEmailer se = new SimpleEmailer();
 										try {
-											se.sendMail("SQLException in Endpoint getFramesByDesignation", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+											se.sendMail("SQLException in Endpoint getFramesByDesignation", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 										} catch (MessagingException e) {
 											e.printStackTrace();
 										}
@@ -818,7 +818,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getFramesByDesignationAndHomogeneityThreshold"))
 				{	
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -858,7 +858,7 @@ public class Endpoint extends HttpServlet {
 										try
 										{
 											
-											con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+											con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 											stmt = con.createStatement();
 											rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
 											rs.last();
@@ -938,7 +938,7 @@ public class Endpoint extends HttpServlet {
 											sqle.printStackTrace();
 											SimpleEmailer se = new SimpleEmailer();
 											try {
-												se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+												se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 											} catch (MessagingException e) {
 												e.printStackTrace();
 											}
@@ -954,7 +954,7 @@ public class Endpoint extends HttpServlet {
 												jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
 												SimpleEmailer se = new SimpleEmailer();
 												try {
-													se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+													se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 												} catch (MessagingException e) {
 													e.printStackTrace();
 												}
@@ -979,7 +979,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getAlertsForTimePeriod"))
 				{
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -1019,7 +1019,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("simulateNewFrame"))
 				{
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -1059,7 +1059,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("resetAllLastAlerts"))
 				{	
-					String admin_password = request.getParameter("hoozon_admin_auth");
+					String admin_password = request.getParameter("huzon_admin_auth");
 					if(admin_password == null)
 					{
 						// check for designation validity FIXME
@@ -1091,7 +1091,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getDesignations"))
 				{	
-					String password = request.getParameter("hoozon_admin_auth");
+					String password = request.getParameter("huzon_admin_auth");
 					if(password == null)
 					{
 						// check for designation validity FIXME
@@ -1144,7 +1144,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getDesignationsAndAccounts"))
 				{	
-					String password = request.getParameter("hoozon_auth");
+					String password = request.getParameter("huzon_auth");
 					if(password == null)
 					{
 						// check for designation validity FIXME
@@ -1191,7 +1191,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getFiredAlerts"))
 				{	
-					String password = request.getParameter("hoozon_admin_auth");
+					String password = request.getParameter("huzon_admin_auth");
 					
 					if(password == null)
 					{
@@ -1234,7 +1234,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("deleteAlert"))
 				{	
-					String password = request.getParameter("hoozon_admin_auth");
+					String password = request.getParameter("huzon_admin_auth");
 					
 					if(password == null)
 					{
@@ -1364,7 +1364,7 @@ public class Endpoint extends HttpServlet {
 					current_homogeneity = dnh_ja.getJSONObject(x).getDouble("homogeneity");
 					current_designation = dnh_ja.getJSONObject(x).getString("designation");
 					// get frames where this designation crosses the single frame threshold
-					con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 					stmt = con.createStatement();
 					// search database for X frames
 					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds >= " + begin_long + " AND timestamp_in_seconds <= " + end_long + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_seconds ASC"); 
@@ -1499,7 +1499,7 @@ public class Endpoint extends HttpServlet {
 				sqle.printStackTrace();
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getAlertFrames2", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getAlertFrames2", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -1515,7 +1515,7 @@ public class Endpoint extends HttpServlet {
 					jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
 					SimpleEmailer se = new SimpleEmailer();
 					try {
-						se.sendMail("SQLException in Endpoint getAlertFrames2", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+						se.sendMail("SQLException in Endpoint getAlertFrames2", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 					} catch (MessagingException e) {
 						e.printStackTrace();
 					}
@@ -1554,7 +1554,7 @@ public class Endpoint extends HttpServlet {
 				Statement stmt = null;
 				try
 				{
-					con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 					stmt = con.createStatement();
 					// search database for X frames
 					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts_long + ") ORDER BY timestamp_in_seconds ASC"); 
@@ -1742,7 +1742,7 @@ public class Endpoint extends HttpServlet {
 												{	
 													SimpleEmailer se = new SimpleEmailer();
 													try {
-														se.sendMail("Invalid Twitter info", "Alert fired, but twitter_stuff was null or invalid for " + max_designation + ". twitter_stuff=" + twitter_stuff, "cyrus7580@gmail.com", "info@hoozon.tv");
+														se.sendMail("Invalid Twitter info", "Alert fired, but twitter_stuff was null or invalid for " + max_designation + ". twitter_stuff=" + twitter_stuff, "cyrus7580@gmail.com", "info@huzon.tv");
 													} catch (MessagingException e) {
 														e.printStackTrace();
 													}
@@ -1781,7 +1781,7 @@ public class Endpoint extends HttpServlet {
 											{	
 												SimpleEmailer se = new SimpleEmailer();
 												try {
-													se.sendMail("Invalid facebook info", "Alert fired, but facebook_stuff was null or invalid for designation " + max_designation + ". facebook_stuff=" + facebook_stuff, "cyrus7580@gmail.com", "info@hoozon.tv");
+													se.sendMail("Invalid facebook info", "Alert fired, but facebook_stuff was null or invalid for designation " + max_designation + ". facebook_stuff=" + facebook_stuff, "cyrus7580@gmail.com", "info@huzon.tv");
 												} catch (MessagingException e) {
 													e.printStackTrace();
 												}
@@ -1838,7 +1838,7 @@ public class Endpoint extends HttpServlet {
 					sqle.printStackTrace();
 					SimpleEmailer se = new SimpleEmailer();
 					try {
-						se.sendMail("SQLException in Endpoint processNewFrame", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+						se.sendMail("SQLException in Endpoint processNewFrame", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 					} catch (MessagingException e) {
 						e.printStackTrace();
 					}
@@ -1854,7 +1854,7 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
 						SimpleEmailer se = new SimpleEmailer();
 						try {
-							se.sendMail("SQLException in Endpoint processNewFrame", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+							se.sendMail("SQLException in Endpoint processNewFrame", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 						} catch (MessagingException e) {
 							e.printStackTrace();
 						}
@@ -1883,7 +1883,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			
 			// active/inactive/all for both person and master types
@@ -1924,7 +1924,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getDesignations", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getDesignations", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -1941,7 +1941,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getDesignations", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getDesignations", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -1959,7 +1959,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT designation,homogeneity FROM people WHERE (stations like '% " + station + " %' AND active=1 AND acct_type='person')"); 
 			JSONObject jo = null;
@@ -1981,7 +1981,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getDesignationsAndHomogeneities", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getDesignationsAndHomogeneities", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -1998,7 +1998,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getDesignationsAndHomogeneities", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getDesignationsAndHomogeneities", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2016,7 +2016,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			if(include_master)
 				rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND active=1)"); 
@@ -2076,7 +2076,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getDesignationsAndAccounts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getDesignationsAndAccounts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2093,7 +2093,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getDesignationsAndAccounts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getDesignationsAndAccounts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2111,7 +2111,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND designation='" + designation + "' AND active=1)"); 
 			if(rs.next())
@@ -2126,7 +2126,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getTwitterHandle", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getTwitterHandle", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2142,7 +2142,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getTwitterHandle", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getTwitterHandle", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2159,7 +2159,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND designation='" + designation + "' AND active=1)"); 
 			if(rs.next())
@@ -2172,7 +2172,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getDisplayName", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getDisplayName", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2188,7 +2188,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getDisplayName", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getDisplayName", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2205,7 +2205,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -2218,7 +2218,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getHomogeneityScore", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getHomogeneityScore", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2234,7 +2234,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getHomogeneityScore", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getHomogeneityScore", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2253,7 +2253,7 @@ public class Endpoint extends HttpServlet {
 			Statement stmt = null;
 			try
 			{
-				con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 				stmt = con.createStatement();
 				rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 				if(rs.next())
@@ -2268,7 +2268,7 @@ public class Endpoint extends HttpServlet {
 				sqle.printStackTrace();
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Couldn't find user in database. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Couldn't find user in database. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2284,7 +2284,7 @@ public class Endpoint extends HttpServlet {
 					System.out.println("Problem closing resultset, statement and/or connection to the database.");
 					SimpleEmailer se = new SimpleEmailer();
 					try {
-						se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+						se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 					} catch (MessagingException e) {
 						e.printStackTrace();
 					}
@@ -2310,7 +2310,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			while(rs.next())
@@ -2326,7 +2326,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2342,7 +2342,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2371,7 +2371,7 @@ public class Endpoint extends HttpServlet {
 					Statement stmt = null;
 					try
 					{
-						con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+						con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 						rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + twitter_alert_id + "'"); 
 						if(rs.next())
@@ -2394,7 +2394,7 @@ public class Endpoint extends HttpServlet {
 						returnval = false;
 						SimpleEmailer se = new SimpleEmailer();
 						try {
-							se.sendMail("SQLException in Endpoint updateTwitterStatusID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+							se.sendMail("SQLException in Endpoint updateTwitterStatusID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 						} catch (MessagingException e) {
 							e.printStackTrace();
 						}
@@ -2410,7 +2410,7 @@ public class Endpoint extends HttpServlet {
 							System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 							SimpleEmailer se = new SimpleEmailer();
 							try {
-								se.sendMail("SQLException in Endpoint updateTwitterStatusID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+								se.sendMail("SQLException in Endpoint updateTwitterStatusID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 							} catch (MessagingException e) {
 								e.printStackTrace();
 							}
@@ -2438,7 +2438,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE AND designation='" + designation + "' "); 
 			while(rs.next())
@@ -2457,7 +2457,7 @@ public class Endpoint extends HttpServlet {
 			returnval = false;
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2473,7 +2473,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2492,7 +2492,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -2509,7 +2509,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2525,7 +2525,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2542,7 +2542,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -2559,7 +2559,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2575,7 +2575,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2592,7 +2592,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_name`,`livestream_url`,`station`) "
 	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')");
@@ -2614,7 +2614,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint createAlertInDB", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint createAlertInDB", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2630,7 +2630,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint createAlertInDB", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint createAlertInDB", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2647,7 +2647,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + id_long + "'"); 
 			if(rs.next())
@@ -2662,7 +2662,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint updateAlertText", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint updateAlertText", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2678,7 +2678,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2695,7 +2695,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			if(rs.next())
@@ -2711,7 +2711,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getFacebookAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getFacebookAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2727,7 +2727,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getFacebookAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getFacebookAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2744,7 +2744,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			if(rs.next())
@@ -2768,7 +2768,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2784,7 +2784,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database.");
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2801,7 +2801,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			if(rs.next())
@@ -2817,7 +2817,7 @@ public class Endpoint extends HttpServlet {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2833,7 +2833,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2851,7 +2851,7 @@ public class Endpoint extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE (station='" + station + "' AND active=1)"); 
 			while(rs.next())
@@ -2868,7 +2868,7 @@ public class Endpoint extends HttpServlet {
 			returnval = false;
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint resetAllLastAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint resetAllLastAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2884,7 +2884,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint resetAllLastAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint resetAllLastAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2937,7 +2937,7 @@ public class Endpoint extends HttpServlet {
 		
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			System.out.println("Endpoint.getFiredAlerts(): SELECT * FROM alerts WHERE station='" + station + "' AND creation_timestamp BETWEEN STR_TO_DATE('" + begin_datestring_in_utc + "', '%Y%m%d_%H%i%s') AND STR_TO_DATE('" + end_datestring_in_utc + "', '%Y%m%d_%H%i%s')"); 
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE station='" + station + "' AND creation_timestamp BETWEEN STR_TO_DATE('" + begin_datestring_in_utc + "', '%Y%m%d_%H%i%s') AND STR_TO_DATE('" + end_datestring_in_utc + "', '%Y%m%d_%H%i%s')"); 
@@ -2972,7 +2972,7 @@ public class Endpoint extends HttpServlet {
 			System.out.println("SQLException in Endpoint getFiredAlerts message=" +sqle.getMessage());
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint getFiredAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+				se.sendMail("SQLException in Endpoint getFiredAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -2991,7 +2991,7 @@ public class Endpoint extends HttpServlet {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getFiredAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@hoozon.tv");
+					se.sendMail("SQLException in Endpoint getFiredAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -3038,7 +3038,7 @@ public class Endpoint extends HttpServlet {
 		JSONObject jsonresponse = new JSONObject();
 		String client_id = "176524552501035";
 		String client_secret = "dbf442014759e75f2f93f2054ac319a0";
-		String redirect_uri = "https://www.hoozon.tv/registration.html";
+		String redirect_uri = "https://www.huzon.tv/registration.html";
 		HttpClient client = new DefaultHttpClient();
 		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?client_id=" + client_id + "&client_secret=" + client_secret + "&redirect_uri=" + redirect_uri + "&code=" + code);
 		HttpResponse response;
@@ -3243,20 +3243,20 @@ public class Endpoint extends HttpServlet {
 		if(social_type.equals("facebook"))
 		{
 			if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
-				returnval = "I am on the air. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;  
+				returnval = "I am on the air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;  
 			else if (selector == 1) // no greeting, "we", "live", "catch" timestamp first
-				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id;
+				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id;
 			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;
 			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id; 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id; 
 		}
 		else if(social_type.equals("twitter"))
 		{
 			if(selector == 0 || selector == 1)
-				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
 			else if(selector == 2 || selector == 3)
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: hoozon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
 		}
 		return returnval;
 	}

@@ -56,7 +56,7 @@ public class SimpleEmailer {
 	  
 		SimpleEmailer se = new SimpleEmailer();
 		try {
-			se.sendMail("hoozon subj", "hoozon body", "cyrus7580@gmail.com", "info@hoozon.tv");
+			se.sendMail("huzon subj", "huzon body", "cyrus7580@gmail.com", "info@huzon.tv");
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

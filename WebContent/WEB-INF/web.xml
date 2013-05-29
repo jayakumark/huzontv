@@ -11,7 +11,7 @@
   </welcome-file-list>
   <servlet>
     <servlet-name>Endpoint</servlet-name>
-    <servlet-class>tv.hoozon.Endpoint</servlet-class>
+    <servlet-class>tv.huzon.Endpoint</servlet-class>
   </servlet>
   <servlet-mapping>
     <servlet-name>Endpoint</servlet-name>
@@ -19,7 +19,7 @@
   </servlet-mapping>
   <servlet>
     <servlet-name>RedirectServlet</servlet-name>
-    <servlet-class>tv.hoozon.RedirectServlet</servlet-class>
+    <servlet-class>tv.huzon.RedirectServlet</servlet-class>
   </servlet>
   <servlet-mapping>
     <servlet-name>RedirectServlet</servlet-name>

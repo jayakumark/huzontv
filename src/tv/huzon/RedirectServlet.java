@@ -35,7 +35,7 @@ public class RedirectServlet extends HttpServlet {
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		System.out.println("tv.hoozon.RedirectServlet.doPost(): entering...");
+		System.out.println("tv.huzon.RedirectServlet.doPost(): entering...");
 		response.setContentType("text/html; charset=UTF-8;");
 		PrintWriter out = response.getWriter();
 		out.println("Sorry. This servlet only speaks GET.");
@@ -44,7 +44,7 @@ public class RedirectServlet extends HttpServlet {
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		System.out.println("tv.hoozon.RedirectServlet.doGet(): entering...");
+		System.out.println("tv.huzon.RedirectServlet.doGet(): entering...");
 		response.setContentType("text/html; charset=UTF-8;");
 		PrintWriter out = response.getWriter();
 		String id = request.getParameter("id");
@@ -75,7 +75,7 @@ public class RedirectServlet extends HttpServlet {
 				catch(JSONException jsone)
 				{
 					jsone.printStackTrace();
-					System.out.println("tv.hoozon.RedirectServlet.doGet(): jsonexception trying to get station string from alert_object when putting redirect hit into database jsone.getMessage()=" + jsone.getMessage());
+					System.out.println("tv.huzon.RedirectServlet.doGet(): jsonexception trying to get station string from alert_object when putting redirect hit into database jsone.getMessage()=" + jsone.getMessage());
 				}
 				try
 				{
@@ -84,7 +84,7 @@ public class RedirectServlet extends HttpServlet {
 				catch(JSONException jsone)
 				{
 					jsone.printStackTrace();
-					System.out.println("tv.hoozon.RedirectServlet.doGet(): jsonexception trying to get livestream_url from alert_object jsone.getMessage()=" + jsone.getMessage());
+					System.out.println("tv.huzon.RedirectServlet.doGet(): jsonexception trying to get livestream_url from alert_object jsone.getMessage()=" + jsone.getMessage());
 				}
 			}
 		}
@@ -99,7 +99,7 @@ public class RedirectServlet extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			// get next frame in database, up to one day from now.
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + alert_id + " LIMIT 1"); 
@@ -148,7 +148,7 @@ public class RedirectServlet extends HttpServlet {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://hoozon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/hoozon?user=hoozon&password=6SzLvxo0B");
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
 					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");

@@ -57,8 +57,8 @@ var docCookies = {
 
 
 
-var endpoint = "https://www.hoozon.tv/endpoint";
-//var endpoint = "http://localhost:8080/hoozontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "http://localhost:8080/huzontv/endpoint";
 
 document.addEventListener('DOMContentLoaded', function () {
 	
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	if(location.protocol !== "https:")
 	{
-		$("#message_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.hoozon.tv/registration.html\">https://www.hoozon.tv/registration.html</a> instead.</span>");
+		$("#message_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.huzon.tv/registration.html\">https://www.huzon.tv/registration.html</a> instead.</span>");
 	}
 	else if(twitter_handle === null)
 	{
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        	}
 		        	else
 		        	{
-		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to hoozon.tv! Thanks! (reloading page)</span>");
+		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to huzon.tv! Thanks! (reloading page)</span>");
 		        		docCookies.setItem("twitter_handle", data.twitter_handle, 31536e3);
 		        		docCookies.setItem("twitter_access_token", data.twitter_access_token, 31536e3);
 		        	}
@@ -182,19 +182,19 @@ document.addEventListener('DOMContentLoaded', function () {
 	}	
 	
 	/*
-	else if(typeof hoozon_auth === undefined || hoozon_auth === null || hoozon_auth === "")
+	else if(typeof huzon_auth === undefined || huzon_auth === null || huzon_auth === "")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">Please enter the password you were provided. </span>");
-		var mds = "<table><tr><td style=\"vertical-align:middle\">Password: </td><td style=\"vertical-align:middle\"><input type=password id=\"hoozon_auth_input\"></td><td style=\"vertical-align:middle\"><input type=button id=\"hoozon_auth_go_button\" value=\"go\"></td></tr></table>";
+		var mds = "<table><tr><td style=\"vertical-align:middle\">Password: </td><td style=\"vertical-align:middle\"><input type=password id=\"huzon_auth_input\"></td><td style=\"vertical-align:middle\"><input type=button id=\"huzon_auth_go_button\" value=\"go\"></td></tr></table>";
 		$("#main_td").html(mds);
-		$("#hoozon_auth_go_button").click(function () {
-				//docCookies.setItem("hoozon_auth", $("#hoozon_auth_input").val(), 31536e3);
+		$("#huzon_auth_go_button").click(function () {
+				//docCookies.setItem("huzon_auth", $("#huzon_auth_input").val(), 31536e3);
 				$.ajax({
 					type: 'GET',
 					url: endpoint,
 					data: {
 			            method: "checkPassword",
-			            password: $("#hoozon_auth_input").val()
+			            password: $("#huzon_auth_input").val()
 					},
 			        dataType: 'json',
 			        async: false,
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        	else
 			        	{
 			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Correct! Reloading page...</span>");
-			        		docCookies.setItem("hoozon_auth", $("#hoozon_auth_input").val(), 31536e3);
+			        		docCookies.setItem("huzon_auth", $("#huzon_auth_input").val(), 31536e3);
 			        		window.location.reload();
 			        	}
 			        }
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		            oauth_verifier: oauth_verifier,
 		            oauth_token: getParameterByName("oauth_token"),
 		            designation: designation,
-		            hoozon_auth: hoozon_auth
+		            huzon_auth: huzon_auth
 				},
 		        dataType: 'json',
 		        async: false,
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        	}
 		        	else
 		        	{
-		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account to hoozon.tv! Thanks!</span>");
+		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account to huzon.tv! Thanks!</span>");
 		        	}
 		        }
 		        ,
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			            method: "getFacebookAccessTokenFromAuthorizationCode",
 			            facebook_code: facebook_code,
 			            designation: designation,
-			            hoozon_auth: hoozon_auth
+			            huzon_auth: huzon_auth
 					},
 			        dataType: 'json',
 			        async: false,
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        	}
 			        	else
 			        	{
-			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Facebook account to hoozon.tv! Thanks!</span>");
+			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Facebook account to huzon.tv! Thanks!</span>");
 			        	}
 			        }
 			        ,
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	            method: "getDesignationsAndAccounts",
 	            station: "wkyt",
 	            include_master: "yes",
-	            hoozon_auth: hoozon_auth
+	            huzon_auth: huzon_auth
 			},
 	        dataType: 'json',
 	        async: false,
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        					data: {
 	        			            method: "startTwitterAuthentication",
 	        			            designation: event.data.value1,
-	        			            hoozon_auth: hoozon_auth
+	        			            huzon_auth: huzon_auth
 	        					},
 	        			        dataType: 'json',
 	        			        async: false,
@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        					var randomnumber=Math.floor(Math.random()*1000000);
 	        					docCookies.setItem("state", randomnumber+"", 31536e3);
 	        					docCookies.setItem("designation", event.data.value1, 31536e3);
-	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.hoozon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
+	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
 	        				
 	        						return false;
 	        					}
