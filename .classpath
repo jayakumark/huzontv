@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/json-20080701.jar"/>
 	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/mysql-connector-java-5.1.24-bin.jar"/>
 	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK">
 		<attributes>

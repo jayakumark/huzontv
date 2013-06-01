@@ -57,14 +57,15 @@ var docCookies = {
 
 
 
-var endpoint = "https://www.huzon.tv/endpoint";
-//var endpoint = "http://localhost:8080/huzontv/endpoint";
+//var endpoint = "https://www.huzon.tv/endpoint";
+var endpoint = "https://localhost:8443/huzontv/endpoint";
+var devel = true;
 
 document.addEventListener('DOMContentLoaded', function () {
 	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	if(location.protocol !== "https:")
+	if(!devel && location.protocol !== "https:")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.huzon.tv/registration.html\">https://www.huzon.tv/registration.html</a> instead.</span>");
 	}
@@ -93,9 +94,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		        	}
 		        	else
 		        	{
-		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to huzon.tv! Thanks! (reloading page)</span>");
+		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to huzon.tv!<br><br>Please wait. Reloading page...</span>");
 		        		docCookies.setItem("twitter_handle", data.twitter_handle, 31536e3);
 		        		docCookies.setItem("twitter_access_token", data.twitter_access_token, 31536e3);
+		        		window.location.reload();
 		        	}
 		        }
 		        ,
@@ -164,9 +166,106 @@ document.addEventListener('DOMContentLoaded', function () {
 	        	{
 	        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + "</span>");
 	        	}
-	        	else
+	        	else // this user has twitter_handle and tat cookies, display three things: facebook connection, stations as reporter, stations as administrator
 	        	{
-	        		$("#main_div").html(JSON.stringify(data));
+	        		var mds = "";
+	        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center\" colspan=2>";
+	        		mds = mds + "			Information for: " + data.user_jo.display_name;
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			designation:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			" + data.user_jo.designation;
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			stations appearing:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			stations as admin:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			news roles:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\"";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			natural homogeneity:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			artificial homogeneity:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			weekend expected:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI-NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			weekday expected:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI-NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			weekend expected:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI-NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			twitter_handles:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right\">";
+	        		mds = mds + "			facebook uid:";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+	        		mds = mds + "			NYI";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "</table>";
+	        		$("#main_div").html(mds);
+	        		//$("#main_div").html(JSON.stringify(data));
 	        	}
 	        }
 	        ,

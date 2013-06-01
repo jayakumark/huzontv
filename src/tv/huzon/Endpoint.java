@@ -30,9 +30,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+
+import com.amazonaws.util.json.JSONArray;
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
 
 
 public class Endpoint extends HttpServlet {
@@ -347,6 +348,8 @@ public class Endpoint extends HttpServlet {
 						if(user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("response_status", "success");
+							System.out.println("Endpoint.getUser(): getting user for twitter_handle=" + twitter_handle + "... " + user.getJSONObject());
+							JSONObject temp_jo = user.getJSONObject();
 							jsonresponse.put("user_jo", user.getJSONObject());
 						}
 					}
