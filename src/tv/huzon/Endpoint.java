@@ -842,7 +842,8 @@ public class Endpoint extends HttpServlet {
 									JSONArray frames_ja = new JSONArray();
 									double total = 0.0;
 									double ma_over_window = 0.0;
-									double homogeneity_double = getHomogeneityScore(designation);
+									User user = new User(designation, "designation");
+									double homogeneity_double = user.getHomogeneityStudio();
 									//double lowest_score_in_window = 2.0;
 									while(rs.next())
 									{
@@ -942,7 +943,8 @@ public class Endpoint extends HttpServlet {
 								}
 								else // designation/numstddev ok
 								{
-									double homogeneity_double = getHomogeneityScore(designation);
+									User user = new User(designation, "designation");
+									double homogeneity_double = user.getHomogeneityStudio();
 									double modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
 									double threshold = homogeneity_double * modifier_double;
 									double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
@@ -1366,11 +1368,11 @@ public class Endpoint extends HttpServlet {
 							}
 							else if(social_type.equals("twitter"))
 							{
-								JSONObject twit_jo = getTwitterAccessTokenAndSecret(designation);
-								if(twit_jo != null)
+								User user = new User(designation, "designation");
+								if(!user.getTwitterAccessToken().isEmpty() && !user.getTwitterAccessTokenSecret().isEmpty())
 								{	
 									Twitter twitter = new Twitter();
-									JSONObject response_from_twitter = twitter.deleteStatus(twit_jo.getString("twitter_access_token"), twit_jo.getString("twitter_access_token_secret"), id);
+									JSONObject response_from_twitter = twitter.deleteStatus(user.getTwitterAccessToken(), user.getTwitterAccessTokenSecret(), id);
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("response_from_twitter", response_from_twitter);
 								}
@@ -1538,7 +1540,7 @@ public class Endpoint extends HttpServlet {
 								}
 							}
 							current_delta = rs.getDouble(current_designation + "_avg") - max_avg;
-							
+							User user = new User(current_designation,"designation");
 							if(current_delta > delta_double)
 							{	
 								current_frame_jo = new JSONObject();
@@ -1547,7 +1549,7 @@ public class Endpoint extends HttpServlet {
 								current_frame_jo.put("image_name", rs.getString("image_name"));
 								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
 								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
-								current_frame_jo.put("twitter_handle", getTwitterHandle("wkyt",current_designation));
+								current_frame_jo.put("twitter_handle", user.getTwitterHandle());
 								current_frame_jo.put("moving_average", ma_over_window);
 								current_frame_jo.put("max_moving_average", max_moving_avg);
 								current_frame_jo.put("max_moving_average_index", max_moving_avg_index);
@@ -1567,7 +1569,7 @@ public class Endpoint extends HttpServlet {
 								current_frame_jo.put("image_name", rs.getString("image_name"));
 								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
 								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
-								current_frame_jo.put("twitter_handle", getTwitterHandle("wkyt",current_designation));
+								current_frame_jo.put("twitter_handle", user.getTwitterHandle());
 								current_frame_jo.put("moving_average", ma_over_window);
 								current_frame_jo.put("max_moving_average", max_moving_avg);
 								current_frame_jo.put("max_moving_average_index", max_moving_avg_index);
@@ -1763,7 +1765,8 @@ public class Endpoint extends HttpServlet {
 							// max_designation is set to the designation of whomever that max_avg belonged to
 																			
 							String twitter_handle = null;
-							double max_homogeneity_double = getHomogeneityScore(max_designation);
+							User user = new User(max_designation, "designation");
+							double max_homogeneity_double = user.getHomogeneityStudio();
 							if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
 							{
 								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_designation=" + max_designation + " and max_avg=" + max_avg + " > " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh PAST THRESH");
@@ -1804,25 +1807,22 @@ public class Endpoint extends HttpServlet {
 									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestampInSeconds(ts_long) + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " > " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh PAST THRESH");
 									
 									// (d) yes it does
-									long last_alert_twitter = getLastAlert(max_designation, "twitter");
+									long last_alert_twitter = user.getLastTwitterAlert();
 									boolean alert_triggered_twitter = false;
 									if((ts_long - last_alert_twitter) > awp_twitter)
 									{
 										setLastAlert(max_designation, ts_long, "twitter");
 										alert_triggered_twitter = true;
 										jsonresponse.put("alert_triggered_twitter", "yes");
-										twitter_handle = getTwitterHandle("wkyt",max_designation);
+										twitter_handle = user.getTwitterHandle();
 										if(twitter_handle != null)
 										{
-											jsonresponse.put("designation_twitter_handle", getTwitterHandle("wkyt",max_designation));
+											jsonresponse.put("designation_twitter_handle",  user.getTwitterHandle());
 											
-											JSONObject twitter_stuff = getTwitterAccessTokenAndSecret(max_designation); 
-											if(twitter_stuff != null
-													&& twitter_stuff.has("twitter_access_token") && !twitter_stuff.getString("twitter_access_token").isEmpty()
-													&& twitter_stuff.has("twitter_access_token_secret") && !twitter_stuff.getString("twitter_access_token_secret").isEmpty())
+											if(!user.getTwitterAccessToken().isEmpty() && !user.getTwitterAccessTokenSecret().isEmpty())
 											{
-												jsonresponse.put("twitter_access_token",twitter_stuff.getString("twitter_access_token"));
-												jsonresponse.put("twitter_access_token_secret",twitter_stuff.getString("twitter_access_token_secret"));
+												jsonresponse.put("twitter_access_token",user.getTwitterAccessToken());
+												jsonresponse.put("twitter_access_token_secret",user.getTwitterAccessTokenSecret());
 												if(!simulation)
 												{	
 													long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
@@ -1838,7 +1838,7 @@ public class Endpoint extends HttpServlet {
 												{	
 													SimpleEmailer se = new SimpleEmailer();
 													try {
-														se.sendMail("Invalid Twitter info", "Alert fired, but twitter_stuff was null or invalid for " + max_designation + ". twitter_stuff=" + twitter_stuff, "cyrus7580@gmail.com", "info@huzon.tv");
+														se.sendMail("Invalid Twitter info", "Alert fired, but twitter_stuff was null or invalid for " + max_designation , "cyrus7580@gmail.com", "info@huzon.tv");
 													} catch (MessagingException e) {
 														e.printStackTrace();
 													}
@@ -1848,7 +1848,7 @@ public class Endpoint extends HttpServlet {
 									}
 									
 									
-									long last_alert_facebook = getLastAlert(max_designation, "facebook");
+									long last_alert_facebook = user.getLastFacebookAlert();
 									boolean alert_triggered_facebook = false;
 									System.out.println("Endpoint processNewFrame(): ts_long=" + ts_long + " last_alert_facebook=" + last_alert_facebook + " diff=" + (ts_long - last_alert_facebook) + " vs awp_facebook=" + awp_facebook);
 									if((ts_long - last_alert_facebook) > awp_facebook)
@@ -1856,7 +1856,6 @@ public class Endpoint extends HttpServlet {
 										setLastAlert(max_designation, ts_long, "facebook");
 										alert_triggered_facebook = true;
 										jsonresponse.put("alert_triggered_facebook", "yes");
-										User user = new User(max_designation, "designation");
 										JSONObject facebook_stuff = user.getFacebookSubAccount(); 
 										if(facebook_stuff != null)
 										{
@@ -1897,7 +1896,7 @@ public class Endpoint extends HttpServlet {
 										jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
 										jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
 										jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
-										jsonresponse.put("designation_display_name", getDisplayName("wkyt",max_designation));
+										jsonresponse.put("designation_display_name", user.getDisplayName());
 										jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
 										jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
 										jsonresponse.put("designation_single_threshold", max_homogeneity_double * single_modifier_double);
@@ -2200,7 +2199,7 @@ public class Endpoint extends HttpServlet {
 		}  	
 		return designations_ja;
 	}
-	
+	/*
 	String getTwitterHandle(String station, String designation)
 	{
 		String returnval = "unknown";
@@ -2447,7 +2446,7 @@ public class Endpoint extends HttpServlet {
 			}
 		}  	
 		return returnval;
-	}
+	}*/
 	
 	/*
 	boolean updateTwitterStatusID(String station, String designation, String twitter_access_token, String twitter_alert_id, String twitter_item_id)

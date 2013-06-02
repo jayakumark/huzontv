@@ -204,15 +204,29 @@ public class User {
 		return designation;
 	}
 	
-	/*
-	public TreeSet<String> getStations()
+	public String getTwitterHandle()
 	{
-		return stations;
-	}*/
+		return twitter_handle;
+	}
+	
+	public long getLastTwitterAlert()
+	{
+		return twitter_last_alert;
+	}
+	
+	public long getLastFacebookAlert()
+	{
+		return facebook_last_alert;
+	}
 	
 	public String getDisplayName()
 	{
 		return display_name;
+	}
+	
+	public double getHomogeneityStudio()
+	{
+		return homogeneity_studio;
 	}
 	
 	public double getHomogeneityArtificial()
@@ -386,6 +400,11 @@ public class User {
 	public String getTwitterAccessToken()
 	{
 		return twitter_access_token;
+	}
+	
+	public String getTwitterAccessTokenSecret()
+	{
+		return twitter_access_token_secret;
 	}
 	
 	boolean setTwitterAccessTokenAndSecret(String access_token, String access_token_secret)
