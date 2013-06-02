@@ -207,6 +207,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	        	if (data.response_status == "error")
 	        	{
 	        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + "</span>");
+	        		if(data.error_code && data.error_code == "07734") // the twitter cookie credentials were invalid. Delete them and reload page (start over).
+	        		{
+	        			docCookies.removeItem("twitter_access_token");
+	        			docCookies.removeItem("twitter_handle");
+	        			window.location.href = "https://www.huzon.tv/registration.html";
+	        		}
 	        	}
 	        	else // this user has twitter_handle and tat cookies, display three things: facebook connection, stations as reporter, stations as administrator
 	        	{
@@ -214,12 +220,22 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
 	        		mds = mds + "	<tr>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\" colspan=2>";
-	        		mds = mds + "			Information for <span style=\"color:green\">" + data.user_jo.display_name + "</span> - ";
-	        		mds = mds + "			Twitter linked? <span style=\"color:blue\">YES</span>  - Facebook brand page linked? ";
+	        		mds = mds + "			Information for <span style=\"color:green\">" + data.user_jo.display_name + "</span>";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:20px\" colspan=2>";
+	        		mds = mds + "1. Twitter linked? <span style=\"color:blue\">YES</span><br>";
+	        		mds = mds + "2. Facebook linked? ";
+	        		if(data.user_jo.facebook_uid)
+	        			mds = mds + "<span style=\"color:blue\">YES</span><br>";
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
+	        		mds = mds + "3. Facebook <i>reporter page</i> linked? ";
 	        		if(data.user_jo.facebook_page_id)
 	        			mds = mds + "<span style=\"color:blue\">YES</span>";
 	        		else
-	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</span>";
+	        			mds = mds + "<span style=\"color:red\">NO</span> (select below)";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -553,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        				        	else
 	        				        	{
 	        				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Designated account is now set. Thanks! (Your non-selected pages will be hidden to others.)</span>");
-	        				        		window.location.reload();
+	        				        		window.location.href = "https://www.huzon.tv/registration.html";
 	        				        	}
 	        				        }
 	        				        ,

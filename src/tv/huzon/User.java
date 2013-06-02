@@ -254,29 +254,39 @@ public class User {
 		return facebook_access_token_expires;
 	}
 	
-	/*
-	public TreeSet<String> getStationsAsReporter()
+	boolean setLastAlert(long alert_ts, String social_type)
 	{
-		TreeSet<String> returnset = new TreeSet<String>();
+		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
+		{
+			System.out.println("Endpoint.setLastAlert: social type was not \"facebook\" or \"twitter\". returning false.");
+			return false;
+		}
+		boolean returnval = false;
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM stations WHERE reporters like ' %" + designation + "% '");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE AND designation='" + designation + "' "); 
 			while(rs.next())
 			{
-				returnset.add(rs.getString("call_letters"));
+				if(social_type.equals("facebook"))
+					rs.updateLong("last_alert_facebook", alert_ts);
+				else												// we can just say "else" because we checked value of social_type above
+					rs.updateLong("last_alert_twitter", alert_ts);
+				rs.updateRow();
 			}
+			returnval = true;
 		}
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			returnval = false;
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in User.getStationsAsReporter", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("SQLException in Endpoint setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -292,61 +302,14 @@ public class User {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in User.getStationsAsReporter", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in Endpoint setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
 			}
 		}  	
-		return returnset;
+		return returnval;
 	}
-	
-	public TreeSet<String> getStationsAsAdministrator()
-	{
-		TreeSet<String> returnset = new TreeSet<String>();
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM stations WHERE administrators like ' %" + designation + "% '");
-			while(rs.next())
-			{
-				returnset.add(rs.getString("call_letters"));
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in User.getStationsAsAdministrator", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in User.getStationsAsAdministrator", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnset;
-	}
-	*/
 	
 	public JSONObject getJSONObject() // for now, returns EVERYTHING. Even secret tokens and stuff.
 	{
@@ -521,8 +484,41 @@ public class User {
 		}
 	}
 	
+	public JSONObject getProfileFromFacebook(String access_token)
+	{
+		JSONObject jsonresponse = new JSONObject();
+		
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet request = new HttpGet("https://graph.facebook.com/me?access_token=" + access_token);
+			HttpResponse response;
+			
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				jsonresponse = new JSONObject(text);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
 	
-	public JSONArray getFacebookSubAccountsFromFacebook()
+	
+	public JSONArray getSubAccountsFromFacebook()
 	{
 		// if returnvalue == null, then facebook access token was null, empty, invalid or we couldn't reach the server.
 		// if returnvalue is empty, then we reached facebook successfully, but there were no subaccounts.

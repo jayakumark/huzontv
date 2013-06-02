@@ -352,6 +352,12 @@ public class Endpoint extends HttpServlet {
 							JSONObject temp_jo = user.getJSONObject();
 							jsonresponse.put("user_jo", user.getJSONObject());
 						}
+						else
+						{
+							jsonresponse.put("message", "User twitter credentials were invalid.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
 					}
 				}
 				else if (method.equals("getFacebookAccessTokenFromAuthorizationCode"))
@@ -402,7 +408,7 @@ public class Endpoint extends HttpServlet {
 									
 									if(preliminary_jsonresponse.getString("response_status").equals("success"))
 									{
-										JSONObject fb_profile_jo = getFacebookProfile("wkyt", preliminary_jsonresponse.getString("access_token"));
+										JSONObject fb_profile_jo = user.getProfileFromFacebook(preliminary_jsonresponse.getString("access_token"));
 										long fb_uid = 0L;
 										try
 										{
@@ -489,7 +495,7 @@ public class Endpoint extends HttpServlet {
 							}
 							else
 							{
-								JSONArray fb_subaccounts_ja = user.getFacebookSubAccountsFromFacebook();
+								JSONArray fb_subaccounts_ja = user.getSubAccountsFromFacebook();
 								if(fb_subaccounts_ja == null)
 								{
 									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
@@ -554,7 +560,7 @@ public class Endpoint extends HttpServlet {
 							}
 							else
 							{
-								JSONArray fb_subaccounts_ja = user.getFacebookSubAccountsFromFacebook();
+								JSONArray fb_subaccounts_ja = user.getSubAccountsFromFacebook();
 								if(fb_subaccounts_ja == null)
 								{
 									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
@@ -1811,7 +1817,7 @@ public class Endpoint extends HttpServlet {
 									boolean alert_triggered_twitter = false;
 									if((ts_long - last_alert_twitter) > awp_twitter)
 									{
-										setLastAlert(max_designation, ts_long, "twitter");
+										user.setLastAlert(ts_long, "twitter");
 										alert_triggered_twitter = true;
 										jsonresponse.put("alert_triggered_twitter", "yes");
 										twitter_handle = user.getTwitterHandle();
@@ -1853,15 +1859,15 @@ public class Endpoint extends HttpServlet {
 									System.out.println("Endpoint processNewFrame(): ts_long=" + ts_long + " last_alert_facebook=" + last_alert_facebook + " diff=" + (ts_long - last_alert_facebook) + " vs awp_facebook=" + awp_facebook);
 									if((ts_long - last_alert_facebook) > awp_facebook)
 									{	 
-										setLastAlert(max_designation, ts_long, "facebook");
+										user.setLastAlert(ts_long, "facebook");
 										alert_triggered_facebook = true;
 										jsonresponse.put("alert_triggered_facebook", "yes");
 										JSONObject facebook_stuff = user.getFacebookSubAccount(); 
 										if(facebook_stuff != null)
 										{
-											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
-											jsonresponse.put("facebook_account_access_token",facebook_stuff.getString("facebook_account_access_token"));
-											jsonresponse.put("facebook_account_name",facebook_stuff.getString("facebook_account_name"));
+											jsonresponse.put("facebook_page_id",facebook_stuff.getLong("facebook_page_id"));
+											jsonresponse.put("facebook_page_access_token",facebook_stuff.getString("facebook_page_access_token"));
+											jsonresponse.put("facebook_page_name",facebook_stuff.getString("facebook_page_name"));
 											if(!simulation)
 											{	
 												long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
@@ -2137,16 +2143,16 @@ public class Endpoint extends HttpServlet {
 					if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
 					{
 						jo.put("facebook_connected", "yes");
-						JSONArray fbaccounts_ja = getFacebookSubAccounts(rs.getString("facebook_access_token"));
+						User user = new User(rs.getString("twitter_handle"), "twitter_handle");
+						JSONArray fbaccounts_ja = user.getSubAccountsFromFacebook();
 						if(fbaccounts_ja != null)
-							jo.put("facebook_accounts", fbaccounts_ja);
-						User user = new User(rs.getString("designation"), "designation");
+							jo.put("facebook_pages", fbaccounts_ja);
 						JSONObject selected_fb_account_jo = user.getFacebookSubAccount();
 						if(selected_fb_account_jo != null)
 						{
-							jo.put("facebook_account_id", selected_fb_account_jo.getLong("facebook_account_id"));
-							jo.put("facebook_account_name", selected_fb_account_jo.getString("facebook_account_name"));
-							jo.put("facebook_account_access_token", selected_fb_account_jo.getString("facebook_account_access_token"));
+							jo.put("facebook_page_id", selected_fb_account_jo.getLong("facebook_page_id"));
+							jo.put("facebook_page_name", selected_fb_account_jo.getString("facebook_page_name"));
+							jo.put("facebook_page_access_token", selected_fb_account_jo.getString("facebook_page_access_token"));
 						}
 					}
 					else
@@ -2199,436 +2205,7 @@ public class Endpoint extends HttpServlet {
 		}  	
 		return designations_ja;
 	}
-	/*
-	String getTwitterHandle(String station, String designation)
-	{
-		String returnval = "unknown";
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND designation='" + designation + "' AND active=1)"); 
-			if(rs.next())
-			{
-				returnval = rs.getString("twitter_handle");
-			}
-			else
-				returnval = null;
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getTwitterHandle", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getTwitterHandle", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
-	String getDisplayName(String station, String designation)
-	{
-		String returnval = "unknown";
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE (stations like '% " + station + " %' AND designation='" + designation + "' AND active=1)"); 
-			if(rs.next())
-			{
-				returnval = rs.getString("display_name");
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getDisplayName", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getDisplayName", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
-	double getHomogeneityScore(String designation)
-	{
-		double returnval = 0.0;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
-			while(rs.next())
-			{
-				returnval = rs.getDouble("homogeneity");
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getHomogeneityScore", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getHomogeneityScore", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
-	JSONObject getTwitterAccessTokenAndSecret(String designation)
-	{
-		JSONObject return_jo = null;
-		try
-		{
-			ResultSet rs = null;
-			Connection con = null;
-			Statement stmt = null;
-			try
-			{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-				stmt = con.createStatement();
-				rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
-				if(rs.next())
-				{
-					return_jo = new JSONObject();
-					return_jo.put("twitter_access_token", rs.getString("twitter_access_token"));
-					return_jo.put("twitter_access_token_secret", rs.getString("twitter_access_token_secret"));
-				}
-			}
-			catch(SQLException sqle)
-			{
-				sqle.printStackTrace();
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Couldn't find user in database. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-			finally
-			{
-				try
-				{
-					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-				}
-				catch(SQLException sqle)
-				{ 
-					System.out.println("Problem closing resultset, statement and/or connection to the database.");
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Endpoint getTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
-				}
-			}  	
-		}	
-		catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return return_jo;
-	}
-	
-	long getLastAlert(String designation, String social_type)
-	{
-		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
-		{
-			System.out.println("Endpoint.getLastAlert: social type was not \"facebook\" or \"twitter\". returning -1L.");
-			return -1L;
-		}
-		long returnval = 0L;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
-			while(rs.next())
-			{
-				if(social_type.equals("twitter"))
-					returnval = rs.getLong("last_alert_twitter");
-				else
-					returnval = rs.getLong("last_alert_facebook");
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}*/
-	
-	/*
-	boolean updateTwitterStatusID(String station, String designation, String twitter_access_token, String twitter_alert_id, String twitter_item_id)
-	{
-		boolean returnval = false;
-		JSONObject tat_and_secret_jo = getTwitterAccessTokenAndSecret(station,designation);
-		if(tat_and_secret_jo == null)
-		{
-			return false;
-		}
-		else
-		{
-			try
-			{
-				if(twitter_access_token.equals(tat_and_secret_jo.getString("twitter_access_token")))
-				{
-					ResultSet rs = null;
-					Connection con = null;
-					Statement stmt = null;
-					try
-					{
-						con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-						rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + twitter_alert_id + "'"); 
-						if(rs.next())
-						{
-							if(rs.getString("designation").equals(designation)) // this alert belongs to this designation.
-							{	
-								rs.updateString("twitter_item_id", twitter_item_id);
-								rs.updateRow();
-							}
-							else
-							{
-								return false;
-							}
-						}
-						returnval = true;
-					}
-					catch(SQLException sqle)
-					{
-						sqle.printStackTrace();
-						returnval = false;
-						SimpleEmailer se = new SimpleEmailer();
-						try {
-							se.sendMail("SQLException in Endpoint updateTwitterStatusID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-						} catch (MessagingException e) {
-							e.printStackTrace();
-						}
-					}
-					finally
-					{
-						try
-						{
-							if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-						}
-						catch(SQLException sqle)
-						{ 
-							System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-							SimpleEmailer se = new SimpleEmailer();
-							try {
-								se.sendMail("SQLException in Endpoint updateTwitterStatusID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-							} catch (MessagingException e) {
-								e.printStackTrace();
-							}
-						}
-					}  	
-				}
-			}	
-			catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-		return returnval;
-	}*/
-	
-	boolean setLastAlert(String designation, long alert_ts, String social_type)
-	{
-		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
-		{
-			System.out.println("Endpoint.setLastAlert: social type was not \"facebook\" or \"twitter\". returning false.");
-			return false;
-		}
-		boolean returnval = false;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people WHERE AND designation='" + designation + "' "); 
-			while(rs.next())
-			{
-				if(social_type.equals("facebook"))
-					rs.updateLong("last_alert_facebook", alert_ts);
-				else												// we can just say "else" because we checked value of social_type above
-					rs.updateLong("last_alert_twitter", alert_ts);
-				rs.updateRow();
-			}
-			returnval = true;
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			returnval = false;
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
-	boolean setFacebookSubAccountIdNameAndAccessToken(String designation, long id_long, String name, String subaccount_access_token)
-	{
-		boolean returnval = false;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
-			if(rs.next())
-			{
-				rs.updateString("facebook_account_access_token", subaccount_access_token);
-				rs.updateString("facebook_account_name", name);
-				rs.updateLong("facebook_account_id", id_long);
-				rs.updateRow();
-				returnval = true;
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
+
 	long createAlertInDB(String station, String social_type, String designation, String image_name)
 	{
 		long returnval = -1L;
@@ -2724,106 +2301,6 @@ public class Endpoint extends HttpServlet {
 				SimpleEmailer se = new SimpleEmailer();
 				try {
 					se.sendMail("SQLException in Endpoint updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-		
-	String getFacebookAccessToken(String designation)
-	{
-		String returnval = null;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
-			if(rs.next())
-			{
-				if(rs.getString("facebook_access_token") != null && !rs.getString("facebook_access_token").isEmpty())
-				{
-					returnval = rs.getString("facebook_access_token");
-				}
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getFacebookAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getFacebookAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
-	
-	
-	String getSelectedFacebookAccountAccessToken(String designation)
-	{
-		String returnval = null;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
-			if(rs.next())
-			{
-				if(rs.getLong("facebook_account_id") != 0 && rs.getString("facebook_account_access_token") != null && rs.getString("facebook_account_name") != null)
-				{
-					returnval = rs.getString("facebook_account_access_token");
-				}
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getSelectedFacebookAccountAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -3081,73 +2558,6 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
-	public JSONObject getFacebookProfile(String station, String access_token)
-	{
-		JSONObject jsonresponse = new JSONObject();
-		
-		try
-		{
-			HttpClient client = new DefaultHttpClient();
-			HttpGet request = new HttpGet("https://graph.facebook.com/me?access_token=" + access_token);
-			HttpResponse response;
-			
-			try 
-			{
-				response = client.execute(request);
-				// Get the response
-				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-				String text = "";
-				String line = "";
-				while ((line = rd.readLine()) != null) {
-					text = text + line;
-				} 
-				jsonresponse = new JSONObject(text);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}	
-		catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return jsonresponse;
-	}
-	
-	public JSONArray getFacebookSubAccounts(String access_token)
-	{
-		JSONArray jsonresponse = new JSONArray();
-		try
-		{
-			HttpClient client = new DefaultHttpClient();
-			HttpGet request = new HttpGet("https://graph.facebook.com/me/accounts?access_token=" + access_token);
-			HttpResponse response;
-			
-			try 
-			{
-				response = client.execute(request);
-				// Get the response
-				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-				String text = "";
-				String line = "";
-				while ((line = rd.readLine()) != null) {
-					text = text + line;
-				} 
-				System.out.println("Endpoint.getFacebookSubAccounts(): response to https://graph.facebook.com/me/accounts?access_token=" + access_token + "=" + text);
-				JSONObject jo = new JSONObject(text);
-				jsonresponse = jo.getJSONArray("data");
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}	
-		catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return jsonresponse;
-	}
-	
 	public boolean isNumeric(String incoming_string) // only works for whole numbers, positive and negative
 	{
 		  int x=0;
@@ -3257,7 +2667,7 @@ public class Endpoint extends HttpServlet {
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
 			User user = new User(designation, "designation");
-			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + user.getFacebookSubAccount().getString("facebook_account_access_token"));
+			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + user.getFacebookSubAccount().getString("facebook_page_access_token"));
 			HttpResponse response = httpClient.execute(hd);
 			int statusCode = response.getStatusLine().getStatusCode();
 	        successful = statusCode == 200 ? true : false;
