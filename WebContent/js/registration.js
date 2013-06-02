@@ -57,8 +57,8 @@ var docCookies = {
 
 
 
-//var endpoint = "https://www.huzon.tv/endpoint";
-var endpoint = "https://localhost:8443/huzontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "https://localhost:8443/huzontv/endpoint";
 var devel = true;
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 	else if(twitter_handle === null)
 	{
-		alert("twitter_handle === null");
+		//alert("twitter_handle === null");
 		var oauth_verifier = getParameterByName("oauth_verifier");
 		if(typeof oauth_verifier !== undefined && oauth_verifier != null && oauth_verifier !== "") // no twitter_handle cookie, but oauth_verifier is present, signifying response from twitter after user has granted access
 		{
-			alert("oauth_verifier !== null");
+			//alert("oauth_verifier !== null");
 			// this is a response from twitter after user has granted access
 			$.ajax({
 				type: 'GET',
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}	
 		else // no twitter_handle cookie, no oauth_verifier from twitter (signifying that the user is coming back from twitter with credentials)
 		{	
-			alert("oauth_verifier is undefined, null or empty");
+			//alert("oauth_verifier is undefined, null or empty");
 			$("#message_div").html("<span style=\"font-size:16;color:red\">Please log in with your Twitter account.</span>");
 			$("#main_div").html("<a href=\"#\" id=\"sign_in_with_twitter_link\">Sign in with Twitter</a>");
 			
@@ -150,7 +150,49 @@ document.addEventListener('DOMContentLoaded', function () {
 	}	
 	else if(twitter_handle !== null && twitter_access_token !== null)
 	{
-		alert("twitter_handle and twitter_access_token cookies !== null");
+		var facebook_code = getParameterByName("code");
+		if(facebook_code !== "")
+		{
+			var facebook_state = getParameterByName("state");
+			var state = docCookies.getItem("state");
+			if(state === facebook_state)
+			{
+				// this is a response from facebook after user has granted access
+				$.ajax({
+					type: 'GET',
+					url: endpoint,
+					data: {
+			            method: "getFacebookAccessTokenFromAuthorizationCode",
+			            facebook_code: facebook_code,
+			            twitter_handle: twitter_handle,
+			            twitter_access_token: twitter_access_token
+					},
+			        dataType: 'json',
+			        async: false,
+			        success: function (data, status) {
+			        	if (data.response_status == "error")
+			        	{
+			        		$("#message_div").html("<span style=\"font-size:14;color:red\">Error: " + data.message + " </span>");
+			        	}
+			        	else
+			        	{
+			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Facebook account to huzon.tv! Thanks!</span>");
+			        	}
+			        }
+			        ,
+			        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+			            console.log(textStatus, errorThrown);
+			        }
+				});
+			}	
+			else
+			{
+				$("#message_div").html("<span style=\"font-size:14;color:red\">State variables did not match. Please start over.</span>");
+			}
+		}	
+		
+		//alert("twitter_handle and twitter_access_token cookies !== null");
 		$.ajax({
 			type: 'GET',
 			url: endpoint,
@@ -171,8 +213,18 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		var mds = "";
 	        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
 	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:14px\" colspan=2>";
-	        		mds = mds + "			Information for " + data.user_jo.display_name;
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\" colspan=2>";
+	        		mds = mds + "			Information for <span style=\"color:green\">" + data.user_jo.display_name + "</span> - ";
+	        		mds = mds + "			Twitter linked? <span style=\"color:blue\">YES</span>  - Facebook brand page linked? ";
+	        		if(data.user_jo.facebook_page_id)
+	        			mds = mds + "<span style=\"color:blue\">YES</span>";
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</span>";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+	        		mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\" colspan=2>";
+	        	
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -305,7 +357,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "			facebook uid:";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_uid;
+	        		if(data.user_jo.facebook_uid)
+	        			mds = mds + data.user_jo.facebook_uid;
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -313,7 +368,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "			facebook access token:";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			<i>hidden</i>";
+	        		if(data.user_jo.facebook_access_token)
+	        			mds = mds + "<i>hidden</i>";
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -321,7 +379,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "			facebook access token expires:";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_access_token_expires;
+	        		if(data.user_jo.facebook_access_token_expires)
+	        			mds = mds + data.user_jo.facebook_access_token_expires;
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -329,7 +390,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "			facebook alert waiting period:";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_alert_waiting_period;
+	        		if(data.user_jo.facebook_alert_waiting_period)
+	        			mds = mds + data.user_jo.facebook_alert_waiting_period;
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -337,7 +401,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "			facebook delete after:";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_delete_after;
+	        		if(data.user_jo.facebook_delete_after)
+	        			mds = mds + data.user_jo.facebook_delete_after;
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "	<tr>";
@@ -345,33 +412,96 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "			facebook last alert:";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_last_alert;
+	        		if(data.user_jo.facebook_last_alert != null)
+	        			mds = mds + " " + data.user_jo.facebook_last_alert;
+	        		else
+	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "	</tr>";
-	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-	        		mds = mds + "			facebook page id:";
-	        		mds = mds + "		</td>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_page_id;
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
-	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-	        		mds = mds + "			facebook page name:";
-	        		mds = mds + "		</td>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			"  + data.user_jo.facebook_page_name;
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
-	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-	        		mds = mds + "			facebook page access token:";
-	        		mds = mds + "		</td>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-	        		mds = mds + "			<i>hidden</i>";
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
+	        		
+	        		// if the top-level facebook account is linked but there is no facebook_page_id...
+	        		// get the subaccounts directly from facebook so the user can select one of them
+	        		var fb_subaccounts_ja = null;
+	        		if(data.user_jo.facebook_access_token != null && data.user_jo.facebook_access_token != "" && data.user_jo.facebook_page_id == null)
+	        		{
+	        			$.ajax({
+	        				type: 'GET',
+	        				url: endpoint,
+							data: {
+					            method: "getFacebookSubAccountInfoFromFacebook",
+					            twitter_handle: twitter_handle,
+					            twitter_access_token: twitter_access_token
+							},
+					        dataType: 'json',
+					        async: false,
+					        success: function (data, status) {
+					        	if (data.response_status == "error")
+					        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error getting facebook subaccount info. message= " + data.message + "</span>");
+					        	else
+					        	{
+					        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
+					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
+					        	}
+					        }
+					        ,
+					        error: function (XMLHttpRequest, textStatus, errorThrown) {
+					        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+					            console.log(textStatus, errorThrown);
+					        }
+						});
+	        		}
+	        		if(fb_subaccounts_ja == null)
+	        		{	
+	        			mds = mds + "	<tr>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
+		        		mds = mds + "			facebook page id:";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+		        		if(data.user_jo.facebook_page_id)
+		        			mds = mds + data.user_jo.facebook_page_id;
+		        		else
+		        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB reporter page not linked!</span>";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "	</tr>";
+		        		mds = mds + "	<tr>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
+		        		mds = mds + "			facebook page name:";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+		        		if(data.user_jo.facebook_page_name)
+		        			mds = mds + data.user_jo.facebook_page_name;
+		        		else
+		        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB reporter page not linked!</span>";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "	</tr>";
+		        		mds = mds + "	<tr>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
+		        		mds = mds + "			facebook page access token:";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+		        		if(data.user_jo.facebook_page_access_token)
+		        			mds = mds + "<i>hidden</i>";
+		        		else
+		        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB reporter page not linked!</span>";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "	</tr>";
+	        		}
+	        		else
+	        		{
+	        			mds = mds + "	<tr>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
+		        		mds = mds + "			facebook brand pages:";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
+		        		mds = mds + " 			<table>";
+		        		for(var x=0; x < fb_subaccounts_ja.length; x++)
+		        		{
+		        			mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "(" + fb_subaccounts_ja[x].id + ")</td></tr>";
+		        		}
+		        		mds = mds + "			</table>";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "	</tr>";
+	        		}
 	        		mds = mds + "	<tr>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
 	        		mds = mds + "			weekday expected:";
@@ -390,7 +520,51 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		mds = mds + "	</tr>";
 	        		mds = mds + "</table>";
 	        		$("#main_div").html(mds);
-	        		//$("#main_div").html(JSON.stringify(data));
+	        		$("#facebook_link").click({value1: data.user_jo.designation},
+        					function (event) {
+        					var randomnumber=Math.floor(Math.random()*1000000);
+        					docCookies.setItem("state", randomnumber+"", 31536e3);
+        					docCookies.setItem("designation", event.data.value1, 31536e3);
+        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
+        				
+        						return false;
+        					}
+        				);
+	        		if(fb_subaccounts_ja != null)
+	        		{	
+	        			for(var x=0; x < fb_subaccounts_ja.length; x++)
+		        		{
+	        				$("#" + fb_subaccounts_ja[x].id + "_radio").click({fb_subaccount_id: fb_subaccounts_ja[x].id},
+        					function (event) {
+    							$.ajax({
+	        						type: 'GET',
+	        						url: endpoint,
+	        						data: {
+	        				            method: "setFacebookSubAccountInfo",
+	        				            twitter_handle: twitter_handle,
+	    					            twitter_access_token: twitter_access_token,
+	    					            fb_subaccount_id: event.data.fb_subaccount_id
+	        						},
+	        				        dataType: 'json',
+	        				        async: false,
+	        				        success: function (data, status) {
+	        				        	if (data.response_status == "error")
+	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
+	        				        	else
+	        				        	{
+	        				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Designated account is now set. Thanks! (Your non-selected pages will be hidden to others.)</span>");
+	        				        		window.location.reload();
+	        				        	}
+	        				        }
+	        				        ,
+	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+	        				            console.log(textStatus, errorThrown);
+	        				        }
+	        					});
+    						});
+		        		}
+    				}
 	        	}
 	        }
 	        ,
@@ -481,48 +655,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 		}	
 		
-		var facebook_code = getParameterByName("code");
-		if(facebook_code !== "")
-		{
-			var facebook_state = getParameterByName("state");
-			var state = docCookies.getItem("state");
-			var designation = docCookies.getItem("designation");
-			if(state === facebook_state)
-			{
-				// this is a response from facebook after user has granted access
-				$.ajax({
-					type: 'GET',
-					url: endpoint,
-					data: {
-			            method: "getFacebookAccessTokenFromAuthorizationCode",
-			            facebook_code: facebook_code,
-			            designation: designation,
-			            huzon_auth: huzon_auth
-					},
-			        dataType: 'json',
-			        async: false,
-			        success: function (data, status) {
-			        	if (data.response_status == "error")
-			        	{
-			        		$("#message_div").html("<span style=\"font-size:14;color:red\">Error: " + data.message + " </span>");
-			        	}
-			        	else
-			        	{
-			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Facebook account to huzon.tv! Thanks!</span>");
-			        	}
-			        }
-			        ,
-			        error: function (XMLHttpRequest, textStatus, errorThrown) {
-			        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-			            console.log(textStatus, errorThrown);
-			        }
-				});
-			}	
-			else
-			{
-				$("#message_div").html("<span style=\"font-size:14;color:red\">State variables did not match. Please start over.</span>");
-			}
-		}	
+		
 		
 		var designations = null;
 		$.ajax({

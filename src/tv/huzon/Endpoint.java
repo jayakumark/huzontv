@@ -356,154 +356,247 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("getFacebookAccessTokenFromAuthorizationCode"))
 				{
-					String password = request.getParameter("huzon_auth");
-					if(password == null)
+					// twitter account must be linked first. That info is then used as the verifier in lieu of a password
+					// hence, this is why we're asking for that information here.
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					if(twitter_handle == null)
 					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
 					else
 					{	
-						if(password.equals("firstnews72"))
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't proceed with Facebook linking.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
 						{
 							String facebook_code = request.getParameter("facebook_code");
-							String designation = request.getParameter("designation");
-							if(facebook_code == null)
-							{
-								jsonresponse.put("message", "This method requires a facebook_code value.");
-								jsonresponse.put("response_status", "error");
-							}
-							else if(designation == null)
-							{
-								jsonresponse.put("message", "This method requires a designation value.");
-								jsonresponse.put("response_status", "error");
-							}
-							else
-							{	
-								// at this point the user has been sent to facebook for permission. The response came back with a code.
-								// Now we need to get and store the user's access_token
-								JSONObject preliminary_jsonresponse = new JSONObject();
-								preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
-								
-								if(preliminary_jsonresponse.getString("response_status").equals("success"))
+							//	String designation = request.getParameter("designation");
+								if(facebook_code == null)
 								{
-									JSONObject fb_profile_jo = getFacebookProfile("wkyt", preliminary_jsonresponse.getString("access_token"));
-									long fb_uid = 0L;
-									try
+									jsonresponse.put("message", "This method requires a facebook_code value.");
+									jsonresponse.put("response_status", "error");
+								}
+							/*	else if(designation == null)
+								{
+									jsonresponse.put("message", "This method requires a designation value.");
+									jsonresponse.put("response_status", "error");
+								}*/ 
+								else
+								{	
+									// at this point the user has been sent to facebook for permission. The response came back with a code.
+									// Now we need to get and store the user's access_token
+									JSONObject preliminary_jsonresponse = new JSONObject();
+									preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
+									
+									if(preliminary_jsonresponse.getString("response_status").equals("success"))
 									{
-										if(fb_profile_jo != null && fb_profile_jo.has("id"))
+										JSONObject fb_profile_jo = getFacebookProfile("wkyt", preliminary_jsonresponse.getString("access_token"));
+										long fb_uid = 0L;
+										try
 										{
-											fb_uid = fb_profile_jo.getLong("id");
-											Calendar cal = Calendar.getInstance();
-											cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-											String expires = preliminary_jsonresponse.getString("expires");
-											int expires_in_seconds = 0;
-											if(expires == null || expires.isEmpty()) // this seems to happen when the user has already given the fb permission but is re-linking the account for whatever reason 
+											if(fb_profile_jo != null && fb_profile_jo.has("id"))
 											{
-												expires_in_seconds = 5184000; // FIXME? Defaulting to 60 days may not be the right behavior. 
+												fb_uid = fb_profile_jo.getLong("id");
+												Calendar cal = Calendar.getInstance();
+												cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+												String expires = preliminary_jsonresponse.getString("expires");
+												int expires_in_seconds = 0;
+												if(expires == null || expires.isEmpty()) // this seems to happen when the user has already given the fb permission but is re-linking the account for whatever reason 
+												{
+													expires_in_seconds = 5184000; // FIXME? Defaulting to 60 days may not be the right behavior. 
+												}
+												else
+													expires_in_seconds = Integer.parseInt(expires);
+												cal.add(Calendar.SECOND, expires_in_seconds);
+												long expires_timestamp = cal.getTimeInMillis() / 1000;
+												boolean successful = user.setFacebookAccessTokenExpiresAndUID(preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
+												if(successful)
+												{	
+													jsonresponse.put("response_status", "success");
+													jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
+												}
+												else
+												{
+													jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
+													jsonresponse.put("response_status", "error");
+												}
 											}
 											else
-												expires_in_seconds = Integer.parseInt(expires);
-											cal.add(Calendar.SECOND, expires_in_seconds);
-											long expires_timestamp = cal.getTimeInMillis() / 1000;
-											boolean successful = setFacebookAccessTokenExpiresAndUID(designation, preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
-											if(successful)
-											{	
-												jsonresponse.put("response_status", "success");
-												jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
-											}
-											else
 											{
-												jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
+												jsonresponse.put("message", "fb profile didn't have id field");
 												jsonresponse.put("response_status", "error");
 											}
 										}
-										else
+										catch(NumberFormatException nfe)
 										{
-											jsonresponse.put("message", "fb profile didn't have id field");
+											jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
 											jsonresponse.put("response_status", "error");
 										}
 									}
-									catch(NumberFormatException nfe)
+									else
 									{
-										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
-										jsonresponse.put("response_status", "error");
+										jsonresponse = preliminary_jsonresponse; // just return the error
 									}
 								}
-								else
-								{
-									jsonresponse = preliminary_jsonresponse; // just return the error
-								}
-							}
 						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect password.");
-							jsonresponse.put("response_status", "error");
-						}
+					
 					}		
 				}
-				else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
+				else if (method.equals("getFacebookSubAccountInfoFromFacebook"))
 				{
-					String designation = request.getParameter("designation");
-					String id = request.getParameter("id");
-					if(designation == null)
+					// twitter account must be linked first. That info is then used as the verifier in lieu of a password
+					// hence, this is why we're asking for that information here.
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					if(twitter_handle == null)
 					{
-						jsonresponse.put("message", "This method requires a designation value.");
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
-					else if(id == null)
+					else if(twitter_access_token == null)
 					{
-						jsonresponse.put("message", "This method requires an id value for the journalist page.");
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
 					else
 					{	
-						// 1. get fb access token for this designation
-						// 2. get the accounts associated with this facebook access token
-						// 3. loop through these accounts, looking for an id that equals the incoming subaccount id
-						// 4. Once found, get the name of the sub account
-						// 5. Get the access token for the account
-						// 6. set the facebook subaccount id, name and access_token for the designation
-						String facebook_access_token =  getFacebookAccessToken(designation);
-						if(facebook_access_token == null)
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "Could not retrieve fb access token for designation " + designation + ". Has the FB account been linked yet?");
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't proceed with Facebook linking.");
 							jsonresponse.put("response_status", "error");
 						}
-						else
-						{	
-							JSONArray fbsubaccounts_ja = getFacebookSubAccounts(facebook_access_token);
-							if(fbsubaccounts_ja == null)
+						else // twitter creds were OK
+						{
+							// now check to see if top-level FB is linked
+							if(!user.facebookTopLevelIsLinked())
 							{
-								jsonresponse.put("message", "Could not retrieve subaccounts for " + designation + ". Has the main FB account been linked yet? Does the parent account have sub accounts?");
+								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't get the subaccount (reporter page) information.");
 								jsonresponse.put("response_status", "error");
 							}
 							else
 							{
-								String name = "";
-								String subaccount_access_token = "";
-								long id_long = 0L;
-								boolean successful = false;
-								for(int x =0; x < fbsubaccounts_ja.length(); x++)
+								JSONArray fb_subaccounts_ja = user.getFacebookSubAccountsFromFacebook();
+								if(fb_subaccounts_ja == null)
 								{
-									if(fbsubaccounts_ja.getJSONObject(x).getLong("id") == (new Long(Long.parseLong(id)).longValue()))
-									{
-										name = fbsubaccounts_ja.getJSONObject(x).getString("name");
-										subaccount_access_token = fbsubaccounts_ja.getJSONObject(x).getString("access_token");
-										id_long =  (new Long(Long.parseLong(id)).longValue());
-										successful = setFacebookSubAccountIdNameAndAccessToken(designation, id_long, name, subaccount_access_token);
-									}
-								}
-								if(successful)
-								{
-									jsonresponse.put("response_status", "success");
+									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
+									jsonresponse.put("response_status", "error");
 								}
 								else
+								{	
+									if(fb_subaccounts_ja.length() == 0)
+									{
+										jsonresponse.put("response_status", "success");
+										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found.");
+									}
+									else
+									{
+										jsonresponse.put("response_status", "success");
+										jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
+									}
+								}
+									
+							}
+						}
+					}
+				}
+				else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
+				{
+					// twitter account must be linked first. That info is then used as the verifier in lieu of a password
+					// hence, this is why we're asking for that information here.
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String fb_subaccount_id = request.getParameter("fb_subaccount_id");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(fb_subaccount_id == null)
+					{
+						jsonresponse.put("message", "A fb_subaccount_id value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't proceed with Facebook linking.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							// now check to see if top-level FB is linked
+							if(!user.facebookTopLevelIsLinked())
+							{
+								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't set the subaccount (reporter page).");
+								jsonresponse.put("response_status", "error");
+							}
+							else
+							{
+								JSONArray fb_subaccounts_ja = user.getFacebookSubAccountsFromFacebook();
+								if(fb_subaccounts_ja == null)
 								{
-									jsonresponse.put("message", "There was an error trying to set the FB account id name and access_token for this user");
+									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
 									jsonresponse.put("response_status", "error");
+								}
+								else
+								{	
+									if(fb_subaccounts_ja.length() == 0)
+									{
+										jsonresponse.put("response_status", "error");
+										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found. Can't set subaccount.");
+									}
+									else
+									{
+										boolean specified_subaccount_exists = false;
+										for(int x = 0; x < fb_subaccounts_ja.length(); x++)
+										{
+											if(fb_subaccounts_ja.getJSONObject(x).getString("id").equals(fb_subaccount_id))
+											{
+												specified_subaccount_exists = true;
+											}
+										}
+										if(!specified_subaccount_exists)
+										{
+											jsonresponse.put("message", "The specified subaccount id (" + fb_subaccount_id + ") doesn't exist for this user's top-level facebook account.");
+											jsonresponse.put("response_status", "error");
+											jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
+										}
+										else
+										{
+											boolean successful = user.setFacebookSubAccountIdNameAndAccessToken(fb_subaccount_id, fb_subaccounts_ja);
+											if(successful)
+											{
+												jsonresponse.put("response_status", "success");
+											}
+											else
+											{
+												jsonresponse.put("message", "Pinged facebook, specified subaccount is valid, but ran into error inserting into db.");
+												jsonresponse.put("response_status", "error");
+											}
+										}
+									}
 								}
 							}
 						}
@@ -1763,7 +1856,8 @@ public class Endpoint extends HttpServlet {
 										setLastAlert(max_designation, ts_long, "facebook");
 										alert_triggered_facebook = true;
 										jsonresponse.put("alert_triggered_facebook", "yes");
-										JSONObject facebook_stuff = getFacebookSubAccount(max_designation); 
+										User user = new User(max_designation, "designation");
+										JSONObject facebook_stuff = user.getFacebookSubAccount(); 
 										if(facebook_stuff != null)
 										{
 											jsonresponse.put("facebook_account_id",facebook_stuff.getLong("facebook_account_id"));
@@ -2047,7 +2141,8 @@ public class Endpoint extends HttpServlet {
 						JSONArray fbaccounts_ja = getFacebookSubAccounts(rs.getString("facebook_access_token"));
 						if(fbaccounts_ja != null)
 							jo.put("facebook_accounts", fbaccounts_ja);
-						JSONObject selected_fb_account_jo = getFacebookSubAccount(rs.getString("designation"));
+						User user = new User(rs.getString("designation"), "designation");
+						JSONObject selected_fb_account_jo = user.getFacebookSubAccount();
 						if(selected_fb_account_jo != null)
 						{
 							jo.put("facebook_account_id", selected_fb_account_jo.getLong("facebook_account_id"));
@@ -2485,58 +2580,6 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	
-	
-	boolean setFacebookAccessTokenExpiresAndUID(String designation, String access_token, long expires_timestamp, long fb_uid)
-	{
-		boolean returnval = false;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
-			if(rs.next())
-			{
-				rs.updateString("facebook_access_token", access_token);
-				rs.updateLong("facebook_access_token_expires", expires_timestamp);
-				rs.updateLong("facebook_uid", fb_uid);
-				rs.updateRow();
-				returnval = true;
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return returnval;
-	}
-	
 	boolean setFacebookSubAccountIdNameAndAccessToken(String designation, long id_long, String name, String subaccount_access_token)
 	{
 		boolean returnval = false;
@@ -2739,62 +2782,7 @@ public class Endpoint extends HttpServlet {
 		return returnval;
 	}
 	
-	JSONObject getFacebookSubAccount(String designation)
-	{
-		JSONObject return_jo = null;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
-			if(rs.next())
-			{
-				if(rs.getLong("facebook_account_id") != 0 && rs.getString("facebook_account_access_token") != null && rs.getString("facebook_account_name") != null)
-				{
-					return_jo = new JSONObject();
-					try {
-						return_jo.put("facebook_account_id", rs.getLong("facebook_account_id"));
-						return_jo.put("facebook_account_access_token", rs.getString("facebook_account_access_token"));
-						return_jo.put("facebook_account_name", rs.getString("facebook_account_name"));
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database.");
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getSelectedFacebookAccount", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}  	
-		return return_jo;
-	}
+	
 	
 	String getSelectedFacebookAccountAccessToken(String designation)
 	{
@@ -3269,7 +3257,8 @@ public class Endpoint extends HttpServlet {
 		 boolean successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
-			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + getFacebookSubAccount(designation).getString("facebook_account_access_token"));
+			User user = new User(designation, "designation");
+			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + user.getFacebookSubAccount().getString("facebook_account_access_token"));
 			HttpResponse response = httpClient.execute(hd);
 			int statusCode = response.getStatusLine().getStatusCode();
 	        successful = statusCode == 200 ? true : false;

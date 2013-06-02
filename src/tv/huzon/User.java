@@ -1,5 +1,8 @@
 package tv.huzon;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -9,6 +12,12 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import javax.mail.MessagingException;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 
 import com.amazonaws.util.json.JSONArray;
@@ -348,19 +357,24 @@ public class User {
 			response_jo.put("twitter_access_token", twitter_access_token);
 			response_jo.put("twitter_access_token_secret", twitter_access_token_secret);
 			response_jo.put("twitter_handle", twitter_handle);
-			response_jo.put("facebook_uid", facebook_uid);
-			response_jo.put("facebook_page_id", facebook_page_id);
-			response_jo.put("facebook_access_token", facebook_access_token);
-			response_jo.put("facebook_access_token_expires", facebook_access_token_expires);
-			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
+			if(facebook_uid != 0)
+				response_jo.put("facebook_uid", facebook_uid);
+			if(!facebook_access_token.isEmpty())
+				response_jo.put("facebook_access_token", facebook_access_token);
+			if(facebook_access_token_expires != 0)
+				response_jo.put("facebook_access_token_expires", facebook_access_token_expires);
+			if(facebook_page_id != 0)
+				response_jo.put("facebook_page_id", facebook_page_id);
+			if(!facebook_page_name.isEmpty())
+				response_jo.put("facebook_page_name", facebook_page_name);
+			if(!facebook_page_access_token.isEmpty())
+				response_jo.put("facebook_page_access_token", facebook_page_access_token);
 			response_jo.put("facebook_alert_waiting_period", facebook_alert_waiting_period);
-			response_jo.put("twitter_delete_after", twitter_delete_after);
 			response_jo.put("facebook_delete_after", facebook_delete_after);
-			response_jo.put("twitter_last_alert", twitter_last_alert);
 			response_jo.put("facebook_last_alert", facebook_last_alert);
-			response_jo.put("facebook_page_id", facebook_page_id);
-			response_jo.put("facebook_page_name", facebook_page_name);
-			response_jo.put("facebook_page_access_token", facebook_page_access_token);
+			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
+			response_jo.put("twitter_delete_after", twitter_delete_after);
+			response_jo.put("twitter_last_alert", twitter_last_alert);
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -424,7 +438,216 @@ public class User {
 		return returnval;
 	}
 	
+	boolean setFacebookAccessTokenExpiresAndUID(String access_token, long expires_timestamp, long fb_uid)
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_access_token", access_token);
+				rs.updateLong("facebook_access_token_expires", expires_timestamp);
+				rs.updateLong("facebook_uid", fb_uid);
+				rs.updateRow();
+				returnval = true;
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
+	}
 	
+	public boolean facebookTopLevelIsLinked()
+	{
+		if(facebook_uid != 0 && !facebook_access_token.isEmpty())
+		{
+			// FIXME -> should check that these are still valid against Facebook
+			// for now, we're assuming that they are
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	
+	public JSONArray getFacebookSubAccountsFromFacebook()
+	{
+		// if returnvalue == null, then facebook access token was null, empty, invalid or we couldn't reach the server.
+		// if returnvalue is empty, then we reached facebook successfully, but there were no subaccounts.
+		if(facebook_access_token == null || facebook_access_token.isEmpty())
+		{
+			return null;
+		}
+		JSONArray jsonresponse = new JSONArray();
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet request = new HttpGet("https://graph.facebook.com/me/accounts?access_token=" + facebook_access_token);
+			HttpResponse response;
+			
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				System.out.println("Endpoint.getFacebookSubAccounts(): response to https://graph.facebook.com/me/accounts?access_token=" + facebook_access_token + "=" + text);
+				JSONObject jo = new JSONObject(text);
+				jsonresponse = jo.getJSONArray("data");
+			} catch (ClientProtocolException e) {
+				jsonresponse = null;
+				e.printStackTrace();
+			} catch (IOException e) {
+				jsonresponse = null;
+				e.printStackTrace();
+			}
+		}	
+		catch (JSONException e) {
+			jsonresponse = null;
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
+	public JSONObject getFacebookSubAccount()
+	{
+		JSONObject return_jo = new JSONObject();
+		try{
+			if(facebook_page_id == 0)
+			{
+				return_jo.put("response_status", "error");
+				return_jo.put("message", "FB subaccount not set in the database");
+			}
+			else if (facebook_page_name == null || facebook_page_name.isEmpty())
+			{
+				return_jo.put("response_status", "error");
+				return_jo.put("message", "FB subaccount id is set, but the subaccount name is empty. Weird.");
+			}
+			else if (facebook_page_access_token == null || facebook_page_access_token.isEmpty())
+			{
+				return_jo.put("response_status", "error");
+				return_jo.put("message", "FB subaccount id and name are set, but the subaccount facebook_page_access_token is empty. Weird.");
+			}
+			else
+			{
+				return_jo.put("response_status", "success");
+				return_jo.put("facebook_page_id", facebook_page_id);
+				return_jo.put("facebook_page_access_token", facebook_page_access_token);
+				return_jo.put("facebook_page_name", facebook_page_name);
+			}
+		}	
+		catch (JSONException e) {
+			return_jo = null;
+			e.printStackTrace();
+		}
+		return return_jo;
+	}
+	
+	boolean setFacebookSubAccountIdNameAndAccessToken(String id, JSONArray fb_subaccounts_ja)
+	{
+		String name = "";
+		String subaccount_access_token = "";
+		long id_long = 0L;
+		try
+		{
+			for(int x =0; x < fb_subaccounts_ja.length(); x++)
+			{
+				if(fb_subaccounts_ja.getJSONObject(x).getLong("id") == (new Long(Long.parseLong(id)).longValue()))
+				{
+					name = fb_subaccounts_ja.getJSONObject(x).getString("name");
+					subaccount_access_token = fb_subaccounts_ja.getJSONObject(x).getString("access_token");
+					id_long =  (new Long(Long.parseLong(id)).longValue());
+				}
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_page_access_token", subaccount_access_token);
+				rs.updateString("facebook_page_name", name);
+				rs.updateLong("facebook_page_id", id_long);
+				rs.updateRow();
+				returnval = true;
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
+	}
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
