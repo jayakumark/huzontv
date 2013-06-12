@@ -92,6 +92,65 @@ public class Endpoint extends HttpServlet {
 					}	
 					else
 					{
+						/*
+						 * 
+						 * System.out.println("Endpoint.commitFrameDataAndAlert(): Looking up existing frame....");
+					JSONObject jo = new JSONObject(jsonpostbody);
+					ResultSet rs = null;
+					Connection con = null;
+					Statement stmt = null;
+					try
+					{
+						con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+						stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+						rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getLong("timestamp_in_seconds") + "' LIMIT 1,1");
+						System.out.println("Endpoint.commitFrameDataAndAlert(): query finished.");
+						double currentavgscore = 0.0;
+						double reporter_total = 0.0;
+						JSONArray all_scores_ja = null;
+
+						if(!rs.next())
+						{	
+							System.out.println("Endpoint.commitFrameDataAndAlert(): row with that timestamp not found. ");
+							rs.moveToInsertRow();
+							all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
+							JSONArray ja = jo.getJSONArray("reporter_scores");
+							for(int x = 0; x < ja.length(); x++)
+							{
+								reporter_total = 0.0;
+								for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
+								{
+									reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+									all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
+									//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+								}
+								currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
+								rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
+								rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
+								rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
+							}
+							System.out.println("image_name: " + jo.getString("image_name"));
+							rs.updateString("image_name", jo.getString("image_name"));
+							rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
+
+							rs.insertRow();
+							rs.close();
+							stmt.close();
+							con.close();
+							System.out.println("Endpoint.commitFrameDataAndAlert(): new row inserted.");
+							
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("alert_triggered", "no"); // FIXME
+						}
+						else
+						{
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("alert_triggered", "no");
+							jsonresponse.put("message", "Duplicate frame.");
+						}
+						 */
+						
+						
 						System.out.println("Endpoint.commitFrameDataAndAlert(): Looking up existing frame....");
 						JSONObject jo = new JSONObject(jsonpostbody);
 						ResultSet rs = null;
@@ -100,100 +159,45 @@ public class Endpoint extends HttpServlet {
 						try
 						{
 							con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-							stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-							rs = stmt.executeQuery("SELECT * FROM frames_" + jo.getString("station") + " WHERE timestamp_in_seconds='" + jo.getLong("timestamp_in_seconds") + "' LIMIT 1,1");
-							System.out.println("Endpoint.commitFrameDataAndAlert(): query finished.");
+							
 							double currentavgscore = 0.0;
 							double reporter_total = 0.0;
-							JSONArray all_scores_ja = null;
-						
-							if(!rs.next())
-							{	
-								System.out.println("Endpoint.commitFrameDataAndAlert(): row with that timestamp not found. ");
-								rs.moveToInsertRow();
-								all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
-								JSONArray ja = jo.getJSONArray("reporter_scores");
-								for(int x = 0; x < ja.length(); x++)
-								{
-									reporter_total = 0.0;
-									for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
-									{
-										reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
-										all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
-										//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
-									}
-									currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
-									rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
-									rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
-									rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
-								}
-								System.out.println("image_name: " + jo.getString("image_name"));
-								rs.updateString("image_name", jo.getString("image_name"));
-								rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
-								
-								rs.insertRow();
-								rs.close();
-								stmt.close();
-								con.close();
-								System.out.println("Endpoint.commitFrameDataAndAlert(): new row inserted.");
-								/*boolean simulation = false;
-								int awp_facebook = 36000; // 10 hours
-								int awp_twitter = 7200; // 2 hours
-								System.out.println("Endpoint.commitFrameDataAndAlert(): Processing new frame.");
-								jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, awp_twitter, awp_facebook, simulation);
-								if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
-								{
-									// missing a frame, wait 2 seconds, try again.
-									Thread.sleep(2000);
-									jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, awp_twitter, awp_facebook, simulation);
-									if(jsonresponse.getString("response_status").equals("error") && jsonresponse.has("error_code") && (jsonresponse.getString("error_code").equals("100")))
-									{
-										// still missing a frame, wait 2 seconds, try again.
-										Thread.sleep(2000);
-										jsonresponse = processNewFrame(jo.getLong("timestamp_in_seconds"), "wkyt", 5, 0.67, 1.0, awp_twitter, awp_facebook, simulation);
-									}
-								}
-								System.out.println("Endpoint.commitFrameDataAndAlert(): Done processing new frame.");*/
-								jsonresponse.put("response_status", "success");
-								jsonresponse.put("alert_triggered", "no"); // FIXME
-							}
-							else
+							JSONArray all_scores_ja = new JSONArray();
+							JSONArray ja = jo.getJSONArray("reporter_scores");
+							String fieldsstring = " (";
+							String valuesstring = " (";
+							fieldsstring = fieldsstring + "`" + "image_name" + "`, ";
+							valuesstring = valuesstring + "'" + jo.getString("image_name") + "', ";
+							fieldsstring = fieldsstring + "`" + "s3_location" + "`, ";
+							valuesstring = valuesstring + "'" + jo.getString("s3_location") + "', ";
+							fieldsstring = fieldsstring + "`" + "url" + "`, ";
+							valuesstring = valuesstring + "'" + jo.getString("url") + "', ";
+							fieldsstring = fieldsstring + "`" + "timestamp_in_ms" + "`, ";
+							valuesstring = valuesstring + "'" + jo.getLong("timestamp_in_ms") + "', ";
+							for(int x = 0; x < ja.length(); x++)
 							{
-								jsonresponse.put("response_status", "error");
-								jsonresponse.put("alert_triggered", "no");
-								jsonresponse.put("message", "Duplicate frame.");
-							}
-							/*
-							else // a row already exists... overwrite.
-							{
-								all_scores_ja = new JSONArray(); // empty the scores array as we're starting to analyze a new row
-								JSONArray ja = jo.getJSONArray("reporter_scores");
-								for(int x = 0; x < ja.length(); x++)
+								reporter_total = 0.0;
+								for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
 								{
-									reporter_total = 0.0;
-									for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
-									{
-										reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
-										all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
-										//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
-									}
-									currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
-									rs.updateString(ja.getJSONObject(x).getString("designation")+"_scores", ja.getJSONObject(x).getJSONArray("scores").toString());
-									rs.updateDouble(ja.getJSONObject(x).getString("designation")+"_avg", currentavgscore);
-									rs.updateInt(ja.getJSONObject(x).getString("designation")+"_num", ja.getJSONObject(x).getJSONArray("scores").length());
+									reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+									all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
+									//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 								}
-								System.out.println("image_name: " + jo.getString("image_name"));
-								rs.updateString("image_name", jo.getString("image_name"));
-								rs.updateLong("timestamp_in_seconds", jo.getLong("timestamp_in_seconds"));
-								
-								rs.updateRow();
-								rs.close();
-								stmt.close();
-								con.close();
-								jsonresponse.put("response_status", "success");
-								jsonresponse.put("alert_triggered", "no");
-								jsonresponse.put("message", "Scores should be UPDATED now.");
-							}*/
+								currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
+								fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_scores" + "`, ";
+								valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").toString() + "', ";
+								fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_avg" + "`, ";
+								valuesstring = valuesstring + "'" + currentavgscore + "', ";
+								fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_num" + "`, ";
+								valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").length() + "', ";
+							}
+							fieldsstring = fieldsstring.substring(0,fieldsstring.length() - 2) + ")";
+							valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";
+							System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
+							con.createStatement().execute("INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
+							con.close();
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("alert_triggered", "no"); // FIXME
 						}
 						catch(SQLException sqle)
 						{
