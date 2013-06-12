@@ -8,7 +8,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import javax.mail.MessagingException;
@@ -24,7 +23,7 @@ import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-public class User {
+public class User implements java.lang.Comparable {
 
 	/**
 	 * @param args
@@ -33,9 +32,9 @@ public class User {
 	// values directly from "people" table
 	private String designation;
 	private String display_name;
-	private double homogeneity_studio;
-	private double homogeneity_natural;
-	private double homogeneity_artificial;
+	private double homogeneity;
+	//private double homogeneity_natural;
+	//private double homogeneity_artificial;
 	private int twitter_alert_waiting_period;
 	private int facebook_alert_waiting_period;
 	private int twitter_delete_after;
@@ -61,17 +60,15 @@ public class User {
 	private boolean reporter;
 	
 	// values collected from "stations" table in constructor
-	private TreeSet<String> stations_appearing;
-	private TreeSet<String> stations_as_admin;
+	//private TreeSet<String> stations_appearing;
+	//private TreeSet<String> stations_as_admin;
 		
 	// additional values
 	boolean valid;
 		
-	public User(String inc_twitter_handle, String constructor_type)
+	public User(String inc_des_or_twit, String constructor_type)
 	{
-		/*
-		private TreeSet<String> facebook_page_ids;
-		*/
+		//System.out.println("Creating user from inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		valid = false;
 		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  		ResultSet rs2 = null;  		Statement stmt2 = null;  		ResultSet rs3 = null; 		Statement stmt3 = null;
 		try
@@ -80,18 +77,17 @@ public class User {
 			stmt = con.createStatement();
 			String query_to_exec = "";
 			if(constructor_type.equals("twitter_handle"))
-				query_to_exec = "SELECT * FROM people WHERE twitter_handle=' " + inc_twitter_handle + "'";
+				query_to_exec = "SELECT * FROM people WHERE twitter_handle=' " + inc_des_or_twit + "'";
 			else if (constructor_type.equals("designation"))
-				query_to_exec = "SELECT * FROM people WHERE designation='" + designation + "'";
-			
+				query_to_exec = "SELECT * FROM people WHERE designation='" + inc_des_or_twit + "'";
 			rs = stmt.executeQuery(query_to_exec);
 			if(rs.next())
 			{
 				designation = rs.getString("designation");
 				display_name = rs.getString("display_name");
-				homogeneity_studio = rs.getDouble("homogeneity_studio");
-				homogeneity_natural = rs.getDouble("homogeneity_natural");
-				homogeneity_artificial = rs.getDouble("homogeneity_artificial");
+				homogeneity = rs.getDouble("homogeneity");
+			//	homogeneity_natural = rs.getDouble("homogeneity_natural");
+				//homogeneity_artificial = rs.getDouble("homogeneity_artificial");
 				twitter_alert_waiting_period = rs.getInt("twitter_alert_waiting_period");
 				facebook_alert_waiting_period = rs.getInt("facebook_alert_waiting_period");
 				twitter_delete_after = rs.getInt("twitter_delete_after");
@@ -116,7 +112,7 @@ public class User {
 				sports = rs.getBoolean("sports");
 				reporter = rs.getBoolean("reporter");
 				
-				rs2 = null;
+				/*rs2 = null;
 				stmt2 = con.createStatement();
 				rs2 = stmt2.executeQuery("SELECT * FROM stations WHERE reporters like '% " + designation + " %'");
 				stations_appearing = new TreeSet<String>();
@@ -125,6 +121,7 @@ public class User {
 					stations_appearing.add(rs2.getString("call_letters"));
 				}
 				
+				
 				rs3 = null;
 				stmt3 = con.createStatement();
 				rs3 = stmt3.executeQuery("SELECT * FROM stations WHERE administrators like '% " + designation + " %'");
@@ -132,11 +129,14 @@ public class User {
 				while(rs3.next())
 				{
 					stations_as_admin.add(rs3.getString("call_letters"));
-				}
+				}*/
+				
+				
 				valid = true;
 			}
 			else
 			{
+				System.out.println("User constructor: valid = false");
 				valid = false;
 			}
 		}
@@ -224,12 +224,12 @@ public class User {
 		return display_name;
 	}
 	
-	public double getHomogeneityStudio()
+	public double getHomogeneity()
 	{
-		return homogeneity_studio;
+		return homogeneity;
 	}
 	
-	public double getHomogeneityArtificial()
+	/*public double getHomogeneityArtificial()
 	{
 		return homogeneity_artificial;
 	}
@@ -237,7 +237,7 @@ public class User {
 	public double getHomogeneityNatural()
 	{
 		return homogeneity_natural;
-	}
+	}*/
 	
 	public long getFacebookUID()
 	{
@@ -317,15 +317,15 @@ public class User {
 		try {
 			response_jo.put("designation", getDesignation());
 			response_jo.put("display_name", getDisplayName());
-			response_jo.put("stations_as_reporter", new JSONArray(stations_appearing));
-			response_jo.put("stations_as_administrator", new JSONArray(stations_as_admin));
+			//response_jo.put("stations_as_reporter", new JSONArray(stations_appearing));
+			//response_jo.put("stations_as_administrator", new JSONArray(stations_as_admin));
 			response_jo.put("anchor", isAnchor());
 			response_jo.put("weather", isWeather());
 			response_jo.put("sports", isSports());
 			response_jo.put("reporter", isReporter());
-			response_jo.put("homogeneity_studio", homogeneity_studio);
-			response_jo.put("homogeneity_natural", homogeneity_natural);
-			response_jo.put("homogeneity_artificial", homogeneity_artificial);
+			response_jo.put("homogeneity", homogeneity);
+		//	response_jo.put("homogeneity_natural", homogeneity_natural);
+		//	response_jo.put("homogeneity_artificial", homogeneity_artificial);
 			response_jo.put("weekend_expected_begin", weekend_expected_begin_string);
 			response_jo.put("weekend_expected_end", weekend_expected_end_string);
 			response_jo.put("weekday_expected_begin", weekday_expected_begin_string);
@@ -664,9 +664,14 @@ public class User {
 		return returnval;
 	}
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+	public int compareTo(Object o) // this sorts by designation alphabetically
+	{
+	    String otherdesignation = ((User)o).getDesignation();
+	    int x = otherdesignation.compareTo(designation);
+	    if(x >= 0) // this is to prevent equals
+	    	return 1;
+	    else
+	    	return -1;
 	}
-
+	
 }
