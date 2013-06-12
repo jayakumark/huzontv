@@ -10,7 +10,11 @@ import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
-public class Station {
+import com.amazonaws.util.json.JSONArray;
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+
+public class Station implements java.lang.Comparable {
 
 	/**
 	 * @param args
@@ -22,9 +26,10 @@ public class Station {
 	private int dma_2013;
 	private TreeSet<String> administrators;
 	private TreeSet<String> reporters;
-	private boolean under_contract;
 	private boolean active;
 	private boolean valid;
+	private int frame_rate; // milliseconds per frame
+	private String s3_bucket_public_hostname;
 	
 	public Station(String inc_call_letters)
 	{
@@ -43,18 +48,21 @@ public class Station {
 				city = rs.getString("city");
 				state = rs.getString("state");
 				dma_2013 = rs.getInt("dma_2013");
+				frame_rate = rs.getInt("frame_rate");
+				reporters = new TreeSet<String>();
 				StringTokenizer st = new StringTokenizer(rs.getString("reporters")," ");
 				while(st.hasMoreTokens())
 				{
 					reporters.add(st.nextToken()); // = rs.getString("station");
 				}
+				administrators = new TreeSet<String>();
 				st = new StringTokenizer(rs.getString("administrators")," ");
 				while(st.hasMoreTokens())
 				{
 					administrators.add(st.nextToken()); // = rs.getString("station");
 				}
 				active = rs.getBoolean("active");
-				under_contract = rs.getBoolean("under_contract");
+				s3_bucket_public_hostname = rs.getString("s3_bucket_public_hostname");
 				valid = true;
 			}
 			else
@@ -109,11 +117,6 @@ public class Station {
 	{
 		return reporters;
 	}
-	
-	public boolean isUnderContract()
-	{
-		return under_contract;
-	}
 
 	public boolean isActive()
 	{
@@ -135,9 +138,45 @@ public class Station {
 		return dma_2013;
 	}
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+	public int getFrameRate()
+	{
+		return frame_rate;
+	}
+	
+	public String getS3BucketPublicHostname()
+	{
+		return s3_bucket_public_hostname;
+	}
+	
+	public JSONObject getAsJSONObject()
+	{
+		JSONObject return_jo = new JSONObject();
+		try
+		{
+			return_jo.put("call_letters", getCallLetters());
+			return_jo.put("city", getCity());
+			return_jo.put("state", getState());
+			return_jo.put("frame_rate", getFrameRate());
+			return_jo.put("dma2013", getDMA());
+			return_jo.put("active", isActive());
+			return_jo.put("reporters", new JSONArray(getReporters()).toString());
+			return_jo.put("administrators", new JSONArray(getAdministrators()).toString());
+		}	
+		catch (JSONException e) {
+			return_jo = null;
+			e.printStackTrace();
+		}
+		return return_jo;
+	}
 
+	public int compareTo(Object o) // this sorts by call_letters alphabetically
+	{
+	    String othercall = ((Station)o).getCallLetters();
+	    int x = othercall.compareTo(call_letters);
+	    if(x >= 0) // this is to prevent equals
+	    	return 1;
+	    else
+	    	return -1;
 	}
 
 }

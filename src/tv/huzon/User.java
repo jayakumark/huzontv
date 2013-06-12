@@ -58,6 +58,7 @@ public class User implements java.lang.Comparable {
 	private boolean weather;
 	private boolean sports;
 	private boolean reporter;
+	private boolean global_admin;
 	
 	// values collected from "stations" table in constructor
 	//private TreeSet<String> stations_appearing;
@@ -111,7 +112,7 @@ public class User implements java.lang.Comparable {
 				weather = rs.getBoolean("weather");
 				sports = rs.getBoolean("sports");
 				reporter = rs.getBoolean("reporter");
-				
+				global_admin = rs.getBoolean("global_admin");
 				/*rs2 = null;
 				stmt2 = con.createStatement();
 				rs2 = stmt2.executeQuery("SELECT * FROM stations WHERE reporters like '% " + designation + " %'");
@@ -172,6 +173,11 @@ public class User implements java.lang.Comparable {
 			}
 		}  	
 		
+	}
+	
+	public boolean isGlobalAdmin()
+	{
+		return global_admin;
 	}
 	
 	public boolean isValid()
