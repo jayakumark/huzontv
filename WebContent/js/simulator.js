@@ -541,7 +541,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            method: "getFrames",
 				            begin: begin,             
 				            end: end,
-				            station: "wkyt",
+				            station: station,
 		    	            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
 						},
@@ -603,7 +603,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            designation: $('#function2_designation_select').val(),
 				            singlemodifier: $('#function2_singlemodifier_input').val(),
 				            delta: $('#function2_delta_input').val(),
-				            huzon_admin_auth: huzon_admin_auth
+				            station: station,
+		    	            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
 						},
 				        dataType: 'json',
 				        async: true,
@@ -622,16 +624,16 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        			{	
 				        				for(var x = 0; x < data.frames.length; x++)
 				        				{
-				        					d = new Date(data.frames[x].timestamp_in_seconds *1000);
+				        					d = new Date(data.frames[x].timestamp_in_ms);
 				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-				        					rds = rds + "<img src=\"http://192.168.2.101/huzon_wkyt/" + data.frames[x].image_name + "\" style=\"width:250px;height:141px\">";
+				        					rds = rds + "<img src=\"" + data.frames[x].url + "\" style=\"width:250px;height:141px\">";
 				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
 				        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
 				        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
 				        					rds = rds + "<br>closest_desg:" + data.frames[x].closest_designation;
 				        					rds = rds + "<br>closest_avg:" + data.frames[x].closest_avg;
 				        					rds = rds + "<br>closest_delta:" + (data.frames[x].score_average - data.frames[x].closest_avg);
-				        					rds = rds + "<br>streak:" + data.frames[x].streak + "</div>";
+				        					rds = rds + "</div>";
 				        				}
 				        			}
 				        			else
@@ -673,7 +675,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            mamodifier: $('#function3_mamodifier_input').val(),
 				            singlemodifier: $('#function3_singlemodifier_input').val(),
 				            mawindow: $('#function3_mawindow_input').val(),
-				            huzon_admin_auth: huzon_admin_auth
+				            station: station,
+		    	            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
 						},
 				        dataType: 'json',
 				        async: true,
