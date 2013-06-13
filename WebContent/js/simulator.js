@@ -370,11 +370,11 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
 	fds = fds + "		</td>";
-	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	/*fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-	fds = fds + "						<b>Function 4:</b> Simulate alerts for a given time range (inclusive)";
+	fds = fds + "						<b>Function 4:</b> Simulate alerts for a given time range (inclusive) OBSOLETE -> can't simulate 1 per second";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
@@ -413,7 +413,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-	fds = fds + "						<b>Function 5:</b> Get list of missing frames (inclusive)";
+	fds = fds + "						<b>Function 5:</b> Get list of missing frames (inclusive)  OBSOLETE -> no such thing as \"missing\" frames";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
@@ -428,95 +428,44 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
-	fds = fds + "		</td>";
+	fds = fds + "		</td>";*/
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-	fds = fds + "						<b>Function 6:</b> Get alerts for a given timeframe (inclusive)";
+	fds = fds + "						<b>Function 4:</b> Get alerts for a given timeframe (inclusive)";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function6_singlemodifier_input\" value=\"1.0\" size=4>";
+	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function6_mamodifier_input\" value=\".67\" size=4>";
+	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function6_mawindow_input\" value=\"5\" size=4>";
+	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	// alert waiting periods should be separated, but this function doesn't actually use one
-	//fds = fds + "						Alert waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"7200\" size=4>";
+	//fds = fds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Delta: <input type=\"text\" id=\"function6_delta_input\" value=\".1\" size=4> ";
+	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130409_050000\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130409_050000\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130409_060000\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130409_060000\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "   					<input id=\"function6_go_button\" type=button value=\"GO\">";
+	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
-	fds = fds + "		</td>";
-	fds = fds + "	</tr>";
-	fds = fds + "	<tr>";
-	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	fds = fds + "			<table style=\"border-spacing:3px\">";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-	fds = fds + "						<b>Function 7:</b> Get fired alerts for time range (inclusive)";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function7_begin_input\" size=13 value=\"20130409_050000\">";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function7_end_input\" value=\"20130409_060000\" size=13>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "   					<input id=\"function7_go_button\" type=button value=\"GO\">";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "			</table>";
-	fds = fds + "		</td>";
-	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	fds = fds + "			<table style=\"border-spacing:3px\">";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-	fds = fds + "						<b>Function 8:</b> Delete an alert";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Designation: <select id=\"function8_designation_select\">";
-	for(var a = 0; a < reporters_ja.length; a++)
-	{
-		fds = fds + "						<option value=\"" + reporters_ja[a] + "\">" + reporters_ja[a] + "</option>";
-	}	
-	fds = fds + "							</select>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Type: <input type=\"text\" id=\"function8_social_type_input\" size=13 value=\"twitter\">";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Item ID: <input type=\"text\" id=\"function8_id_input\" value=\"\" size=13>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "   					<input id=\"function8_go_button\" type=button value=\"GO\">";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "			</table>";
-	fds = fds + "		</td>";
 	fds = fds + "		</td>";
 	fds = fds + "	</tr>";
 	fds = fds + "</table>";
@@ -742,640 +691,16 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					});
 				return;
 			});
-	
+
 	$("#function4_go_button").click(
 			function () {
-				$("#alerts_div").html("");
 				$("#results_div").html("");
 				$("#chart1").html("");
-				resetAllLastAlerts("wkyt");
 				var rds = "";
 				var datestring = $('#function4_begin_input').val();
 				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var begin = d.getTime()/1000;
 				datestring = $('#function4_end_input').val();
-				d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				// end, ma_modifier, single_modifier, alert_waiting_period, moving_average_window
-				var current_ts = begin;
-				var x = 0;
-				var alert_triggered = false;
-				while(current_ts <= end)
-				{
-					//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-						current_ts = alert_triggered; // alert_triggered is the next valid frame
-					if(alert_triggered == true)
-					{
-						setTimeout(function(){
-							while(current_ts <= end)
-							{
-								//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-									current_ts = alert_triggered; // alert_triggered is the next valid frame
-								if(alert_triggered == true)
-								{
-									setTimeout(function(){
-										while(current_ts <= end)
-										{
-											//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-												current_ts = alert_triggered; // alert_triggered is the next valid frame
-											if(alert_triggered == true)
-											{
-												setTimeout(function(){
-													while(current_ts <= end)
-													{
-														//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-															current_ts = alert_triggered; // alert_triggered is the next valid frame
-														if(alert_triggered == true)
-														{
-															setTimeout(function(){
-																while(current_ts <= end)
-																{
-																	//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																		current_ts = alert_triggered; // alert_triggered is the next valid frame
-																	if(alert_triggered == true)
-																	{
-																		setTimeout(function(){
-																			while(current_ts <= end)
-																			{
-																				//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																					current_ts = alert_triggered; // alert_triggered is the next valid frame
-																				if(alert_triggered == true)
-																				{
-																					setTimeout(function(){
-																						while(current_ts <= end)
-																						{
-																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																								current_ts = alert_triggered; // alert_triggered is the next valid frame
-																							if(alert_triggered == true)
-																							{
-																								setTimeout(function(){
-																									while(current_ts <= end)
-																									{
-																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																										if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																											current_ts = alert_triggered; // alert_triggered is the next valid frame
-																										if(alert_triggered == true)
-																										{
-																											setTimeout(function(){
-																												while(current_ts <= end)
-																												{
-																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																													if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																														current_ts = alert_triggered; // alert_triggered is the next valid frame
-																													if(alert_triggered == true)
-																													{
-																														setTimeout(function(){
-																															while(current_ts <= end)
-																															{
-																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																	current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																if(alert_triggered == true)
-																																{
-																																	setTimeout(function(){
-																																		while(current_ts <= end)
-																																		{
-																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																			if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																				current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																			if(alert_triggered == true)
-																																			{
-																																				setTimeout(function(){
-																																					while(current_ts <= end)
-																																					{
-																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																							current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																						if(alert_triggered == true)
-																																						{
-																																							setTimeout(function(){
-																																								while(current_ts <= end)
-																																								{
-																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																										current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																									if(alert_triggered == true)
-																																									{
-																																										setTimeout(function(){
-																																											while(current_ts <= end)
-																																											{
-																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																													current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																												if(alert_triggered == true)
-																																												{
-																																													setTimeout(function(){
-																																														while(current_ts <= end)
-																																														{
-																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																															if(alert_triggered == true)
-																																															{
-																																																setTimeout(function(){
-																																																	while(current_ts <= end)
-																																																	{
-																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																			current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																		if(alert_triggered == true)
-																																																		{
-																																																			setTimeout(function(){
-																																																				while(current_ts <= end)
-																																																				{
-																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																						current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																					if(alert_triggered == true)
-																																																					{
-																																																						setTimeout(function(){
-																																																							while(current_ts <= end)
-																																																							{
-																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																									current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																								if(alert_triggered == true)
-																																																								{
-																																																									setTimeout(function(){
-																																																										while(current_ts <= end)
-																																																										{
-																																																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																												current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																											if(alert_triggered == true)
-																																																											{
-																																																												setTimeout(function(){
-																																																													while(current_ts <= end)
-																																																													{
-																																																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																															current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																														if(alert_triggered == true)
-																																																														{
-																																																															setTimeout(function(){
-																																																																while(current_ts <= end)
-																																																																{
-																																																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																		current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																	if(alert_triggered == true)
-																																																																	{
-																																																																		setTimeout(function(){
-																																																																			while(current_ts <= end)
-																																																																			{
-																																																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																					current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																				if(alert_triggered == true)
-																																																																				{
-																																																																					setTimeout(function(){
-																																																																						while(current_ts <= end)
-																																																																						{
-																																																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																								current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																							if(alert_triggered == true)
-																																																																							{
-																																																																								setTimeout(function(){
-																																																																									while(current_ts <= end)
-																																																																									{
-																																																																										alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																										if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																											current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																										if(alert_triggered == true)
-																																																																										{
-																																																																											setTimeout(function(){
-																																																																												while(current_ts <= end)
-																																																																												{
-																																																																													alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																													if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																														current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																													if(alert_triggered == true)
-																																																																													{
-																																																																														setTimeout(function(){
-																																																																															while(current_ts <= end)
-																																																																															{
-																																																																																alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																	current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																if(alert_triggered == true)
-																																																																																{
-																																																																																	setTimeout(function(){
-																																																																																		while(current_ts <= end)
-																																																																																		{
-																																																																																			alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																			if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																				current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																			if(alert_triggered == true)
-																																																																																			{
-																																																																																				setTimeout(function(){
-																																																																																					while(current_ts <= end)
-																																																																																					{
-																																																																																						alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																						if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																							current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																						if(alert_triggered == true)
-																																																																																						{
-																																																																																							setTimeout(function(){
-																																																																																								while(current_ts <= end)
-																																																																																								{
-																																																																																									alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																									if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																										current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																									if(alert_triggered == true)
-																																																																																									{
-																																																																																										setTimeout(function(){
-																																																																																											while(current_ts <= end)
-																																																																																											{
-																																																																																												alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																												if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																													current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																												if(alert_triggered == true)
-																																																																																												{
-																																																																																													setTimeout(function(){
-																																																																																														while(current_ts <= end)
-																																																																																														{
-																																																																																															alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																															if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																															if(alert_triggered == true)
-																																																																																															{
-																																																																																																setTimeout(function(){
-																																																																																																	while(current_ts <= end)
-																																																																																																	{
-																																																																																																		alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																		if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																			current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																		if(alert_triggered == true)
-																																																																																																		{
-																																																																																																			setTimeout(function(){
-																																																																																																				while(current_ts <= end)
-																																																																																																				{
-																																																																																																					alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																					if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																						current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																					if(alert_triggered == true)
-																																																																																																					{
-																																																																																																						setTimeout(function(){
-																																																																																																							while(current_ts <= end)
-																																																																																																							{
-																																																																																																								alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																								if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																									current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																								if(alert_triggered == true)
-																																																																																																								{
-																																																																																																									setTimeout(function(){
-																																																																																																										while(current_ts <= end)
-																																																																																																										{
-																																																																																																											alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																											if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																												current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																											if(alert_triggered == true)
-																																																																																																											{
-																																																																																																												setTimeout(function(){
-																																																																																																													while(current_ts <= end)
-																																																																																																													{
-																																																																																																														alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																														if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																															current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																														if(alert_triggered == true)
-																																																																																																														{
-																																																																																																															setTimeout(function(){
-																																																																																																																while(current_ts <= end)
-																																																																																																																{
-																																																																																																																	alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																																	if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																																		current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																																	if(alert_triggered == true)
-																																																																																																																	{
-																																																																																																																		setTimeout(function(){
-																																																																																																																			while(current_ts <= end)
-																																																																																																																			{
-																																																																																																																				alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																																				if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																																					current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																																				if(alert_triggered == true)
-																																																																																																																				{
-																																																																																																																					setTimeout(function(){
-																																																																																																																						while(current_ts <= end)
-																																																																																																																						{
-																																																																																																																							alert_triggered = simulateNewFrame(current_ts,  $('#function4_mamodifier_input').val(), $('#function4_singlemodifier_input').val(), $('#function4_awp_twitter_input').val(), $('#function4_awp_facebook_input').val(), $('#function4_mawindow_input').val());
-																																																																																																																							if(alert_triggered != true && alert_triggered != false && alert_triggered != -1) // this means that it's a next_frame value and not null
-																																																																																																																								current_ts = alert_triggered; // alert_triggered is the next valid frame
-																																																																																																																							if(alert_triggered == true)
-																																																																																																																							{
-																																																																																																																								setTimeout(function(){
-																																																																																																																									alert("demo alert limit reached");
-																																																																																																																									},1000);
-																																																																																																																								break;
-																																																																																																																							}	
-																																																																																																																							current_ts++;
-																																																																																																																							x++;
-																																																																																																																						}	
-																																																																																																																						},1000);
-																																																																																																																					break;
-																																																																																																																				}	
-																																																																																																																				current_ts++;
-																																																																																																																				x++;
-																																																																																																																			}	
-																																																																																																																			},1000);
-																																																																																																																		break;
-																																																																																																																	}	
-																																																																																																																	current_ts++;
-																																																																																																																	x++;
-																																																																																																																}	
-																																																																																																																},1000);
-																																																																																																															break;
-																																																																																																														}	
-																																																																																																														current_ts++;
-																																																																																																														x++;
-																																																																																																													}	
-																																																																																																													},1000);
-																																																																																																												break;
-																																																																																																											}	
-																																																																																																											current_ts++;
-																																																																																																											x++;
-																																																																																																										}	
-																																																																																																										},1000);
-																																																																																																									break;
-																																																																																																								}	
-																																																																																																								current_ts++;
-																																																																																																								x++;
-																																																																																																							}	
-																																																																																																							},1000);
-																																																																																																						break;
-																																																																																																					}	
-																																																																																																					current_ts++;
-																																																																																																					x++;
-																																																																																																				}	
-																																																																																																				},1000);
-																																																																																																			break;
-																																																																																																		}	
-																																																																																																		current_ts++;
-																																																																																																		x++;
-																																																																																																	}	
-																																																																																																	},1000);
-																																																																																																break;
-																																																																																															}	
-																																																																																															current_ts++;
-																																																																																															x++;
-																																																																																														}	
-																																																																																														},1000);
-																																																																																													break;
-																																																																																												}	
-																																																																																												current_ts++;
-																																																																																												x++;
-																																																																																											}	
-																																																																																											},1000);
-																																																																																										break;
-																																																																																									}	
-																																																																																									current_ts++;
-																																																																																									x++;
-																																																																																								}	
-																																																																																								},1000);
-																																																																																							break;
-																																																																																						}	
-																																																																																						current_ts++;
-																																																																																						x++;
-																																																																																					}	
-																																																																																					},1000);
-																																																																																				break;
-																																																																																			}	
-																																																																																			current_ts++;
-																																																																																			x++;
-																																																																																		}	
-																																																																																		},1000);
-																																																																																	break;
-																																																																																}	
-																																																																																current_ts++;
-																																																																																x++;
-																																																																															}	
-																																																																															},1000);
-																																																																														break;
-																																																																													}	
-																																																																													current_ts++;
-																																																																													x++;
-																																																																												}	
-																																																																												},1000);
-																																																																											break;
-																																																																										}	
-																																																																										current_ts++;
-																																																																										x++;
-																																																																									}	
-																																																																									},1000);
-																																																																								break;
-																																																																							}	
-																																																																							current_ts++;
-																																																																							x++;
-																																																																						}	
-																																																																						},1000);
-																																																																					break;
-																																																																				}	
-																																																																				current_ts++;
-																																																																				x++;
-																																																																			}	
-																																																																			},1000);
-																																																																		break;
-																																																																	}	
-																																																																	current_ts++;
-																																																																	x++;
-																																																																}	
-																																																																},1000);
-																																																															break;
-																																																														}	
-																																																														current_ts++;
-																																																														x++;
-																																																													}	
-																																																													},1000);
-																																																												break;
-																																																											}	
-																																																											current_ts++;
-																																																											x++;
-																																																										}	
-																																																										},1000);
-																																																									break;
-																																																								}	
-																																																								current_ts++;
-																																																								x++;
-																																																							}	
-																																																							},1000);
-																																																						break;
-																																																					}	
-																																																					current_ts++;
-																																																					x++;
-																																																				}	
-																																																				},1000);
-																																																			break;
-																																																		}	
-																																																		current_ts++;
-																																																		x++;
-																																																	}	
-																																																	},1000);
-																																																break;
-																																															}	
-																																															current_ts++;
-																																															x++;
-																																														}	
-																																														},1000);
-																																													break;
-																																												}	
-																																												current_ts++;
-																																												x++;
-																																											}	
-																																											},1000);
-																																										break;
-																																									}	
-																																									current_ts++;
-																																									x++;
-																																								}	
-																																								},1000);
-																																							break;
-																																						}	
-																																						current_ts++;
-																																						x++;
-																																					}	
-																																					},1000);
-																																				break;
-																																			}	
-																																			current_ts++;
-																																			x++;
-																																		}	
-																																		},1000);
-																																	break;
-																																}	
-																																current_ts++;
-																																x++;
-																															}	
-																															},1000);
-																														break;
-																													}	
-																													current_ts++;
-																													x++;
-																												}	
-																												},1000);
-																											break;
-																										}	
-																										current_ts++;
-																										x++;
-																									}	
-																									},1000);
-																								break;
-																							}	
-																							current_ts++;
-																							x++;
-																						}	
-																						},1000);
-																					break;
-																				}	
-																				current_ts++;
-																				x++;
-																			}	
-																			},1000);
-																		break;
-																	}	
-																	current_ts++;
-																	x++;
-																}	
-																},1000);
-															break;
-														}	
-														current_ts++;
-														x++;
-													}	
-													},1000);
-												break;
-											}	
-											current_ts++;
-											x++;
-										}	
-										},1000);
-									break;
-								}	
-								current_ts++;
-								x++;
-							}	
-							},1000);
-						break;
-					}	
-					current_ts++;
-					x++;
-				}	
-			});
-	
-	$("#function5_go_button").click(
-			function () {
-				$("#results_div").html("");
-				$("#chart1").html("");
-				var rds = "";
-				var datestring = $('#function5_begin_input').val();
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var begin = d.getTime()/1000;
-				datestring = $('#function5_end_input').val();
-			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				$.ajax({
-						type: 'GET',
-						url: endpoint,
-						data: {
-				            method: "getMissingFrames",
-				            begin: begin,             
-				            end: end  ,
-				            huzon_admin_auth: huzon_admin_auth
-						},
-				        dataType: 'json',
-				        async: false,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error message=" + data.message);
-				        	else
-				        	{
-				        		if(data.missing_frames_timestamps.length > 100000)
-				        		{
-				        			$("#results_div").html("too many results. Try again.");
-				        		}	
-				        		else
-				        		{
-				        			
-				        			for(var x = 0; x < data.missing_frames_timestamps.length; x++)
-				        			{
-				        				rds = rds + data.missing_frames_timestamps[x] + " " + data.missing_frames_datestrings[x] + "<br>";
-				        			}
-				        			$("#results_div").html(rds);
-				        		}
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
-	
-	$("#function6_go_button").click(
-			function () {
-				$("#results_div").html("");
-				$("#chart1").html("");
-				var rds = "";
-				resetAllLastAlerts("wkyt");
-				var datestring = $('#function6_begin_input').val();
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var begin = d.getTime()/1000;
-				datestring = $('#function6_end_input').val();
 			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var end = d.getTime()/1000;
 				
@@ -1386,12 +711,13 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            method: "getAlertsForTimePeriod",
 				            begin: begin,             
 				            end: end,
-				            mamodifier: $('#function6_mamodifier_input').val(),
-				            singlemodifier: $('#function6_singlemodifier_input').val(),
-				       //     awp: $('#function6_awp_input').val(),
-				            mawindow: $('#function6_mawindow_input').val(),
-				            delta:  $('#function6_delta_input').val(),
-				            huzon_admin_auth: huzon_admin_auth
+				            mamodifier: $('#function4_mamodifier_input').val(),
+				            singlemodifier: $('#function4_singlemodifier_input').val(),
+				            mawindow: $('#function4_mawindow_input').val(),
+				            delta:  $('#function4_delta_input').val(),
+				            station: station,
+		    	            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
 						},
 				        dataType: 'json',
 				        async: false,
@@ -1401,64 +727,31 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        	else
 				        	{
 				        		//alert("response_status=success");
-				        		if(data.alert_frames)
+				        		if(data.alert_frames_ja)
 			        			{	
-				        			data.alert_frames.sort(function(a,b){
+				        			data.alert_frames_ja.sort(function(a,b){
 				        				a = a.timestamp_in_seconds;
 				        				b = b.timestamp_in_seconds;
 				        				return a - b;
 				        			});
 				        			
-			        				for(var x = 0; x < data.alert_frames.length; x++)
+			        				for(var x = 0; x < data.alert_frames_ja.length; x++)
 			        				{
 			        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 				        				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-				        				rds = rds + "<br><img src=\"http://192.168.2.101/huzon_wkyt/" + data.alert_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
-				        				rds = rds + "<br>datestring:" + data.alert_frames[x].datestring;
-				        				rds = rds + "<br>designation:" + data.alert_frames[x].designation;
-				        				rds = rds + "<br>score for des:" + data.alert_frames[x].score;
-				        				rds = rds + "<br>ma[0] score:" + data.alert_frames[x].moving_average;
-				        				rds = rds + "<br>max_moving_average:" + data.alert_frames[x].max_moving_average;
-				        				rds = rds + "<br>mma index:" + data.alert_frames[x].max_moving_average_index;
-				        				rds = rds + "<br>des homogeneity:" + data.alert_frames[x].homogeneity_score;
-				        				rds = rds + "<br>des single thresh:" + data.alert_frames[x].single_threshold;
-				        				rds = rds + "<br>des ma thres:" + data.alert_frames[x].ma_threshold;
-				        				rds = rds + "<br>2nd pl des:" + data.alert_frames[x].secondplace_designation;
-				        				rds = rds + "<br>2nd pl score:" + data.alert_frames[x].secondplace_score;
-				        				rds = rds + "<br>score_of_last frame_in_window:" + data.alert_frames[x].score_of_last_frame_in_window;
-				        				rds = rds + "<br>window_index_of_max_score:" + data.alert_frames[x].window_index_of_max_score;
+				        				rds = rds + "<br><img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
+				        				rds = rds + "<br>datestring:" + data.alert_frames_ja[x].datestring;
+				        				rds = rds + "<br>designation:" + data.alert_frames_ja[x].designation;
+				        				rds = rds + "<br>score for des:" + data.alert_frames_ja[x].score;
+				        				rds = rds + "<br>ma score:" + data.alert_frames_ja[x].moving_average;
+				        				rds = rds + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity_score;
+				        				rds = rds + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
+				        				rds = rds + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
+				        				rds = rds + "<br>window_index_of_max_score:" + data.alert_frames_ja[x].window_index_of_max_score;
 				        				rds = rds + "</div>";
 			        				}
 			        			}
-				        		if(data.delta_suppressed_frames)
-				        		{
-				        			data.delta_suppressed_frames.sort(function(a,b){
-				        				a = a.timestamp_in_seconds;
-				        				b = b.timestamp_in_seconds;
-				        				return a - b;
-				        			});
-			        				for(var x = 0; x < data.delta_suppressed_frames.length; x++)
-			        				{
-			        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-				        				//rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-				        				rds = rds + "<br><img src=\"http://192.168.2.101/huzon_wkyt/" + data.delta_suppressed_frames[x].image_name + "\" style=\"width:250px;height:141px\">";
-				        				rds = rds + "<br>datestring:" + data.delta_suppressed_frames[x].datestring;
-				        				rds = rds + "<br>designation:" + data.delta_suppressed_frames[x].designation;
-				        				rds = rds + "<br>score for des:" + data.delta_suppressed_frames[x].score;
-				        				rds = rds + "<br>ma[0] score:" + data.delta_suppressed_frames[x].moving_average;
-				        				rds = rds + "<br>max_moving_average:" + data.delta_suppressed_frames[x].max_moving_average;
-				        				rds = rds + "<br>mma index:" + data.delta_suppressed_frames[x].max_moving_average_index;
-				        				rds = rds + "<br>des homogeneity:" + data.delta_suppressed_frames[x].homogeneity_score;
-				        				rds = rds + "<br>des single thresh:" + data.delta_suppressed_frames[x].single_threshold;
-				        				rds = rds + "<br>des ma thres:" + data.delta_suppressed_frames[x].ma_threshold;
-				        				rds = rds + "<br>2nd pl des:" + data.delta_suppressed_frames[x].secondplace_designation;
-				        				rds = rds + "<br>2nd pl score:" + data.delta_suppressed_frames[x].secondplace_score;
-				        				rds = rds + "<br>score_of_last frame_in_window:" + data.delta_suppressed_frames[x].score_of_last_frame_in_window;
-				        				rds = rds + "<br>window_index_of_max_score:" + data.delta_suppressed_frames[x].window_index_of_max_score;
-				        				rds = rds + "</div>";
-			        				}
-				        		}
-			        		
+				        
 			        			$("#results_div").html(rds);
 				        	}
 				        }
@@ -1470,247 +763,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					});
 				return;
 			});
-	
-	$("#function7_go_button").click(
-			function () {
-				$("#results_div").html("");
-				$("#chart1").html("");
-				var rds = "";
-				$.ajax({
-						type: 'GET',
-						url: endpoint,
-						data: {
-				            method: "getFiredAlerts",
-				            begin: $('#function7_begin_input').val(),             
-				            end: $('#function7_end_input').val(),
-				            huzon_admin_auth: huzon_admin_auth
-						},
-				        dataType: 'json',
-				        async: false,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error message=" + data.message);
-				        	else
-				        	{
-				        		rds = rds + "<table style=\"width:100%\">";
-				        		rds = rds + "<tr>";
-			        			rds = rds + "	<td>id";
-			        			rds = rds + "	</td>";
-			        			rds = rds + "	<td>creation_timestamp";
-			        			rds = rds + "	</td>";
-			        			rds = rds + "	<td>image_name";
-			        			rds = rds + "	</td>";
-			        			
-			        			rds = rds + "	<td>designation";
-			        			rds = rds + "	</td>";
-			        			rds = rds + "	<td>social_type";
-			        			rds = rds + "	</td>";
-			        			rds = rds + "	<td>actual_text";
-			        			rds = rds + "	</td>";
-			        			rds = rds + "</tr>";
-				        		for(var count = 0; count < data.fired_alerts.length; count++)
-				        		{
-				        			rds = rds + "<tr>";
-				        			rds = rds + "	<td>";
-				        			rds = rds + data.fired_alerts[count].id;
-				        			rds = rds + "	</td>";
-				        			rds = rds + "	<td>";
-				        			rds = rds + data.fired_alerts[count].creation_timestamp;
-				        			rds = rds + "	</td>";
-				        			rds = rds + "	<td>";
-				        			rds = rds + "<img src=\"http://192.168.2.101/huzon_wkyt/" + data.fired_alerts[count].image_name + "\" style=\"width:250px;height:141px\">";
-				        			rds = rds + "	</td>";
-				        	
-				        			rds = rds + "	<td>";
-				        			rds = rds + data.fired_alerts[count].designation;
-				        			rds = rds + "	</td>";
-				        			rds = rds + "	<td>";
-				        			rds = rds + data.fired_alerts[count].social_type;
-				        			rds = rds + "	</td>";
-				        			rds = rds + "	<td>";
-				        			rds = rds + data.fired_alerts[count].actual_text;
-				        			rds = rds + "	</td>";
-				        			rds = rds + "</tr>";
-				        		}	
-				        		rds = rds + "</table>";
-				        		//rds = JSON.stringify(data.fired_alerts);
-				        		$("#results_div").html(rds);
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
-	
-	$("#function8_go_button").click(
-			function () {
-				$("#results_div").html("");
-				$("#chart1").html("");
-				var rds = "";
-				$.ajax({
-						type: 'GET',
-						url: endpoint,
-						data: {
-				            method: "deleteAlert",
-				            designation: $('#function8_designation_select').val(),
-				            social_type: $('#function8_social_type_input').val(),             
-				            id: $('#function8_id_input').val(),
-				            huzon_admin_auth: huzon_admin_auth
-						},
-				        dataType: 'json',
-				        async: false,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error message=" + data.message);
-				        	else
-				        	{
-				        		rds = JSON.stringify(data);
-				        		$("#results_div").html(rds);
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
 }
 	
 
-function simulateNewFrame(ts, mamodifier, singlemodifier, awp_twitter, awp_facebook, mawindow)
-{
-	var huzon_admin_auth = docCookies.getItem("huzon_admin_auth"); // this should always be here since this function can't be called without it. 
-	var alert_triggered = false;
-	$("#alerts_div").html(ts);
-	$.ajax({
-			type: 'GET',
-			url: endpoint,
-			data: {
-	            method: "simulateNewFrame",
-	            ts: ts,
-	            mamodifier: mamodifier,
-	            singlemodifier: singlemodifier,
-	            awp_twitter: awp_twitter,
-	            awp_facebook: awp_facebook,
-	            mawindow: mawindow,
-	            huzon_admin_auth: huzon_admin_auth
-			},
-	        dataType: 'json',
-	        async: false,
-	        success: function (data, status) {
-	        	if (data.response_status == "error")
-	        	{
-	        		//$("#results_div").html("error: "  + data.message);
-	        		if(data.next_frame)
-	        		{ 
-	        			//alert("next_frame " + data.next_frame);
-	        			alert_triggered = data.next_frame;
-	        		}	
-	        	}
-	        	else
-	        	{
-	        		
-	        		
-	        			//alert("retrieving info for ts:" + ts);
-	        			if(data.alert_triggered === "yes")
-	        			{
-	        				//alert("alert triggered");
-	        				var alertstring = "";
-	        				alertstring = alertstring + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-	        				alertstring = alertstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
-	        				alertstring = alertstring + "<tr>";
-	        				alertstring = alertstring + "		<td style=\"text-align:right;vertical-align:middle\">";
-	        				if(data.alert_triggered_twitter)
-	        					alertstring = alertstring + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
-	        				if(data.alert_triggered_facebook)
-	        					alertstring = alertstring + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
-	        				alertstring = alertstring + "		</td>";
-	        				alertstring = alertstring + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
-	        				alertstring = alertstring + "	</tr>";
-	        				alertstring = alertstring + "</table>";
-	        				alertstring = alertstring + "<br><img src=\"http://192.168.2.101/huzon_wkyt/" + data.image_name_of_frame_with_highest_score_in_window + "\" style=\"width:250px;height:141px\">";
-	        				alertstring = alertstring + "<br>datestring_of_frame_with_highest_score_in_window: " + data.datestring_of_frame_with_highest_score_in_window;
-	        				alertstring = alertstring + "<br>designation: " + data.designation;
-	        				alertstring = alertstring + "<br>designation_moving_average_over_window: " + data.designation_moving_average_over_window;
-	        				alertstring = alertstring + "<br>designation_score_for_last_frame_in_window: " + data.designation_score_for_last_frame_in_window;
-	        				alertstring = alertstring + "<br>designation_highest_frame_score_in_window: " + data.designation_highest_frame_score_in_window;
-	        				alertstring = alertstring + "<br>index_of_designation_highest_frame_score_in_window: " + data.index_of_designation_highest_frame_score_in_window;
-	        				if(data.designation_twitter_handle)
-	        				{
-	        					alertstring = alertstring + "<br>designation_twitter_handle: " + data.designation_twitter_handle;
-	        					//alertstring = alertstring + "<br>twitter_access_token:" + data.twitter_access_token;
-	        					//alertstring = alertstring + "<br>twitter_access_token_secret:" + data.twitter_access_token_secret;
-	        					alertstring = alertstring + "<br>twitter_redirect_id: " + data.twitter_redirect_id;
-	        				}
-	        				if(data.facebook_account_id)
-	        				{
-	        					alertstring = alertstring + "<br>facebook_account_id: " + data.facebook_account_id;
-	        					//alertstring = alertstring + "<br>facebook_account_access_token:" + data.facebook_account_access_token;
-	        					alertstring = alertstring + "<br>facebook_account_name: " + data.facebook_account_name;
-	        					alertstring = alertstring + "<br>facebook_redirect_id: " + data.facebook_redirect_id;
-	        				}	
-	        				alertstring = alertstring + "<br>designation_display_name: " + data.designation_display_name;
-	        				alertstring = alertstring + "<br>designation_homogeneity_score: " + data.designation_homogeneity_score;
-	        				alertstring = alertstring + "<br>designation_moving_average_threshold: " + data.designation_moving_average_threshold;
-	        				alertstring = alertstring + "<br>designation_single_threshold: " + data.designation_single_threshold;
-	        				alertstring = alertstring + "<br>datestring_of_last_frame_in_window: " + data.datestring_of_last_frame_in_window;
-	        				alertstring = alertstring + "<br>datestring_of_frame_with_highest_score_in_window: " + data.datestring_of_frame_with_highest_score_in_window;
-	        				alertstring = alertstring + "<br>image_name_of_last_frame_in_window: " + data.image_name_of_last_frame_in_window;
-	        				alertstring = alertstring + "<br>image_name_of_frame_with_highest_score_in_window: " + data.image_name_of_frame_with_highest_score_in_window;
-	        				
-	        				alertstring = alertstring + "</div>";
-	        				$("#results_div").append(alertstring);
-	        				alert_triggered = true;
-	        			}	
-	        			else
-	        			{
-	        				alert("no alert triggered");
-	        			}
-	        		
-	        	}
-	        }
-	        ,
-	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	$("#results_div").html("ajax error");
-	            console.log(textStatus, errorThrown);
-	        }
-		});
-	return alert_triggered;
-}
-
-function resetAllLastAlerts(station)
-{
-	var huzon_admin_auth = docCookies.getItem("huzon_admin_auth"); // this should always be here since this function can't be called without it. 
-	$.ajax({
-			type: 'GET',
-			url: endpoint,
-			data: {
-	            method: "resetAllLastAlerts",
-	            station: station,
-	            huzon_admin_auth: huzon_admin_auth
-			},
-	        dataType: 'json',
-	        async: false,
-	        success: function (data, status) {
-	        	if (data.response_status == "error")
-	        		$("#results_div").html("error: "  + data.message);
-	        	else
-	        	{
-	        		//$("#results_div").html("success resetting all last alerts");
-	        	}
-	        }
-	        ,
-	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	$("#results_div").html("ajax error");
-	            console.log(textStatus, errorThrown);
-	        }
-		});
-	return;
-}
 

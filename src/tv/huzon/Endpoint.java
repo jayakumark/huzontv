@@ -1174,474 +1174,103 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				
-				/*
-				else if (method.equals("getMissingFrames"))
-				{
-					String admin_password = request.getParameter("huzon_admin_auth");
-					if(admin_password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A admin_password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(admin_password.equals("sanders.lov"))
-						{
-							System.out.println("Getting missing frames");
-							String begin = request.getParameter("begin"); // required
-							String end = request.getParameter("end"); // required
-							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "begin or end was empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else
-							{
-								long begin_long = Long.parseLong(begin);
-								long end_long = Long.parseLong(end);
-								long counter = begin_long;
-								System.out.println("Putting all timestamps in window in treeset");
-								TreeSet<String> timestamps = new TreeSet<String>();
-								while(counter < end_long)
-								{
-									timestamps.add(counter+"");
-									counter++;
-								}
-								System.out.println("DONE Putting all timestamps in window in treeset");
-								ResultSet rs = null;
-								Connection con = null;
-								Statement stmt = null;
-								System.out.println("1");
-								try
-								{
-									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-									System.out.println("2");
-									stmt = con.createStatement();
-									System.out.println("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ") ORDER BY timestamp_in_seconds ASC");
-									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ") ORDER BY timestamp_in_seconds ASC"); // get the frames in the time range
-									System.out.println("4");
-									rs.last();
-									System.out.println("5");
-									jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-									System.out.println("6");
-								 	rs.beforeFirst(); // go back to the beginning for parsing
-									System.out.println("Looping through frames found in database and removing entries from timestamps treeset");
-									while(rs.next())
-									{
-										timestamps.remove(rs.getLong("timestamp_in_seconds")+"");
-									}
-									System.out.println("DONE Looping through frames found in database and removing entries from timestamps treeset");
-									Iterator<String> it = timestamps.iterator();
-									JSONArray timestamps_ja = new JSONArray();
-									JSONArray datestrings_ja = new JSONArray();
-									String current = "";
-									System.out.println("Looping through missing frames and creating jsonarrays");
-									while(it.hasNext())
-									{
-										current = it.next();
-										timestamps_ja.put(current);
-										datestrings_ja.put(getLouisvilleDatestringFromTimestampInSeconds(Long.parseLong(current)));
-									}
-									System.out.println("DONE Looping through frames found in database and removing entries from timestamps treeset");
-									jsonresponse.put("missing_frames_timestamps", timestamps_ja);
-									jsonresponse.put("missing_frames_datestrings", datestrings_ja);
-									jsonresponse.put("response_status", "success");
-								}
-								catch(SQLException sqle)
-								{
-									jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-									jsonresponse.put("response_status", "error");
-									sqle.printStackTrace();
-									jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
-									SimpleEmailer se = new SimpleEmailer();
-									try {
-										se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when getting frames. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-									} catch (MessagingException e) {
-										e.printStackTrace();
-									}
-								}
-								finally
-								{
-									try
-									{
-										if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-									}
-									catch(SQLException sqle)
-									{ 
-										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
-										SimpleEmailer se = new SimpleEmailer();
-										try {
-											se.sendMail("SQLException in Endpoint getMissingFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-										} catch (MessagingException e) {
-											e.printStackTrace();
-										}
-									}
-								}   	
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect admin_password.");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
-				else if (method.equals("getFramesByDesignation")) 
-				{
-					String admin_password = request.getParameter("huzon_admin_auth");
-					if(admin_password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A admin_password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(admin_password.equals("sanders.lov"))
-						{
-							String begin = request.getParameter("begin"); // required
-							String end = request.getParameter("end"); // required
-							String designation = request.getParameter("designation");
-							double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
-							double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-							String mawindow = request.getParameter("mawindow");
-							int mawindow_int = Integer.parseInt(mawindow);
-							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "begin or end was empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else
-							{
-								ResultSet rs = null;
-								Connection con = null;
-								Statement stmt = null;
-								Statement stmt2 = null;
-								ResultSet rs2 = null;
-								try
-								{
-									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-									stmt = con.createStatement();
-									rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + ")"); // get the frames in the time range
-									rs.last();
-									jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-									rs.beforeFirst(); // go back to the beginning for parsing
-									JSONObject current_frame_jo = null;
-									JSONArray frames_ja = new JSONArray();
-									double total = 0.0;
-									double ma_over_window = 0.0;
-									User user = new User(designation, "designation");
-									double homogeneity_double = user.getHomogeneity();
-									//double lowest_score_in_window = 2.0;
-									while(rs.next())
-									{
-										current_frame_jo = new JSONObject();
-										current_frame_jo.put("image_name", rs.getString("image_name"));
-										current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-										current_frame_jo.put("designation_score", rs.getDouble(designation + "_avg"));
-										current_frame_jo.put("homogeneity_score", homogeneity_double);
-										current_frame_jo.put("ma_threshold", homogeneity_double * ma_modifier_double);
-										current_frame_jo.put("single_threshold", homogeneity_double * single_modifier_double);
-										stmt2 = con.createStatement();
-										rs2 = stmt2.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds > " + (rs.getInt("timestamp_in_seconds") - mawindow_int) + " AND timestamp_in_seconds <= " + rs.getInt("timestamp_in_seconds") + ")");
-										total = 0;
-										//lowest_score_in_window = 2.0;
-										while(rs2.next())
-										{
-											//* this removes the lowest score over the window, essentially throwing out an outlier to compensate for closed eyes, 
-											// * or other total failure to locate the face in an otherwise good stream of consistent images **
-											//if(rs2.getDouble(designation + "_avg") < lowest_score_in_window)
-											//	lowest_score_in_window = rs2.getDouble(designation + "_avg");
-											total = total + rs2.getDouble(designation + "_avg");
-										}
-										//ma_over_window = (total - lowest_score_in_window) / (mawindow_int - 1);
-										ma_over_window = total / mawindow_int;
-										current_frame_jo.put("moving_average", ma_over_window);
-										frames_ja.put(current_frame_jo);
-									}
-									jsonresponse.put("response_status", "success");
-									if(frames_ja.length() > 0)
-										jsonresponse.put("frames", frames_ja);
-								}
-								catch(SQLException sqle)
-								{
-									jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-									jsonresponse.put("response_status", "error");
-									sqle.printStackTrace();
-									SimpleEmailer se = new SimpleEmailer();
-									try {
-										se.sendMail("SQLException in Endpoint getFramesByDesignation", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-									} catch (MessagingException e) {
-										e.printStackTrace();
-									}
-								}
-								finally
-								{
-									try
-									{
-										if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (rs2  != null){ rs2.close(); } if (stmt2  != null) { stmt2.close(); } if (con != null) { con.close(); }
-									}
-									catch(SQLException sqle)
-									{ 
-										jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
-										SimpleEmailer se = new SimpleEmailer();
-										try {
-											se.sendMail("SQLException in Endpoint getFramesByDesignation", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-										} catch (MessagingException e) {
-											e.printStackTrace();
-										}
-									}
-								}   	
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect admin_password.");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
-				else if (method.equals("getFramesByDesignationAndHomogeneityThreshold"))
-				{	
-					String admin_password = request.getParameter("huzon_admin_auth");
-					if(admin_password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A admin_password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(admin_password.equals("sanders.lov"))
-						{
-							String begin = request.getParameter("begin"); // required
-							String end = request.getParameter("end"); // required
-							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "begin and/or end was null and/or empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else // begin/end ok
-							{	
-								String designation = request.getParameter("designation"); 
-								if(designation == null || designation.isEmpty())
-								{	
-									jsonresponse.put("message", "designation was null or empty");
-									jsonresponse.put("response_status", "error");
-								}
-								else // designation/numstddev ok
-								{
-									User user = new User(designation, "designation");
-									double homogeneity_double = user.getHomogeneity();
-									double modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-									double threshold = homogeneity_double * modifier_double;
-									double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
-									try
-									{
-										ResultSet rs = null;
-										Connection con = null;
-										Statement stmt = null;
-										try
-										{
-											
-											con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-											stmt = con.createStatement();
-											rs = stmt.executeQuery("SELECT * FROM frames_wkyt WHERE (timestamp_in_seconds <= " + end + " AND timestamp_in_seconds >= " + begin + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
-											rs.last();
-											jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-											rs.beforeFirst(); // go back to the beginning for parsing
-											JSONObject current_frame_jo = null;
-											JSONArray frames_ja = new JSONArray();
-											boolean all_others_below_delta = true;
-											double control_avg = 100;
-											double closest_avg = 0;
-											JSONArray designations = getDesignations("wkyt", "active", "person");
-											double challenge_avg = 0;
-											String closest_designation = "";
-											int delta_suppressions = 0;
-											while(rs.next()) // get one row
-											{
-												all_others_below_delta = true;
-												control_avg = rs.getDouble(designation + "_avg");
-												closest_avg = 0;
-												for(int d = 0; d < designations.length(); d++)
-												{	
-													if(!designations.getString(d).equals(designation)) // skip comparing this against itself
-													{	
-														challenge_avg = rs.getDouble(designations.getString(d) + "_avg");
-														if(challenge_avg > closest_avg)
-														{
-															closest_avg = challenge_avg;
-															closest_designation = designations.getString(d);
-														}
-														System.out.println("\t\tChallenge avg=" + challenge_avg + " (" + designations.getString(d) + ")");
-														if((control_avg - challenge_avg) < delta_double) // this one did not satisfy the delta requirement
-														{
-															all_others_below_delta = false;
-															// could include a break here to save cycles, but want to get closest for informational purposes
-														}
-														
-													}
-												}
-												if(all_others_below_delta)
-												{
-													current_frame_jo = new JSONObject();
-													current_frame_jo.put("image_name", rs.getString("image_name"));
-													current_frame_jo.put("timestamp_in_seconds", rs.getInt("timestamp_in_seconds"));
-													current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-													current_frame_jo.put("homogeneity_score", homogeneity_double);
-													current_frame_jo.put("threshold", threshold);
-													current_frame_jo.put("closest_avg", closest_avg);
-													current_frame_jo.put("closest_designation", closest_designation);
-													//System.out.println("Adding a frame. " + rs.getString("image_name") + " " + rs.getInt("timestamp_in_seconds") + " " + rs.getDouble(designation + "_avg"));
-													
-													// if the previous frame's timestamp is one less than this one
-													if(frames_ja.length() > 0 && frames_ja.getJSONObject(frames_ja.length()-1).getInt("timestamp_in_seconds") == (rs.getInt("timestamp_in_seconds") - 1))
-													{
-														// then add to whatever streak number is there
-														current_frame_jo.put("streak", frames_ja.getJSONObject(frames_ja.length()-1).getInt("streak")+1);
-													}
-													else
-													{
-														// else set the streak to 0
-														current_frame_jo.put("streak", 1);
-													}
-													frames_ja.put(current_frame_jo);
-												}
-												else
-												{
-													delta_suppressions++;
-												}
-											}
-											jsonresponse.put("delta_suppressions", delta_suppressions);
-											jsonresponse.put("response_status", "success");
-											jsonresponse.put("frames", frames_ja);
-										}
-										catch(SQLException sqle)
-										{
-											jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-											jsonresponse.put("response_status", "error");
-											sqle.printStackTrace();
-											SimpleEmailer se = new SimpleEmailer();
-											try {
-												se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-											} catch (MessagingException e) {
-												e.printStackTrace();
-											}
-										}
-										finally
-										{
-											try
-											{
-												if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-											}
-											catch(SQLException sqle)
-											{ 
-												jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
-												SimpleEmailer se = new SimpleEmailer();
-												try {
-													se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-												} catch (MessagingException e) {
-													e.printStackTrace();
-												}
-											}
-										}   	
-										
-									}
-									catch(NumberFormatException nfe)
-									{
-										jsonresponse.put("message", "threshold was not a valid double value");
-										jsonresponse.put("response_status", "error");
-									}
-								}
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect admin_password.");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
 				else if (method.equals("getAlertsForTimePeriod"))
 				{
-					String admin_password = request.getParameter("huzon_admin_auth");
-					if(admin_password == null)
+					System.out.println("Endpoint begin getAlertsForTimePeriod");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String station_param = request.getParameter("station");
+					
+					String begin = request.getParameter("begin");
+					String end = request.getParameter("end");
+					String singlemodifier = request.getParameter("singlemodifier");
+					String mamodifier = request.getParameter("mamodifier");
+					String mawindow = request.getParameter("mawindow");
+					String delta = request.getParameter("delta");
+					
+					if(twitter_handle == null)
 					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A admin_password value must be supplied to this method.");
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(station_param == null)
+					{
+						jsonresponse.put("message", "A station value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(begin == null)
+					{
+						jsonresponse.put("message", "A begin value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(end == null)
+					{
+						jsonresponse.put("message", "A end value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(delta == null)
+					{
+						jsonresponse.put("message", "A delta value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(singlemodifier == null)
+					{
+						jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(mamodifier == null)
+					{
+						jsonresponse.put("message", "A mamodifier value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(mawindow == null)
+					{
+						jsonresponse.put("message", "A mawindow value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
 					else
 					{	
-						if(admin_password.equals("sanders.lov"))
+						// check twitter_handle and twitter_access_token for validity
+						User user2 = new User(twitter_handle, "twitter_handle");
+						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
-							//int awp_twitter = Integer.parseInt(request.getParameter("awp_twitter"));
-						//	int awp_facebook = Integer.parseInt(request.getParameter("awp_facebook"));
-							double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
-							double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-							String begin = request.getParameter("begin"); // required
-							String end = request.getParameter("end"); // required
-							double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
-							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "begin and/or end was null and/or empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else // begin and end exist, proceed
-							{	
-								long begin_long = Long.parseLong(begin);
-								long end_long = Long.parseLong(end);
-								jsonresponse  = getAlertFrames2(begin_long, end_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, delta_double);
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect admin_password.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
-					}
-				}
-				else if (method.equals("simulateNewFrame"))
-				{
-					String admin_password = request.getParameter("huzon_admin_auth");
-					if(admin_password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A admin_password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(admin_password.equals("sanders.lov"))
+						else // twitter creds were OK
 						{
-							// get the incoming parameters, the most important of which is the timestamp (ts) value
-							String ts = request.getParameter("ts"); // required
-							int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
-							int awp_twitter = Integer.parseInt(request.getParameter("awp_twitter"));
-							int awp_facebook = Integer.parseInt(request.getParameter("awp_facebook"));
-							double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
-							double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-							// is the ts empty? if so, bail.
-							if(ts == null || ts.isEmpty()) // must always have the time range 
+							if(user2.isGlobalAdmin())
 							{
-								jsonresponse.put("message", "begin and/or end was null and/or empty.");
+								Station station = new Station(station_param);
+								if(!station.isValid())
+								{
+									jsonresponse.put("message", "The station parameter provided was invalid. ");
+									jsonresponse.put("response_status", "error");
+								}
+								else
+								{	
+									int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
+									double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
+									double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
+									double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
+									long begin_long = Long.parseLong(begin);
+									long end_long = Long.parseLong(end);
+									System.out.println("Endpoint.getAlertsForTimePeriod(): passed validation gauntlet, moving to getAlertFrames() function");
+									JSONArray alert_frames_ja = getAlertFrames(begin_long, end_long, station, moving_average_window_int, ma_modifier_double, single_modifier_double, delta_double);
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("alert_frames_ja", alert_frames_ja);
+								}
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
 								jsonresponse.put("response_status", "error");
 							}
-							else // ts exists, proceed
-							{	
-								Long ts_long = new Long(ts);
-								boolean simulation = true;
-								jsonresponse = processNewFrame(ts_long, "wkyt", moving_average_window_int, ma_modifier_double, single_modifier_double, awp_twitter, awp_facebook, simulation);
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect admin_password.");
-							jsonresponse.put("response_status", "error");
 						}
 					}
 				}
@@ -1677,149 +1306,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("getDesignations"))
-				{	
-					String password = request.getParameter("huzon_admin_auth");
-					if(password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(password.equals("sanders.lov"))
-						{
-							String station = request.getParameter("station"); // required
-							String active_scope = request.getParameter("active_scope");
-							String person_or_master_scope = request.getParameter("person_or_master_scope");
-							if(station == null || station.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "station was null or empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else if(active_scope == null || !(active_scope.equals("all") || active_scope.equals("active") || active_scope.equals("inactive"))) // must always have the time range 
-							{
-								jsonresponse.put("message", "active_scope was null or not \"all\",\"active\" or \"inactive\".");
-								jsonresponse.put("response_status", "error");
-							}
-							else if(person_or_master_scope == null || !(person_or_master_scope.equals("all") || person_or_master_scope.equals("person") || person_or_master_scope.equals("master"))) // must always have the time range 
-							{
-								jsonresponse.put("message", "person_or_master_scope was null or not \"all\",\"person\" or \"master\".");
-								jsonresponse.put("response_status", "error");
-							}
-							else // station ok
-							{	
-								JSONArray designations_ja = getDesignations(station, active_scope, person_or_master_scope);
-								if(designations_ja == null)
-								{
-									jsonresponse.put("message", "Error getting designations from DB.");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{
-									jsonresponse.put("response_status", "success");
-									jsonresponse.put("designations", designations_ja);
-								}
-							}
-						}
-						else
-						{
-								jsonresponse.put("message", "Wrong admin password.");
-								jsonresponse.put("response_status", "error");
-						}
-					}
-				}
-				else if (method.equals("getDesignationsAndAccounts"))
-				{	
-					String password = request.getParameter("huzon_auth");
-					if(password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(password.equals("firstnews72"))
-						{
-							String station = request.getParameter("station"); // required
-							String include_master = request.getParameter("include_master");
-							if(station == null || station.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "station was null or empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else // station ok
-							{	
-								
-								JSONArray designations_ja = null;
-								if(include_master != null && include_master.equals("yes")) 
-									designations_ja = getDesignationsAndAccounts(station, true);
-								else
-									designations_ja = getDesignationsAndAccounts(station, false);
-								if(designations_ja == null)
-								{
-									jsonresponse.put("message", "Error getting designations from DB.");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{
-									jsonresponse.put("response_status", "success");
-									jsonresponse.put("designations", designations_ja);
-								}
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Incorrect password.");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
-				else if (method.equals("getFiredAlerts"))
-				{	
-					String password = request.getParameter("huzon_admin_auth");
-					
-					if(password == null)
-					{
-						// check for designation validity FIXME
-						jsonresponse.put("message", "A password value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						if(password.equals("sanders.lov"))
-						{
-							String begin = request.getParameter("begin"); // required
-							String end = request.getParameter("end"); // required
-							if(begin == null || begin.isEmpty() || end == null || end.isEmpty()) // must always have the time range 
-							{
-								jsonresponse.put("message", "begin or end was empty.");
-								jsonresponse.put("response_status", "error");
-							}
-							else
-							{
-								JSONArray fired_alerts_ja = getFiredAlerts("wkyt", begin, end);
-								if(fired_alerts_ja == null)
-								{
-									jsonresponse.put("message", "Encountered error getting fired alerts");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{
-									jsonresponse.put("response_status", "success");
-									jsonresponse.put("fired_alerts", fired_alerts_ja);
-								}
-							}
-						}
-						else
-						{
-							jsonresponse.put("message", "Wrong admin password");
-							jsonresponse.put("response_status", "error");
-						}
-					}
-				}
+				
 				else if (method.equals("deleteAlert"))
 				{	
 					String password = request.getParameter("huzon_admin_auth");
@@ -1878,7 +1365,7 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 					}
-				}*/
+				}
 				
 				
 				/***
@@ -2027,17 +1514,15 @@ public class Endpoint extends HttpServlet {
 	
 	
 	
-	// do not delete. Just commented out for a bit
-	/*
-	JSONObject getAlertFrames2(long begin_long, long end_long, String station, int maw_int, double ma_modifier_double, double single_modifier_double, double delta_double)
+	
+	JSONArray getAlertFrames(long begin_long, long end_long, Station station, int maw_int, double ma_modifier_double, double single_modifier_double, double delta_double)
 	{
+		System.out.println("Endpoint.getAlertFrames() begin");
 		JSONArray alert_frames_ja = new JSONArray();
-		JSONObject jsonresponse = new JSONObject();
 		JSONObject current_frame_jo = new JSONObject();
-		JSONArray delta_suppressed_frames_ja = new JSONArray();
 		try
 		{
-			JSONArray dnh_ja = getDesignationsAndHomogeneities(station); // get the designations and homogeneities for WKYT
+			TreeSet<String> reporters = station.getReporters();
 			Connection con = null;
 			Statement stmt = null;
 			ResultSet rs = null;
@@ -2045,155 +1530,90 @@ public class Endpoint extends HttpServlet {
 			ResultSet rs2 = null;
 			long ts = 0L;
 			double total = 0.0;
-			double[] mas = new double[maw_int];
-			double[] scores = new double[2*maw_int - 1]; // 5 makes a window of 9, 10 makes a window of 19, etc
 			double current_homogeneity;
 			String current_designation;
-			double current_delta = 0.0;
 			double ma_over_window = 0.0;
 			try
 			{
-				for(int x = 0; x < dnh_ja.length(); x++)
+				Iterator<String> it = reporters.iterator();
+				User currentreporter = null;
+				while(it.hasNext()) // looping through reporters
 				{
-					current_homogeneity = dnh_ja.getJSONObject(x).getDouble("homogeneity");
-					current_designation = dnh_ja.getJSONObject(x).getString("designation");
-					// get frames where this designation crosses the single frame threshold
+					currentreporter = new User(it.next(), "designation");
+					System.out.println("Endpoint.getAlertFrames(): looping reporters. " + currentreporter.getDesignation());
+					current_homogeneity = currentreporter.getHomogeneity();
+					current_designation = currentreporter.getDesignation();
 					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 					stmt = con.createStatement();
-					// search database for X frames
-					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds >= " + begin_long + " AND timestamp_in_seconds <= " + end_long + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_seconds ASC"); 
-					while(rs.next())
+					// get frames where this designation crosses the single frame threshold
+					rs = stmt.executeQuery("SELECT * FROM frames_" + station.getCallLetters() + " WHERE (timestamp_in_ms >= " + (1000*begin_long) + " AND timestamp_in_ms <= " + (1000*end_long) + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_ms ASC");
+					rs.last();
+					System.out.println("Endpoint.getAlertFrames() found " + rs.getRow()  + " frames over threshold (" + current_homogeneity + " * " + single_modifier_double + "=" +  (current_homogeneity * single_modifier_double) + ") for " + currentreporter.getDesignation());
+					rs.beforeFirst();
+					while(rs.next()) // looping through frames where single score beats single threshold for this reporter
 					{
-						ts = rs.getLong("timestamp_in_seconds");
+						ts = rs.getLong("timestamp_in_ms");
 						stmt2 = con.createStatement();
-						rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts - maw_int) + " AND timestamp_in_seconds < " + (ts + maw_int) + ")");
-						total = 0;
+						rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station.getCallLetters() + " WHERE (timestamp_in_ms > " + (ts - maw_int*1000) + " AND timestamp_in_ms < " + ts + ")");
+						
+						// 6/12/2013 simplified this function. To see old version, check github prior to this date.
 						
 						// so what we're doing here is we've got a single frame with a single score above the single thresh.
-						// we want to check the moving average on all sides of this frame to get the max moving average
-						//	                **
-						//	                **  **      **  **
-						//              **  **  **  **  **  **
-						//  **      **  **  **  **  **  **  **
-						//  **  **  **  **  **  **  **  **  **
-						// [16][17][18][19][20][21][22][23][24]   ([20] == the frame above the single threshold, 5 frame moving average int ) 
-						//  --  --  --  --  -- 						<- moving average [0]
-						//      --  --  --  --  --  				<- moving average [1]
-						//          --  --  --  --  --  			<- moving average [2]
-						//              --  --  --  --  --  		<- moving average [3]
-						//                  --  --  --  --  -- 		<- moving average [4]
-						//
-						// Now, test the ma threshold against the max ma over the full window
-						// (Previously, we were looking for [20] and then calculating ma[0] only.)
+						// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
 						
-						int i = 0;
-						while(rs2.next())
+						rs2.last();
+						int num_frames_in_window = rs2.getRow();
+						rs2.beforeFirst();
+						if(num_frames_in_window < maw_int) // only process this frame if there were enough prior frames to warrn
 						{
-							scores[i] = rs2.getDouble(current_designation + "_avg"); // fill up the scores array with the 0 through 2*maw_int - 1
-							total = total + scores[i]; // the running total of the last maw_int frames
-							if(i >= (maw_int - 1)) // if we've reached target frame (e.g. [20] in the example above)
+							// NOT ENOUGH FRAMES (i.e. less than 1 per second)
+							System.out.println("Endpoint.getAlertFrames(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
+						}
+						else // there were enough frames
+						{
+							int i = 0; 
+							total = 0;
+							ma_over_window = 0;
+							while(rs2.next()) // looping through all the frames in the moving average window before the current frame
 							{
-								mas[i-(maw_int-1)] = total / maw_int; // then mas[0] = target average of last maw_int scores; 
-								total = total - scores[i-(maw_int-1)]; // remove the score at the front of this window from the moving total (i.e. get sum of 4 instead of 5)
+								total = total + rs2.getDouble(current_designation + "_avg"); // the running total of the last maw_int frames
+								i++;
 							}
-							i++;
+							ma_over_window = total / i; // i should = num_frames_in_window
+							System.out.println("Endpoint.getAlertFrames(): there were enough frames. ma_over_window=" + ma_over_window);
 						}
 						
-						System.out.print("Scores array:");
-						for(int s = 0; s < scores.length; s++)
-						{
-							System.out.print("[" + scores[s] + "]");
-						}
-						System.out.println();
-						double max_moving_avg = 0.0;
-						int max_moving_avg_index = 0;
-						System.out.print("Mas array   :");
-						for(int m = 0; m < mas.length; m++)
-						{
-							System.out.print("[" + mas[m] + "]");
-							if(mas[m] > max_moving_avg)
-							{
-								max_moving_avg_index = m;
-								max_moving_avg = mas[m];
-							}
-						}
-						System.out.println();
-						ma_over_window = mas[0];
-						
-						if(max_moving_avg > (current_homogeneity * ma_modifier_double))
+						if(ma_over_window > (current_homogeneity * ma_modifier_double))
 						{	
-							double max_avg = 0.0;
-							String max_designation = "";
-							for(int y = 0; y < dnh_ja.length(); y++)
-							{
-								if(!dnh_ja.getJSONObject(y).getString("designation").equals(current_designation))
-								{
-									if(rs.getDouble(dnh_ja.getJSONObject(y).getString("designation") + "_avg") > max_avg)
-									{
-										max_avg = rs.getDouble(dnh_ja.getJSONObject(y).getString("designation") + "_avg");
-										max_designation = dnh_ja.getJSONObject(y).getString("designation");
-									}
-								}
-							}
-							current_delta = rs.getDouble(current_designation + "_avg") - max_avg;
-							User user = new User(current_designation,"designation");
-							if(current_delta > delta_double)
-							{	
-								current_frame_jo = new JSONObject();
-								current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
-								current_frame_jo.put("designation", current_designation);
-								current_frame_jo.put("image_name", rs.getString("image_name"));
-								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
-								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
-								current_frame_jo.put("twitter_handle", user.getTwitterHandle());
-								current_frame_jo.put("moving_average", ma_over_window);
-								current_frame_jo.put("max_moving_average", max_moving_avg);
-								current_frame_jo.put("max_moving_average_index", max_moving_avg_index);
-								current_frame_jo.put("homogeneity_score", current_homogeneity);
-								current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
-								current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
-								current_frame_jo.put("secondplace_designation", max_designation);
-								current_frame_jo.put("secondplace_score", max_avg);
-								alert_frames_ja.put(current_frame_jo);
-								break; // only get one frame per designation right now FIXME
-							}
-							else
-							{
-								current_frame_jo = new JSONObject();
-								current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestampInSeconds(rs.getLong("timestamp_in_seconds")));
-								current_frame_jo.put("designation", current_designation);
-								current_frame_jo.put("image_name", rs.getString("image_name"));
-								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
-								current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
-								current_frame_jo.put("twitter_handle", user.getTwitterHandle());
-								current_frame_jo.put("moving_average", ma_over_window);
-								current_frame_jo.put("max_moving_average", max_moving_avg);
-								current_frame_jo.put("max_moving_average_index", max_moving_avg_index);
-								current_frame_jo.put("homogeneity_score", current_homogeneity);
-								current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
-								current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
-								current_frame_jo.put("secondplace_designation", max_designation);
-								current_frame_jo.put("secondplace_score", max_avg);
-								delta_suppressed_frames_ja.put(current_frame_jo);
-							}
+							System.out.println("Endpoint.getAlertFrames(): moving average passed req threshold. ma_over_window=" + ma_over_window + " thresh=" + (current_homogeneity * ma_modifier_double));
+							current_frame_jo = new JSONObject();
+							current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestamp(rs.getLong("timestamp_in_ms"),"ms"));
+							current_frame_jo.put("designation", current_designation);
+							current_frame_jo.put("image_name", rs.getString("image_name"));
+							current_frame_jo.put("url", rs.getString("url"));
+							current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
+							current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
+							current_frame_jo.put("twitter_handle", currentreporter.getTwitterHandle());
+							current_frame_jo.put("moving_average", ma_over_window);
+							current_frame_jo.put("homogeneity_score", current_homogeneity);
+							current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
+							current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
+							alert_frames_ja.put(current_frame_jo);
+							break; // only get one frame per designation right now FIXME
+						}
+						else
+						{
+							System.out.println("Endpoint.getAlertFrames(): moving average DID NOT pass req threshold. ma_over_window=" + ma_over_window + " thresh=" + (current_homogeneity * ma_modifier_double));
 						}
 					}
 				}
-				jsonresponse.put("response_status", "success");
-				if(alert_frames_ja.length() > 0)
-					jsonresponse.put("alert_frames", alert_frames_ja);
-				if(delta_suppressed_frames_ja.length() > 0)
-					jsonresponse.put("delta_suppressed_frames", delta_suppressed_frames_ja);
-				
 			}
 			catch(SQLException sqle)
 			{
-				jsonresponse.put("message", "Error getting frames from DB. sqle.getMessage()=" + sqle.getMessage());
-				jsonresponse.put("response_status", "error");
 				sqle.printStackTrace();
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getAlertFrames2", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in Endpoint getAlertFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -2206,10 +1626,9 @@ public class Endpoint extends HttpServlet {
 				}
 				catch(SQLException sqle)
 				{ 
-					jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database."); 
 					SimpleEmailer se = new SimpleEmailer();
 					try {
-						se.sendMail("SQLException in Endpoint getAlertFrames2", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+						se.sendMail("SQLException in Endpoint getAlertFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 					} catch (MessagingException e) {
 						e.printStackTrace();
 					}
@@ -2220,8 +1639,8 @@ public class Endpoint extends HttpServlet {
 		{
 			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
 		}	
-		return jsonresponse;
-	}*/
+		return alert_frames_ja;
+	}
 	
 	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, 
 			double ma_modifier_double, double single_modifier_double, int awp_twitter, int awp_facebook, boolean simulation)
