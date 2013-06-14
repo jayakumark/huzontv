@@ -5,7 +5,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Calendar;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 import javax.mail.MessagingException;
@@ -148,6 +150,258 @@ public class Station implements java.lang.Comparable {
 		return s3_bucket_public_hostname;
 	}
 	
+	public JSONArray getFrames(long begin_in_ms, long end_in_ms)
+	{
+		JSONArray return_ja = new JSONArray();
+		try
+		{
+			ResultSet rs = null;
+			Connection con = null;
+			Statement stmt = null;
+			try
+			{
+				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+				stmt = con.createStatement();
+				System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); // get the frames in the time range
+				JSONObject current_frame_jo = null;
+				while(rs.next())
+				{
+					current_frame_jo = new JSONObject();
+					current_frame_jo.put("image_name", rs.getString("image_name"));
+					current_frame_jo.put("s3_location", "s3://huzon-frames-" + getCallLetters() + "/" + rs.getString("image_name")); 
+					current_frame_jo.put("url", "http://" + getS3BucketPublicHostname() + "/" + rs.getString("image_name"));
+					current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
+					current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestamp(rs.getLong("timestamp_in_ms"), "ms"));
+					return_ja.put(current_frame_jo);
+				}
+			}
+			catch(SQLException sqle)
+			{
+				sqle.printStackTrace();
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+			finally
+			{
+				try
+				{
+					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				}
+				catch(SQLException sqle)
+				{ 
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint getFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
+				}
+			}  
+		}
+		catch(JSONException jsone)
+		{
+			
+		}
+		return return_ja;
+	}
+	
+	public JSONArray getFramesByDesignationAndHomogeneityThreshold(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double, double delta_double)
+	{
+		JSONArray return_ja = new JSONArray();
+		try
+		{
+			User reporter = new User(designation, "designation");
+			double homogeneity_double = reporter.getHomogeneity();
+			//double modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
+			double threshold = homogeneity_double * single_modifier_double;
+			//double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
+			
+				ResultSet rs = null;
+				Connection con = null;
+				Statement stmt = null;
+				try
+				{
+					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+					stmt = con.createStatement();
+					rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters()  + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
+					rs.last();
+					rs.beforeFirst(); // go back to the beginning for parsing
+					JSONObject current_frame_jo = null;
+					boolean all_others_below_delta = true;
+					double control_avg = 100;
+					double closest_avg = 0;
+					JSONArray designations = new JSONArray(getReporters()); 
+					double challenge_avg = 0;
+					String closest_designation = "";
+					while(rs.next()) // get one row
+					{
+						all_others_below_delta = true;
+						control_avg = rs.getDouble(designation + "_avg");
+						closest_avg = 0;
+						for(int d = 0; d < designations.length(); d++)
+						{	
+							if(!designations.getString(d).equals(designation)) // skip comparing this against itself
+							{	
+								challenge_avg = rs.getDouble(designations.getString(d) + "_avg");
+								if(challenge_avg > closest_avg)
+								{
+									closest_avg = challenge_avg;
+									closest_designation = designations.getString(d);
+								}
+								//System.out.println("\t\tChallenge avg=" + challenge_avg + " (" + designations.getString(d) + ")");
+								if((control_avg - challenge_avg) < delta_double) // this one did not satisfy the delta requirement
+								{
+									all_others_below_delta = false;
+									// could include a break here to save cycles, but want to get closest for informational purposes
+								}
+								
+							}
+						}
+						if(all_others_below_delta)
+						{
+							current_frame_jo = new JSONObject();
+							current_frame_jo.put("image_name", rs.getString("image_name"));
+							current_frame_jo.put("url", rs.getString("url"));
+							current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
+							current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
+							current_frame_jo.put("homogeneity_score", homogeneity_double);
+							current_frame_jo.put("threshold", threshold);
+							current_frame_jo.put("closest_avg", closest_avg);
+							current_frame_jo.put("closest_designation", closest_designation);
+							return_ja.put(current_frame_jo);
+						}
+						else
+						{
+							//delta_suppressions++;
+						}
+					}
+				}
+				catch(SQLException sqle)
+				{
+					sqle.printStackTrace();
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Station.getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
+				}
+				finally
+				{
+					try
+					{
+						if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+					}
+					catch(SQLException sqle)
+					{ 
+						SimpleEmailer se = new SimpleEmailer();
+						try {
+							se.sendMail("SQLException in Station.getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+						} catch (MessagingException e) {
+							e.printStackTrace();
+						}
+					}
+				}   	
+			
+		}
+		catch(JSONException jsone)
+		{
+			
+		}
+		return return_ja;
+	}
+	
+	public JSONArray getFramesByDesignation(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double, double ma_modifier_double, int mawindow_int)
+	{
+		JSONArray return_ja = new JSONArray();
+		User reporter = new User(designation, "designation");
+		double homogeneity_double = reporter.getHomogeneity();
+		//double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
+		//double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
+	//	int mawindow_int = Integer.parseInt(mawindow);
+		int num_frames_in_mawindow = 0;
+		try
+		{
+			ResultSet rs = null;
+			Connection con = null;
+			Statement stmt = null;
+			Statement stmt2 = null;
+			ResultSet rs2 = null;
+			try
+			{
+				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+				stmt = con.createStatement();
+				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); // get the frames in the time range
+				rs.last();
+				rs.beforeFirst(); // go back to the beginning for parsing
+				JSONObject current_frame_jo = null;
+				double total = 0.0;
+				double ma_over_window = 0.0;
+				while(rs.next())
+				{
+					current_frame_jo = new JSONObject();
+					current_frame_jo.put("image_name", rs.getString("image_name"));
+					current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
+					current_frame_jo.put("designation_score", rs.getDouble(designation + "_avg"));
+					current_frame_jo.put("homogeneity_score", homogeneity_double);
+					current_frame_jo.put("ma_threshold", homogeneity_double * ma_modifier_double);
+					current_frame_jo.put("single_threshold", homogeneity_double * single_modifier_double);
+					stmt2 = con.createStatement();
+					rs2 = stmt2.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + (rs.getLong("timestamp_in_ms") - (mawindow_int*1000)) + " AND timestamp_in_ms <= " + rs.getLong("timestamp_in_ms") + ")");
+					total = 0;
+					num_frames_in_mawindow = 0;
+					while(rs2.next())
+					{
+						total = total + rs2.getDouble(designation + "_avg");
+						num_frames_in_mawindow++;
+					}
+					//ma_over_window = (total - lowest_score_in_window) / (mawindow_int - 1);
+					ma_over_window = total / num_frames_in_mawindow;
+					current_frame_jo.put("moving_average", ma_over_window);
+					current_frame_jo.put("num_frames_in_mawindow", num_frames_in_mawindow);
+					return_ja.put(current_frame_jo);
+				}
+			}
+			catch(SQLException sqle)
+			{
+				sqle.printStackTrace();
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+			finally
+			{
+				try
+				{
+					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				}
+				catch(SQLException sqle)
+				{ 
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
+				}
+			}   		
+		}
+		catch(JSONException jsone)
+		{
+			
+		}
+		return return_ja;
+	}
+	
+	
 	public JSONObject getAsJSONObject()
 	{
 		JSONObject return_jo = new JSONObject();
@@ -177,6 +431,29 @@ public class Station implements java.lang.Comparable {
 	    	return 1;
 	    else
 	    	return -1;
+	}
+	
+	private String getLouisvilleDatestringFromTimestamp(long timestamp, String seconds_or_ms)
+	{
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		if(seconds_or_ms.equals("seconds"))
+			cal.setTimeInMillis(timestamp * 1000);
+		else if(seconds_or_ms.equals("ms"))
+			cal.setTimeInMillis(timestamp);
+		String year = new Integer(cal.get(Calendar.YEAR)).toString();
+		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		String second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String datestring = year  + month + day + "_" + hour24 + minute + second;
+		return datestring;
 	}
 
 }

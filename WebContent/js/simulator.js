@@ -501,17 +501,17 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		$("#results_div").html("error message=" + data.message);
 				        	else
 				        	{
-				        		if(data.frames.length > 100000)
+				        		if(data.frames_ja.length > 100000)
 				        		{
 				        			$("#results_div").html("too many results. Try again.");
 				        		}	
 				        		else
 				        		{
-				        			for(var x = 0; x < data.frames.length; x++)
+				        			for(var x = 0; x < data.frames_ja.length; x++)
 				        			{
 				        				rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-				        				rds = rds + "<img src=\"" + data.frames[x].url + "\" style=\"width:250px;height:141px\">";
-				        				rds = rds + "<br>" + data.frames[x].datestring;
+				        				rds = rds + "<img src=\"" + data.frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
+				        				rds = rds + "<br>" + data.frames_ja[x].datestring;
 				        				rds = rds + "</div>";
 				        			}
 				        			$("#results_div").html(rds);
@@ -563,32 +563,32 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		$("#results_div").html("error: " + data.message);
 				        	else
 				        	{
-				        		if(data.frames.length > 100000)
+				        		if(data.frames_ja.length > 100000)
 				        		{
 				        			$("#results_div").html("too many results. Try again.");
 				        		}	
 				        		else
 				        		{
-				        			if(data.frames.length > 0)
+				        			if(data.frames_ja.length > 0)
 				        			{	
-				        				for(var x = 0; x < data.frames.length; x++)
+				        				for(var x = 0; x < data.frames_ja.length; x++)
 				        				{
-				        					d = new Date(data.frames[x].timestamp_in_ms);
+				        					d = new Date(data.frames_ja[x].timestamp_in_ms);
 				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-				        					rds = rds + "<img src=\"" + data.frames[x].url + "\" style=\"width:250px;height:141px\">";
-				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames[x].score_average;
-				        					rds = rds + "<br>h-score:" + data.frames[x].homogeneity_score;
-				        					rds = rds + "<br>threshold:" + data.frames[x].threshold;
-				        					rds = rds + "<br>closest_desg:" + data.frames[x].closest_designation;
-				        					rds = rds + "<br>closest_avg:" + data.frames[x].closest_avg;
-				        					rds = rds + "<br>closest_delta:" + (data.frames[x].score_average - data.frames[x].closest_avg);
+				        					rds = rds + "<img src=\"" + data.frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
+				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames_ja[x].score_average;
+				        					rds = rds + "<br>h-score:" + data.frames_ja[x].homogeneity_score;
+				        					rds = rds + "<br>threshold:" + data.frames_ja[x].threshold;
+				        					rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
+				        					rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
+				        					rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
 				        					rds = rds + "</div>";
 				        				}
 				        			}
 				        			else
 				        				rds = "no matches";
 				        			
-				        			rds = "frames processed:" + data.frames_processed + "<br>delta suppressions:" + data.delta_suppressions + "<br>" + rds;
+				        		//	rds = "frames processed:" + data.frames_processed + "<br>delta suppressions:" + data.delta_suppressions + "<br>" + rds;
 				        			$("#results_div").html(rds);
 				        		}
 				        	}
@@ -636,7 +636,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        	else if (data.response_status == "success")
 				        	{
 				        		//alert("success");
-				        		if(data.frames.length > 100000)
+				        		if(data.frames_ja.length > 100000)
 				        		{
 				        			$("#results_div").html("too many results. Try again.");
 				        		}	
@@ -644,10 +644,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		{
 				        		
 				        			var scores = []; var moving_avg = [];
-				        			for(var x = 0; x < data.frames.length; x++)
+				        			for(var x = 0; x < data.frames_ja.length; x++)
 				        			{
-				        				scores.push(data.frames[x].designation_score);
-				        				moving_avg.push(data.frames[x].moving_average);
+				        				scores.push(data.frames_ja[x].designation_score);
+				        				moving_avg.push(data.frames_ja[x].moving_average);
 				        			}
 				        			var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
 				        				axes: {
@@ -660,7 +660,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        			        objects: [
 				        			                  {horizontalLine: {
 							        			            name: 'pebbles',
-							        			            y: data.frames[0].homogeneity_score * $('#function3_singlemodifier_input').val(),
+							        			            y: data.frames_ja[0].homogeneity_score * $('#function3_singlemodifier_input').val(),
 							        			            lineWidth: 3,
 							        			            color: 'rgb(100, 55, 124)',
 							        			            shadow: true,
@@ -669,7 +669,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 							        			          }},  
 				        			          {dashedHorizontalLine: {
 				        			            name: 'bam-bam',
-				        			            y: (data.frames[0].homogeneity_score * $('#function3_mamodifier_input').val()),
+				        			            y: (data.frames_ja[0].homogeneity_score * $('#function3_mamodifier_input').val()),
 				        			            lineWidth: 4,
 				        			            dashPattern: [8, 16],
 				        			            lineCap: 'round',
