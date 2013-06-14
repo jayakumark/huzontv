@@ -370,65 +370,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
 	fds = fds + "		</td>";
-	/*fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	fds = fds + "			<table style=\"border-spacing:3px\">";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-	fds = fds + "						<b>Function 4:</b> Simulate alerts for a given time range (inclusive) OBSOLETE -> can't simulate 1 per second";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						AWP twitter: <input type=\"text\" id=\"function4_awp_twitter_input\" value=\"7200\" size=5>";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130409_050000\"><br>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130409_060000\" size=13><br>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						AWP facebook: <input type=\"text\" id=\"function4_awp_facebook_input\" value=\"36000\" size=5>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "			</table>";
-	fds = fds + "		</td>";
-	fds = fds + "	</tr>";
-	fds = fds + "	<tr>";
-	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	fds = fds + "			<table style=\"border-spacing:3px\">";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-	fds = fds + "						<b>Function 5:</b> Get list of missing frames (inclusive)  OBSOLETE -> no such thing as \"missing\" frames";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130409_050000\">";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130409_060000\" size=13>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "   					<input id=\"function5_go_button\" type=button value=\"GO\">";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "			</table>";
-	fds = fds + "		</td>";*/
+
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
@@ -466,6 +408,67 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
+	fds = fds + "		</td>";
+	fds = fds + "	</tr>";
+	fds = fds + "	<tr>";
+	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	fds = fds + "						<b>Function 5:</b> Graph frame rates over time";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130409_050000\">";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130409_060000\" size=13>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "   					<input id=\"function5_go_button\" type=button value=\"GO\">";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "			</table>";
+	fds = fds + "		</td>";
+
+	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	/*fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
+	fds = fds + "						<b>Function 4:</b> Get alerts for a given timeframe (inclusive)";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	// alert waiting periods should be separated, but this function doesn't actually use one
+	//fds = fds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130409_050000\"><br>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130409_060000\" size=13><br>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "			</table>";*/
 	fds = fds + "		</td>";
 	fds = fds + "	</tr>";
 	fds = fds + "</table>";
@@ -511,7 +514,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        			{
 				        				rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 				        				rds = rds + "<img src=\"" + data.frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
-				        				rds = rds + "<br>" + data.frames_ja[x].datestring;
+				        				rds = rds + "<br>" + data.frames_ja[x].image_name;
 				        				rds = rds + "</div>";
 				        			}
 				        			$("#results_div").html(rds);
@@ -642,7 +645,6 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		}	
 				        		else
 				        		{
-				        		
 				        			var scores = []; var moving_avg = [];
 				        			for(var x = 0; x < data.frames_ja.length; x++)
 				        			{
@@ -763,6 +765,102 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					});
 				return;
 			});
+	
+	$("#function5_go_button").click(
+			function () {
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				var datestring = $('#function5_begin_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var begin = d.getTime()/1000;
+				datestring = $('#function5_end_input').val();
+			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end = d.getTime()/1000;
+				
+				$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "getFrames",
+				            begin: begin,             
+				            end: end,
+				            station: station,
+		    	            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
+						},
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error message=" + data.message);
+				        	else
+				        	{
+				        		if(data.frames_ja.length > 100000)
+				        		{
+				        			$("#results_div").html("too many results. Try again.");
+				        		}	
+				        		else
+				        		{
+				        			var frame_rates = []; 
+				        			var max_frame_rate = 0;
+				        			for(var x = 0; x < data.frames_ja.length; x++)
+				        			{
+				        				frame_rates.push(data.frames_ja[x].frame_rate);
+				        				if(data.frames_ja[x].frame_rate > max_frame_rate)
+				        					max_frame_rate = data.frames_ja[x].frame_rate;
+				        			}
+				        			var plot1 = $.jqplot ('chart1', [frame_rates],{
+				        				axes: {
+				        					yaxis: {
+				        			            min:0,max:max_frame_rate
+				        			        }
+				        				},
+				        				canvasOverlay: {
+				        					show: true,
+				        			        objects: [
+				        			              /*    {horizontalLine: {
+							        			            name: 'pebbles',
+							        			            y: 1000,
+							        			            lineWidth: 3,
+							        			            color: 'rgb(100, 55, 124)',
+							        			            shadow: true,
+							        			            lineCap: 'butt',
+							        			            xOffset: 0
+							        			          }},*/  
+				        			          {dashedHorizontalLine: {
+				        			            name: 'bam-bam',
+				        			            y: 1000,
+				        			            lineWidth: 4,
+				        			            dashPattern: [8, 16],
+				        			            lineCap: 'round',
+				        			            xOffset: '25',
+				        			            color: 'rgb(66, 98, 144)',
+				        			            shadow: false
+				        			          }}
+				        			        ]
+				        			      }
+				        			    });
+				        			
+				        			/*for(var x = 0; x < data.frames_ja.length; x++)
+				        			{
+				        				rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
+				        				rds = rds + data.frames_ja[x].image_name + "-"  + data.frames_ja[x].frame_rate;
+				        				rds = rds + "</div>";
+				        			}
+				        			$("#results_div").html(rds);*/
+				        		}
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#message_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				return;
+			});
+	
 }
 	
 

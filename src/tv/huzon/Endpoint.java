@@ -116,6 +116,8 @@ public class Endpoint extends HttpServlet {
 							valuesstring = valuesstring + "'http://" + station.getS3BucketPublicHostname() + "/" + jo.getString("image_name") + "', ";
 							fieldsstring = fieldsstring + "`" + "timestamp_in_ms" + "`, ";
 							valuesstring = valuesstring + "'" + jo.getLong("timestamp_in_ms") + "', ";
+							fieldsstring = fieldsstring + "`" + "frame_rate" + "`, ";
+							valuesstring = valuesstring + "'" + jo.getInt("frame_rate") + "', ";
 							for(int x = 0; x < ja.length(); x++)
 							{
 								reporter_total = 0.0;
@@ -734,7 +736,8 @@ public class Endpoint extends HttpServlet {
 								else
 								{
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("frames_ja", station.getFrames(new Long(begin).longValue()*1000, new Long(end).longValue()*1000));
+									boolean get_score_data = false;
+									jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, get_score_data));
 								}
 							}
 							else

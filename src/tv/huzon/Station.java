@@ -3,9 +3,11 @@ package tv.huzon;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -16,7 +18,7 @@ import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-public class Station implements java.lang.Comparable {
+public class Station implements java.lang.Comparable<Station> {
 
 	/**
 	 * @param args
@@ -150,64 +152,110 @@ public class Station implements java.lang.Comparable {
 		return s3_bucket_public_hostname;
 	}
 	
-	public JSONArray getFrames(long begin_in_ms, long end_in_ms)
+	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms)
 	{
-		JSONArray return_ja = new JSONArray();
+		TreeSet<Frame> returnset = new TreeSet<Frame>();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
 		try
 		{
-			ResultSet rs = null;
-			Connection con = null;
-			Statement stmt = null;
-			try
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); // get the frames in the time range
+		
+			//System.out.println("Does the resultset have any rows?");
+			if(rs.next()) // at least one row exists
 			{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-				stmt = con.createStatement();
-				System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
-				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); // get the frames in the time range
-				JSONObject current_frame_jo = null;
+				ResultSetMetaData rsmd = rs.getMetaData();
+				int columncount = rsmd.getColumnCount();
+				int reportercount = 0;
+				int x = 1; 
+				//System.out.println("Starting loop through " + columncount + " columns to find how many reporters are there...");
+				while(x <= columncount)
+				{
+					if(rsmd.getColumnName(x).endsWith("_avg"))
+					{
+						reportercount++;
+					}
+					x++;
+				}
+				//System.out.println("Found " + reportercount + " columns. Initalizing arrays.");
+				String reporter_designations[] = new String[reportercount];
+				double reporter_avgs[] = new double[reportercount];
+				String reporter_score_arrays[] = new String[reportercount];
+				int reporter_nums[] = new int[reportercount];
+				
+				rs.beforeFirst();
+				//System.out.println("Starting loop through resultset of frames...");
 				while(rs.next())
 				{
-					current_frame_jo = new JSONObject();
-					current_frame_jo.put("image_name", rs.getString("image_name"));
-					current_frame_jo.put("s3_location", "s3://huzon-frames-" + getCallLetters() + "/" + rs.getString("image_name")); 
-					current_frame_jo.put("url", "http://" + getS3BucketPublicHostname() + "/" + rs.getString("image_name"));
-					current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
-					current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestamp(rs.getLong("timestamp_in_ms"), "ms"));
-					return_ja.put(current_frame_jo);
+					int reporter_index = 0;
+					x=1; 
+					//System.out.println("Starting loop through " + columncount + " columns to fill reporter arrays...");
+					while(x <= columncount)
+					{
+						//System.out.println("Reading columname: " + rsmd.getColumnName(x));
+						if(rsmd.getColumnName(x).endsWith("_avg"))
+						{
+							reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
+							reporter_avgs[reporter_index] = rs.getDouble(x);
+						}
+						else if(rsmd.getColumnName(x).endsWith("_scores"))
+						{
+							reporter_score_arrays[reporter_index] = rs.getString(x);
+						}
+						else if(rsmd.getColumnName(x).endsWith("_num"))
+						{
+							reporter_nums[reporter_index] = rs.getInt(x);
+							reporter_index++;
+						}
+						else
+						{
+							//System.out.println("Skipping a non-score-related row.");
+						}
+						x++;
+					}
+					//System.out.println("Adding Frame object to treeset and going to next...");
+					returnset.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
+							rs.getString("url"), rs.getInt("frame_rate"), getCallLetters(), reporter_designations, 
+							reporter_avgs, reporter_score_arrays, reporter_nums));
+					//System.out.println("... frame added");
 				}
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
-			{
+			{ 
 				sqle.printStackTrace();
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
 			}
-			finally
-			{
-				try
-				{
-					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-				}
-				catch(SQLException sqle)
-				{ 
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Endpoint getFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
-				}
-			}  
-		}
-		catch(JSONException jsone)
+		}  
+		return returnset; 
+	}
+	
+	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
+	{
+		JSONArray frames_ja = new JSONArray();
+		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms);
+		Iterator<Frame> it = frameset.iterator();
+		Frame currentframe = null;
+		while(it.hasNext())
 		{
-			
+			currentframe = it.next();
+			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
+			frames_ja.put(currentframe.getAsJSONObject(get_score_data));
 		}
-		return return_ja;
+		return frames_ja;
 	}
 	
 	public JSONArray getFramesByDesignationAndHomogeneityThreshold(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double, double delta_double)
@@ -423,7 +471,7 @@ public class Station implements java.lang.Comparable {
 		return return_jo;
 	}
 
-	public int compareTo(Object o) // this sorts by call_letters alphabetically
+	public int compareTo(Station o) // this sorts by call_letters alphabetically
 	{
 	    String othercall = ((Station)o).getCallLetters();
 	    int x = othercall.compareTo(call_letters);
