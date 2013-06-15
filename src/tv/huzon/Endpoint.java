@@ -63,14 +63,13 @@ public class Endpoint extends HttpServlet {
 		long timestamp_at_entry = tempcal.getTimeInMillis();
 		try
 		{
-			// FIXME // this should eventually be secure to protect info. leaving insecure for now due to testing
-			/*if(!request.isSecure())
+			if(!request.isSecure())
 			{
 				jsonresponse.put("message", "The huzon.tv API endpoint must be communicated with securely.");
 				jsonresponse.put("response_status", "error");
 			}
 			else
-			{*/	
+			{	
 				String method = request.getParameter("method");
 				if(method == null)
 				{
@@ -188,7 +187,7 @@ public class Endpoint extends HttpServlet {
 					jsonresponse.put("message", "Unknown method.");
 					jsonresponse.put("response_status", "error");
 				}
-		//	}
+			}
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
 			long elapsed = timestamp_at_exit - timestamp_at_entry;
