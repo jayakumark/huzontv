@@ -494,6 +494,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            begin: begin,             
 				            end: end,
 				            station: station,
+				            get_score_data: "false",
 		    	            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
 						},
@@ -545,11 +546,39 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var end = d.getTime()/1000;
 				
+				var reporter_homogeneity = 0;
+				var designation = $('#function2_designation_select').val();
+				$.ajax({
+					type: 'GET',
+					url: endpoint,
+					data: {
+			            method: "getUser",
+			            designation: designation,
+	    	            twitter_handle: twitter_handle,
+			            twitter_access_token: twitter_access_token
+					},
+			        dataType: 'json',
+			        async: true,
+			        success: function (data, status) {
+			        	if (data.response_status == "error")
+			        		$("#results_div").html("error: " + data.message);
+			        	else
+			        	{
+			        		reporter_homogeneity = data.user_jo.homogeneity;
+			        	}
+			        }
+			        ,
+			        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	$("#results_div").html("ajax error");
+			            console.log(textStatus, errorThrown);
+			        }
+				});
+				
 				$.ajax({
 						type: 'GET',
 						url: endpoint,
 						data: {
-				            method: "getFramesByDesignationAndHomogeneityThreshold",
+				            method: "getFramesAboveDesignationHomogeneityThreshold",
 				            begin: begin,             
 				            end: end,
 				            designation: $('#function2_designation_select').val(),
@@ -579,12 +608,13 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        					d = new Date(data.frames_ja[x].timestamp_in_ms);
 				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 				        					rds = rds + "<img src=\"" + data.frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
-				        					rds = rds + "<br>" + d.toString() + "<br>avg4des:"+ data.frames_ja[x].score_average;
-				        					rds = rds + "<br>h-score:" + data.frames_ja[x].homogeneity_score;
-				        					rds = rds + "<br>threshold:" + data.frames_ja[x].threshold;
-				        					rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
-				        					rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
-				        					rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
+				        					rds = rds + "<br>" + data.frames_ja[x].image_name;
+				        					rds = rds + "<br>avg4des:"+ data.frames_ja[x].reporters[designation].score_avg;
+				        					rds = rds + "<br>homogeneity:" + reporter_homogeneity;
+				        					rds = rds + "<br>threshold:" + (reporter_homogeneity * $('#function2_singlemodifier_input').val());
+				        					//rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
+				        					//rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
+				        					//rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
 				        					rds = rds + "</div>";
 				        				}
 				        			}
@@ -616,18 +646,43 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var end = d.getTime()/1000;
 				
+				var designation = $('#function3_designation_select').val();
+				var reporter_homogeneity = 0;
+				$.ajax({
+					type: 'GET',
+					url: endpoint,
+					data: {
+			            method: "getUser",
+			            designation: designation,
+	    	            twitter_handle: twitter_handle,
+			            twitter_access_token: twitter_access_token
+					},
+			        dataType: 'json',
+			        async: true,
+			        success: function (data, status) {
+			        	if (data.response_status == "error")
+			        		$("#results_div").html("error: " + data.message);
+			        	else
+			        	{
+			        		reporter_homogeneity = data.user_jo.homogeneity;
+			        	}
+			        }
+			        ,
+			        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	$("#results_div").html("ajax error");
+			            console.log(textStatus, errorThrown);
+			        }
+				});
+				
 				$.ajax({
 						type: 'GET',
 						url: endpoint,
 						data: {
-				            method: "getFramesByDesignation",
+				            method: "getFrames",
 				            begin: begin,             
 				            end: end,
-				            designation: $('#function3_designation_select').val(),
-				            mamodifier: $('#function3_mamodifier_input').val(),
-				            singlemodifier: $('#function3_singlemodifier_input').val(),
-				            mawindow: $('#function3_mawindow_input').val(),
 				            station: station,
+				            get_score_data: "true",
 		    	            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
 						},
@@ -645,24 +700,28 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		}	
 				        		else
 				        		{
-				        			var scores = []; var moving_avg = [];
+				        			var scores = []; 
+				        			//var moving_avg = [];
 				        			for(var x = 0; x < data.frames_ja.length; x++)
 				        			{
-				        				scores.push(data.frames_ja[x].designation_score);
-				        				moving_avg.push(data.frames_ja[x].moving_average);
+				        				scores.push(data.frames_ja[x].reporters[designation].score_avg);
+				        				//moving_avg.push(data.frames_ja[x].moving_average);
 				        			}
-				        			var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
+				        			var plot1 = $.jqplot ('chart1', [scores
+				        			                                 //, moving_avg
+				        			                                 ],{
 				        				axes: {
 				        					yaxis: {
 				        			            min:0,max:1
 				        			        }
-				        				},
+				        				}
+				        				,
 				        				canvasOverlay: {
 				        					show: true,
 				        			        objects: [
 				        			                  {horizontalLine: {
 							        			            name: 'pebbles',
-							        			            y: data.frames_ja[0].homogeneity_score * $('#function3_singlemodifier_input').val(),
+							        			            y: (reporter_homogeneity * $('#function3_singlemodifier_input').val()),
 							        			            lineWidth: 3,
 							        			            color: 'rgb(100, 55, 124)',
 							        			            shadow: true,
@@ -671,7 +730,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 							        			          }},  
 				        			          {dashedHorizontalLine: {
 				        			            name: 'bam-bam',
-				        			            y: (data.frames_ja[0].homogeneity_score * $('#function3_mamodifier_input').val()),
+				        			            y: (reporter_homogeneity * $('#function3_mamodifier_input').val()),
 				        			            lineWidth: 4,
 				        			            dashPattern: [8, 16],
 				        			            lineCap: 'round',

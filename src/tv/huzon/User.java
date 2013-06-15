@@ -32,6 +32,7 @@ public class User implements java.lang.Comparable {
 	// values directly from "people" table
 	private String designation;
 	private String display_name;
+	private String email;
 	private double homogeneity;
 	//private double homogeneity_natural;
 	//private double homogeneity_artificial;
@@ -86,6 +87,7 @@ public class User implements java.lang.Comparable {
 			{
 				designation = rs.getString("designation");
 				display_name = rs.getString("display_name");
+				email = rs.getString("email");
 				homogeneity = rs.getDouble("homogeneity");
 			//	homogeneity_natural = rs.getDouble("homogeneity_natural");
 				//homogeneity_artificial = rs.getDouble("homogeneity_artificial");

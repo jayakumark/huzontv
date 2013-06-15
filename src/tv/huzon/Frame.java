@@ -22,12 +22,12 @@ public class Frame implements Comparable<Frame> {
 	String station;
 	String[] reporter_designations;
 	double[] reporter_avgs;
-	String[] reporter_score_arrays;
+	JSONArray[] reporter_score_arrays;
 	int[] reporter_nums; 
 	
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
-			double[] inc_reporter_avgs, String[] inc_reporter_score_arrays, int[] inc_reporter_nums)
+			double[] inc_reporter_avgs, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums)
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
 		image_name = inc_image_name;
@@ -42,7 +42,7 @@ public class Frame implements Comparable<Frame> {
 		reporter_nums = inc_reporter_nums;
 	}
 	
-	
+	/*
 	public Frame(long inc_timestamp_in_ms, String inc_station)
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
@@ -71,15 +71,18 @@ public class Frame implements Comparable<Frame> {
 					{
 						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
 						reporter_avgs[reporter_index] = rs.getDouble(x);
-						reporter_index++;
 					}
 					else if(rsmd.getColumnName(x).endsWith("_scores"))
 					{
-						reporter_score_arrays[reporter_index] = rs.getString(x);
+						if(rs.getString(x).isEmpty())
+							reporter_score_arrays[reporter_index] = new JSONArray();
+						else
+							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
 					}
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
+						reporter_index++;
 					}
 					x++;
 				}
@@ -92,6 +95,9 @@ public class Frame implements Comparable<Frame> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		finally
 		{
@@ -104,7 +110,7 @@ public class Frame implements Comparable<Frame> {
 				sqle.printStackTrace();
 			}
 		}   		
-	}
+	}*/
 	
 	long getTimestampInMillis()
 	{
@@ -143,10 +149,18 @@ public class Frame implements Comparable<Frame> {
 	 * 		s3_location: s3_location,
 	 * 		...
 	 * 		reporters:[
-	 * 			{
+	 * 			designation: {
 	 * 				designation: designation,
 	 * 				score_avg: score_avg,
 	 * 				num: num,
+	 * 				moving_average: moving_average,
+	 * 				scores: [ score1, score2, .... score3]
+	 * 			},
+	 * 			designation2: {
+	 * 				designation: designation2,
+	 * 				score_avg: score_avg,
+	 * 				num: num,
+	 * 				moving_average: moving_average,
 	 * 				scores: [ score1, score2, .... score3]
 	 * 			},
 	 * 			...
@@ -169,7 +183,7 @@ public class Frame implements Comparable<Frame> {
 			if(get_score_data)
 			{	
 				int x = 0;
-				JSONArray ja = new JSONArray();
+				JSONObject reporter_jo = new JSONObject();
 				JSONObject jo2 = null;
 				while(x < reporter_designations.length)
 				{
@@ -177,11 +191,11 @@ public class Frame implements Comparable<Frame> {
 					jo2.put("designation", reporter_designations[x]);
 					jo2.put("score_avg", reporter_avgs[x]);
 					jo2.put("num", reporter_nums[x]);
-					jo2.put("scores", new JSONArray(reporter_score_arrays[x]));
-					ja.put(jo2);
+					jo2.put("scores", reporter_score_arrays[x]);
+					reporter_jo.put(reporter_designations[x],jo2);
 					x++;
 				}
-				jo.put("reporters", ja);
+				jo.put("reporters", reporter_jo);
 			}
 		}
 		catch(JSONException jsone)

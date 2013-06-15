@@ -294,7 +294,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("getUser"))
+				else if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
 				{
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
@@ -322,6 +322,51 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("message", "User twitter credentials were invalid.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+						}
+					}
+				}
+				else if (method.equals("getUser")) // for getting a DIFFERENT user, global_admin required
+				{
+					String designation = request.getParameter("designation");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "This method requires a twitter_handle value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "This method requires a twitter_access_token value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(designation == null)
+					{
+						jsonresponse.put("message", "This method requires a designation value.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							if(user.isGlobalAdmin())
+							{
+								jsonresponse.put("response_status", "success");
+								User target_user = new User(designation, "designation");
+								System.out.println("Endpoint.getUser(): getting user for designation=" + designation + "... " + target_user.getJSONObject());
+								jsonresponse.put("user_jo", target_user.getJSONObject());
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
 						}
 					}
 				}
@@ -688,6 +733,7 @@ public class Endpoint extends HttpServlet {
 					String station_param = request.getParameter("station");
 					String begin = request.getParameter("begin");
 					String end = request.getParameter("end");
+					String get_score_data = request.getParameter("get_score_data");
 					if(twitter_handle == null)
 					{
 						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
@@ -713,6 +759,11 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("message", "A end value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
+					else if(get_score_data == null)
+					{
+						jsonresponse.put("message", "A get_score_data value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
@@ -734,9 +785,21 @@ public class Endpoint extends HttpServlet {
 								}
 								else
 								{
-									jsonresponse.put("response_status", "success");
-									boolean get_score_data = false;
-									jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, get_score_data));
+									if(get_score_data.equals("true"))
+									{	
+										jsonresponse.put("response_status", "success");
+										jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, true));
+									}
+									else if(get_score_data.equals("false"))
+									{
+										jsonresponse.put("response_status", "success");
+										jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, false));
+									}
+									else
+									{	
+										jsonresponse.put("message", "get_score_data must be true or false.");
+										jsonresponse.put("response_status", "error");
+									}
 								}
 							}
 							else
@@ -747,7 +810,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("getFramesByDesignationAndHomogeneityThreshold"))
+				else if (method.equals("getFramesAboveDesignationHomogeneityThreshold"))
 				{	
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
@@ -819,8 +882,9 @@ public class Endpoint extends HttpServlet {
 								else
 								{	
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("frames_ja", station.getFramesByDesignationAndHomogeneityThreshold(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, designation, 
-											(new Double(singlemodifier)).doubleValue(), (new Double(delta)).doubleValue())); 
+									boolean get_score_data = true;
+									jsonresponse.put("frames_ja", station.getFramesAboveDesignationHomogeneityThresholdAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, 
+											designation, new Double(singlemodifier).doubleValue(), get_score_data)); 
 								}
 							}
 							else
@@ -831,7 +895,7 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("getFramesByDesignation"))
+			/*	else if (method.equals("getFramesByDesignation"))
 				{	
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
@@ -922,7 +986,7 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 					}
-				}
+				}*/
 				else if (method.equals("getAlertsForTimePeriod"))
 				{
 					System.out.println("Endpoint begin getAlertsForTimePeriod");
@@ -1010,7 +1074,7 @@ public class Endpoint extends HttpServlet {
 									long begin_long = Long.parseLong(begin);
 									long end_long = Long.parseLong(end);
 									System.out.println("Endpoint.getAlertsForTimePeriod(): passed validation gauntlet, moving to getAlertFrames() function");
-									JSONArray alert_frames_ja = getAlertFrames(begin_long, end_long, station, moving_average_window_int, ma_modifier_double, single_modifier_double, delta_double);
+									JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, delta_double);
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("alert_frames_ja", alert_frames_ja);
 								}
@@ -1126,7 +1190,6 @@ public class Endpoint extends HttpServlet {
 			long timestamp_at_exit = tempcal.getTimeInMillis();
 			long elapsed = timestamp_at_exit - timestamp_at_entry;
 			jsonresponse.put("elapsed", elapsed);
-			System.out.println("Endpoint.doGet(): final jsonresponse=" + jsonresponse);	// respond with object, success response, or error
 			out.println(jsonresponse);
 		}
 		catch(JSONException jsone)
@@ -1137,218 +1200,6 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
-	
-	boolean testFrameForMovingAverage(long ts, int maw_int, Station station, String current_designation, double current_homogeneity, double ma_modifier_double)
-	{
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs2 = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs2 = stmt.executeQuery("SELECT * FROM frames_" + station.getCallLetters() + " WHERE (timestamp_in_ms > " + (ts - maw_int*1000) + " AND timestamp_in_ms < " + ts + ")");
-			
-			// 6/12/2013 simplified this function. To see old vers2ion, check github prior to this date.
-			
-			// so what we're doing here is we've got a single frame with a single score above the single thresh.
-			// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
-			
-			rs2.last();
-			int num_frames_in_window = rs2.getRow();
-			rs2.beforeFirst();
-			int i = 0; 
-			double total = 0;
-			double ma_over_window = 0;
-			
-			
-			if(num_frames_in_window < maw_int) // only process this frame if there were enough prior frames to warrn
-			{
-				// NOT ENOUGH FRAMES (i.e. less than 1 per second)
-				System.out.println("Endpoint.getAlertFrames(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
-			}
-			else // there were enough frames
-			{
-			
-				while(rs2.next()) // looping through all the frames in the moving average window before the current frame
-				{
-					total = total + rs2.getDouble(current_designation + "_avg"); // the running total of the last maw_int frames
-					i++;
-				}
-				ma_over_window = total / i; // i should = num_frames_in_window
-				System.out.println("Endpoint.getAlertFrames(): there were enough frames. ma_over_window=" + ma_over_window);
-			}
-			
-			if(ma_over_window > (current_homogeneity * ma_modifier_double))
-				return true;
-			else
-				return false;
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs2  != null){ rs2.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}   
-		return false; // if it reaches here, something has failed.
-	}
-	
-	
-	JSONArray getAlertFrames(long begin_long, long end_long, Station station, int maw_int, double ma_modifier_double, double single_modifier_double, double delta_double)
-	{
-		System.out.println("Endpoint.getAlertFrames() begin");
-		JSONArray alert_frames_ja = new JSONArray();
-		JSONObject current_frame_jo = new JSONObject();
-		try
-		{
-			TreeSet<String> reporters = station.getReporters();
-			Connection con = null;
-			Statement stmt = null;
-			ResultSet rs = null;
-			Statement stmt2 = null;
-			ResultSet rs2 = null;
-			long ts = 0L;
-			double total = 0.0;
-			double current_homogeneity;
-			String current_designation;
-			double ma_over_window = 0.0;
-			try
-			{
-				Iterator<String> it = reporters.iterator();
-				User currentreporter = null;
-				while(it.hasNext()) // looping through reporters
-				{
-					currentreporter = new User(it.next(), "designation");
-					System.out.println("Endpoint.getAlertFrames(): looping reporters. " + currentreporter.getDesignation());
-					current_homogeneity = currentreporter.getHomogeneity();
-					current_designation = currentreporter.getDesignation();
-					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-					stmt = con.createStatement();
-					// get frames where this designation crosses the single frame threshold
-					rs = stmt.executeQuery("SELECT * FROM frames_" + station.getCallLetters() + " WHERE (timestamp_in_ms >= " + (1000*begin_long) + " AND timestamp_in_ms <= " + (1000*end_long) + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_ms ASC");
-					rs.last();
-					System.out.println("Endpoint.getAlertFrames() found " + rs.getRow()  + " frames over threshold (" + current_homogeneity + " * " + single_modifier_double + "=" +  (current_homogeneity * single_modifier_double) + ") for " + currentreporter.getDesignation());
-					rs.beforeFirst();
-					while(rs.next()) // looping through frames where single score beats single threshold for this reporter
-					{
-						
-						// At this point, we have a frame that passed the single thresh.
-						// Does it pass the moving average thresh also?
-						// if so, add the frame to alert_frames_ja and break (moving to next reporter)
-						// if not, there's still a chance that one of the frames remaining within +- maw_int could pass the moving average threshold. Check them.
-						
-						ts = rs.getLong("timestamp_in_ms");
-						boolean passed_ma_thresh = testFrameForMovingAverage(ts, maw_int, station, current_designation, current_homogeneity, ma_modifier_double);
-						if(passed_ma_thresh)
-						{	
-							System.out.println("Endpoint.getAlertFrames(): moving average passed req threshold. ma_over_window=" + ma_over_window + " thresh=" + (current_homogeneity * ma_modifier_double));
-							current_frame_jo = new JSONObject();
-							current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestamp(rs.getLong("timestamp_in_ms"),"ms"));
-							current_frame_jo.put("designation", current_designation);
-							current_frame_jo.put("image_name", rs.getString("image_name"));
-							current_frame_jo.put("url", rs.getString("url"));
-							current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
-							current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
-							current_frame_jo.put("twitter_handle", currentreporter.getTwitterHandle());
-							current_frame_jo.put("moving_average", ma_over_window);
-							current_frame_jo.put("homogeneity_score", current_homogeneity);
-							current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
-							current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
-							alert_frames_ja.put(current_frame_jo);
-							break; // only get one frame per designation right now FIXME
-						}
-						else // the frame in this rs doesn't pass the moving average thresh, but there may be subsequent frames within the maw_int window that do. Check them.
-						{
-							System.out.println("Endpoint.getAlertFrames(): moving average DID NOT pass req threshold. ma_over_window=" + ma_over_window + " thresh=" + (current_homogeneity * ma_modifier_double) + " checking next mawindow_int -1 frames");
-							stmt2 = con.createStatement();
-							// get frames after the current ts within the maw_int window
-							System.out.println("executing SELECT * FROM frames_" + station.getCallLetters() + " WHERE (timestamp_in_ms > " + ts + " AND timestamp_in_ms <= " + (ts + 1000*maw_int) + ") ORDER BY timestamp_in_ms ASC");
-							rs2 = stmt2.executeQuery("SELECT * FROM frames_" + station.getCallLetters() + " WHERE (timestamp_in_ms > " + ts + " AND timestamp_in_ms <= " + (ts + 1000*maw_int) + ") ORDER BY timestamp_in_ms ASC");
-							boolean subsequent_frame_passed_ma_thresh = false;
-							rs2.last();
-							System.out.println("Got " + rs2.getRow() + " subsequent frames.");
-							rs2.beforeFirst();
-							while(rs2.next())
-							{
-								subsequent_frame_passed_ma_thresh = testFrameForMovingAverage(rs2.getLong("timestamp_in_ms"), maw_int, station, current_designation, current_homogeneity, ma_modifier_double);
-								if(subsequent_frame_passed_ma_thresh)
-								{
-									System.out.println("Endpoint.getAlertFrames(): moving average OF SUBSEQUENT FRAME passed req ma_thresh. Adding the CURRENT frame to alert_frames_ja");
-									current_frame_jo = new JSONObject();
-									current_frame_jo.put("datestring", getLouisvilleDatestringFromTimestamp(rs.getLong("timestamp_in_ms"),"ms"));
-									current_frame_jo.put("designation", current_designation);
-									current_frame_jo.put("image_name", rs.getString("image_name"));
-									current_frame_jo.put("url", rs.getString("url"));
-									current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
-									current_frame_jo.put("score", rs.getDouble(current_designation + "_avg"));
-									current_frame_jo.put("twitter_handle", currentreporter.getTwitterHandle());
-									current_frame_jo.put("moving_average", ma_over_window);
-									current_frame_jo.put("homogeneity_score", current_homogeneity);
-									current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
-									current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
-									alert_frames_ja.put(current_frame_jo);
-									break; // only get one frame per designation right now FIXME
-								}
-							}
-							if(subsequent_frame_passed_ma_thresh) 
-								break; // get out of the loop
-						}
-					}
-				}
-			}
-			catch(SQLException sqle)
-			{
-				sqle.printStackTrace();
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getAlertFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-			finally
-			{
-				try
-				{
-					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-				}
-				catch(SQLException sqle)
-				{ 
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Endpoint getAlertFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
-				}
-			}   
-		}
-		catch(JSONException jsone)
-		{
-			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
-		}	
-		return alert_frames_ja;
-	}
 	
 	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, 
 			double ma_modifier_double, double single_modifier_double, int awp_twitter, int awp_facebook, boolean simulation)

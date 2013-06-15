@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			type: 'GET',
 			url: endpoint,
 			data: {
-	            method: "getUser",
+	            method: "getSelf",
 	            twitter_handle: twitter_handle,
 	            twitter_access_token: twitter_access_token
 			},
