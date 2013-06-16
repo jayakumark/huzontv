@@ -277,6 +277,9 @@ public class Station implements java.lang.Comparable<Station> {
 			{
 				returnset = getFramesFromResultSet(rs);
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -425,7 +428,6 @@ public class Station implements java.lang.Comparable<Station> {
 				}
 				rs.close();
 				stmt.close();
-				
 				con.close();
 			}
 			catch(SQLException sqle)

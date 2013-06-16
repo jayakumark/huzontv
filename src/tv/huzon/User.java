@@ -280,7 +280,7 @@ public class User implements java.lang.Comparable {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM people WHERE AND designation='" + designation + "' "); 
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			while(rs.next())
 			{
 				if(social_type.equals("facebook"))
@@ -290,6 +290,9 @@ public class User implements java.lang.Comparable {
 				rs.updateRow();
 			}
 			returnval = true;
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -409,6 +412,9 @@ public class User implements java.lang.Comparable {
 				rs.updateRow();
 			}
 			returnval = true;
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -460,6 +466,9 @@ public class User implements java.lang.Comparable {
 				rs.updateRow();
 				returnval = true;
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -654,6 +663,9 @@ public class User implements java.lang.Comparable {
 				rs.updateRow();
 				returnval = true;
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{

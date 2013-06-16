@@ -165,6 +165,7 @@ public class Endpoint extends HttpServlet {
 								jsonresponse.put("message", "There was a problem inserting the data and/or building a Frame object from it.");
 								jsonresponse.put("response_status", "error");
 							}
+							con.close();
 						}
 						catch(SQLException sqle)
 						{
@@ -1276,6 +1277,9 @@ public class Endpoint extends HttpServlet {
 		    } else {
 		    	System.out.println("Endpoint.createAlertInDB(): error getting auto_increment value from row just entered.");
 		    }
+		    rs.close();
+		    stmt.close();
+		    con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -1324,6 +1328,9 @@ public class Endpoint extends HttpServlet {
 				rs.updateRow();
 				returnval = true;
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -1374,6 +1381,9 @@ public class Endpoint extends HttpServlet {
 				rs.updateRow();
 			}
 			returnval = true;
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -1478,6 +1488,9 @@ public class Endpoint extends HttpServlet {
 			{
 				System.out.println("Endpoint.getFiredAlerts(). no results");
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{

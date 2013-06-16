@@ -229,6 +229,9 @@ public class Frame implements Comparable<Frame> {
 				// NOT ENOUGH FRAMES (i.e. less than 1 per second) 
 				reporter_moving_avgs = null;
 				System.out.println("Frame.populateMovingAverages(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
+				rs2.close();
+				stmt.close();
+				con.close();
 				return false;
 			}
 			else
@@ -261,6 +264,9 @@ public class Frame implements Comparable<Frame> {
 						max_ma_designation = reporter_designations[x];
 					}
 				}
+				rs2.close();
+				stmt.close();
+				con.close();
 				return true; // reporter_moving_avgs[], max_ma, second_max_ma, max_ma_designation, second_max_ma_designation should be set now.
 			}
 		}
