@@ -1,5 +1,5 @@
-//var endpoint = "https://localhost:8443/huzontv/endpoint";
-var endpoint = "https://www.huzon.tv/endpoint";
+var endpoint = "https://localhost:8443/huzontv/endpoint";
+//var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -265,10 +265,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function1_begin_input\" size=13 value=\"20130409_050000\"> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function1_begin_input\" size=13 value=\"20130615_180100\"> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130409_060000\" size=13> ";
+	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130615_180105\" size=13> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "  						<input id=\"function1_go_button\" type=button value=\"GO\">";
@@ -301,10 +301,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function2_begin_input\" size=13 value=\"20130409_050000\"> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function2_begin_input\" size=13 value=\"20130615_180100\"> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function2_end_input\" value=\"20130409_060000\" size=13> ";
+	fds = fds + "						End: <input type=\"text\" id=\"function2_end_input\" value=\"20130615_180105\" size=13> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function2_go_button\" type=button value=\"GO\">";
@@ -344,10 +344,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function3_mawindow_input\" value=\"5\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130409_050000\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130615_180100\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function3_end_input\" value=\"20130409_060000\" size=13>";
+	fds = fds + "						End: <input type=\"text\" id=\"function3_end_input\" value=\"20130615_180105\" size=13>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function3_go_button\" type=button value=\"GO\">";
@@ -383,10 +383,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130409_050000\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130615_180100\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130409_060000\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130615_180105\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
@@ -405,10 +405,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130409_050000\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130615_180100\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130409_060000\" size=13>";
+	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130615_180105\" size=13>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function5_go_button\" type=button value=\"GO\">";
@@ -418,14 +418,14 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "		</td>";
 
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	/*fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-	fds = fds + "						<b>Function 4:</b> Get alerts for a given timeframe (inclusive)";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	fds = fds + "						<b>Function 6:</b> Simulate Alerts (inclusive)";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	/*fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
@@ -437,23 +437,23 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	// alert waiting periods should be separated, but this function doesn't actually use one
 	//fds = fds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
-	fds = fds + "					</td>";
+	fds = fds + "					</td>";*/
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
+	//fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	//fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
+	//fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130615_180100\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130409_050000\"><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130615_180105\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130409_060000\" size=13><br>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
+	fds = fds + "   					<input id=\"function6_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
-	fds = fds + "			</table>";*/
+	fds = fds + "			</table>";
 	fds = fds + "		</td>";
 	fds = fds + "	</tr>";
 	fds = fds + "</table>";
@@ -926,6 +926,156 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				return;
 			});
 	
+	$("#function6_go_button").click(
+			function () {
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				var datestring = $('#function6_begin_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var begin = d.getTime()/1000;
+				datestring = $('#function6_end_input').val();
+			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end = d.getTime()/1000;
+				var timestamps_ja = null;
+				
+				$.ajax({
+					type: 'GET',
+					url: endpoint,
+					data: {
+			            method: "resetAllLastAlerts",
+			            station: station,
+			            twitter_handle: twitter_handle,
+			            twitter_access_token: twitter_access_token
+					},
+			        dataType: 'json',
+			        async: false,
+			        success: function (data, status) {
+			        	if (data.response_status == "error")
+			        		$("#results_div").html("error: "  + data.message);
+			        	else
+			        	{
+			        		//$("#results_div").html("success resetting all last alerts");
+			        	}
+			        }
+			        ,
+			        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	$("#results_div").html("ajax error");
+			            console.log(textStatus, errorThrown);
+			        }
+				});	
+				
+				$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "getFrameTimestamps",
+				            begin: begin,             
+				            end: end,
+				            station: station,
+		    	            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
+						},
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error message=" + data.message);
+				        	else
+				        	{
+				        		if(data.timestamps_ja.length > 100)
+				        		{
+				        			alert("too many frames. Try a smaller window.");
+				        		}	
+				        		else
+				        		{
+				        			timestamps_ja = data.timestamps_ja;
+					        		/*for(var x = 0; x < data.timestamps_ja.length; x++)
+					        		{
+					        			rds = rds + "<div>" + data.timestamps_ja[x] + "</div>";
+					        		}
+					        		$("#results_div").html(rds);*/
+					        		
+					        		timestamps_ja.sort();
+					        		
+					        		// now use the frames to simulate 
+					        		//simulateNewFrame(timestamps_ja[0], station);
+					        		
+					        		for(var x = 0; x < data.timestamps_ja.length; x++)
+					        		{
+										//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
+										rds = rds + simulateNewFrame(timestamps_ja[x],station);
+					        		}	// end of for loop
+					        		$("#results_div").html(rds);
+				        		}
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#message_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				
+				
+				
+				
+				return;
+			});
+	
+}
+
+function simulateNewFrame(timestamp_in_ms, station)
+{
+	var returnstring = "";
+	var jsonpostbody = { 
+			timestamp_in_ms: timestamp_in_ms,
+			station: station,
+            simulation: "true"
+		};
+	
+	$.ajax({
+		type: 'POST',
+		url: endpoint,
+		data: {
+			method: "commitFrameDataAndAlert",
+            jsonpostbody: JSON.stringify(jsonpostbody)
+		},
+        dataType: 'json',
+        async: false,
+        success: function (data, status) {
+        	if (data.response_status == "error")
+        		$("#results_div").html("error message=" + data.message);
+        	else
+        	{
+        		if(data.alert_triggered === "yes" && data.alert_fired === "yes")
+        		{
+        			returnstring = "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
+    				returnstring = returnstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
+    				returnstring = returnstring + "<tr>";
+    				returnstring = returnstring + "		<td style=\"text-align:right;vertical-align:middle\">";
+    				if(data.social_type == "twitter" || data.social_type == "both")
+    					returnstring = returnstring + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
+    				if(data.social_type == "facebook" || data.social_type == "both")
+    					returnstring = returnstring + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
+    				returnstring = returnstring + "		</td>";
+    				returnstring = returnstring + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
+    				returnstring = returnstring + "	</tr>";
+    				returnstring = returnstring + "</table>";
+    				returnstring = returnstring + "<br><img src=\"" + data.url + "\" style=\"width:250px;height:141px\">";
+    				returnstring = returnstring + "<br>image_name: " + data.image_name;
+    				returnstring = returnstring + "<br>designation: " + data.designation;
+    				returnstring = returnstring + "</div>";
+        		}
+        	}
+        }
+        ,
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	$("#message_div").html("ajax error");
+            console.log(textStatus, errorThrown);
+        }
+	});
+	return returnstring;
 }
 	
 

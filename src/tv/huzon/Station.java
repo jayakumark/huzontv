@@ -6,8 +6,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -247,6 +249,44 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnframes;
 	}
 	
+	public JSONArray getFrameTimestamps(long begin_in_ms, long end_in_ms)
+	{
+		JSONArray timestamps_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
+			while(rs.next()) // at least one row exists
+			{
+				timestamps_ja.put(rs.getLong("timestamp_in_ms"));
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}  
+		return timestamps_ja; 
+	}
+	
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double) // INCLUSIVE
 	{
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
@@ -435,7 +475,7 @@ public class Station implements java.lang.Comparable<Station> {
 				sqle.printStackTrace();
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint getAlertFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in Station.getAlertFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -450,7 +490,7 @@ public class Station implements java.lang.Comparable<Station> {
 				{ 
 					SimpleEmailer se = new SimpleEmailer();
 					try {
-						se.sendMail("SQLException in Endpoint getAlertFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+						se.sendMail("SQLException in Station.getAlertFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 					} catch (MessagingException e) {
 						e.printStackTrace();
 					}
@@ -462,6 +502,257 @@ public class Station implements java.lang.Comparable<Station> {
 			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
 		}	
 		return alert_frames_ja;
+	}
+
+	// DANGEROUS!!!! This will reset all alerts for every active reporter at this station
+	boolean resetAllLastAlerts()
+	{
+		System.out.println("resetting all last alerts");
+		Iterator<String> it = reporters.iterator();
+		String query = "SELECT * FROM people WHERE ("; 
+		while(it.hasNext())
+		{
+			query = query + "`designation`='" + it.next() + "' OR ";
+		}
+		query = query.substring(0,query.length() - 4) + ")";
+		Connection con = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		try
+		{
+				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				// get frames where this designation crosses the single frame threshold
+				rs = stmt.executeQuery(query);
+				while(rs.next())
+				{
+					rs.updateLong("facebook_last_alert", 0);
+					rs.updateLong("twitter_last_alert", 0);
+					rs.updateRow();
+				}
+				rs.close();
+				stmt.close();
+				con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Station.resetAllLastAlerts()", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Station.resetAllLastAlerts()", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}   		
+		return true;
+	}
+	
+
+	JSONArray getFiredAlerts(String station, long begin_long, long end_long)
+	{
+		JSONArray returnval = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(begin_long); // set time from epoch value
+		cal.setTimeZone(TimeZone.getTimeZone("UTC")); // set the cal to UTC before retrieving values
+		String year = new Integer(cal.get(Calendar.YEAR)).toString();
+		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		String second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String begin_datestring_in_utc = year  + month + day + "_" + hour24 + minute + second;
+		
+		cal = Calendar.getInstance();
+		cal.setTimeInMillis(end_long); // set time from epoch value
+		cal.setTimeZone(TimeZone.getTimeZone("UTC")); // set the cal to UTC before retrieving values
+		year = new Integer(cal.get(Calendar.YEAR)).toString();
+		month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String end_datestring_in_utc = year  + month + day + "_" + hour24 + minute + second;
+		
+		
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			System.out.println("Endpoint.getFiredAlerts(): SELECT * FROM alerts WHERE station='" + station + "' AND creation_timestamp BETWEEN STR_TO_DATE('" + begin_datestring_in_utc + "', '%Y%m%d_%H%i%s') AND STR_TO_DATE('" + end_datestring_in_utc + "', '%Y%m%d_%H%i%s')"); 
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE station='" + station + "' AND creation_timestamp BETWEEN STR_TO_DATE('" + begin_datestring_in_utc + "', '%Y%m%d_%H%i%s') AND STR_TO_DATE('" + end_datestring_in_utc + "', '%Y%m%d_%H%i%s')"); 
+			int x = 0;
+			JSONObject jo = new JSONObject();
+			while(rs.next())
+			{
+				if(x == 0)
+				{
+					returnval = new JSONArray();
+					x = 1;
+				}
+				jo = new JSONObject();
+				jo.put("id",rs.getLong("id"));
+				jo.put("social_type",rs.getString("social_type"));
+				jo.put("image_name",rs.getString("image_name"));
+				jo.put("creation_timestamp",rs.getTimestamp("creation_timestamp"));
+				jo.put("designation",rs.getString("designation"));
+				jo.put("station",rs.getString("station"));
+				jo.put("livestream_url",rs.getString("livestream_url"));
+				jo.put("actual_text",rs.getString("actual_text"));
+				returnval.put(jo);
+			}
+			if(x == 0)
+			{
+				System.out.println("Endpoint.getFiredAlerts(). no results");
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			System.out.println("SQLException in Endpoint getFiredAlerts message=" +sqle.getMessage());
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint getFiredAlerts", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint getFiredAlerts", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
+	} 
+	
+	
+
+	
+	private String[] morning_greetings = {"Good morning", "Morning"};
+	private String[] afternoon_greetings = {"Good afternoon", "Afternoon"};
+	private String[] evening_greetings = {"Good evening", "Evening"};
+	private String[] generic_greetings = {"Hello", "Greetings"};
+	private String[] objects = {"Lexington", "Bluegrass", "Central Kentucky", "everyone", "folks", "viewers"};
+	
+	
+	String getMessage(String social_type, long timestamp_in_seconds, long redirect_id)
+	{
+		String returnval = "";
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		cal.setTimeInMillis(timestamp_in_seconds * 1000);
+		ArrayList<String> greeting_choices = new ArrayList<String>();
+		if(cal.get(Calendar.HOUR_OF_DAY) < 12)
+		{	
+			for(int x = 0; x < morning_greetings.length; x++)
+				greeting_choices.add(morning_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+		else if(cal.get(Calendar.HOUR_OF_DAY) < 18)
+		{	
+			for(int x = 0; x < afternoon_greetings.length; x++)
+				greeting_choices.add(afternoon_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+		else if(cal.get(Calendar.HOUR_OF_DAY) < 24)
+		{	
+			for(int x = 0; x < evening_greetings.length; x++)
+				greeting_choices.add(evening_greetings[x]);
+			for(int x = 0; x < generic_greetings.length; x++)
+				greeting_choices.add(generic_greetings[x]);
+		}
+			
+		ArrayList<String> object_choices = new ArrayList<String>();
+		for(int x = 0; x < objects.length; x++)
+			object_choices.add(objects[x]);
+		
+		Random random = new Random();
+		int greetings_index = random.nextInt(greeting_choices.size());
+		int objects_index = random.nextInt(object_choices.size());
+		int hour = cal.get(Calendar.HOUR);
+		if(hour == 0)
+			hour = 12;
+		int minute = cal.get(Calendar.MINUTE);
+		String minutestring = (new Integer(minute)).toString();
+		if(minutestring.length() < 2)
+			minutestring = "0" + minutestring;
+		String am_or_pm_string = "";
+		if(cal.get(Calendar.AM_PM) == 0)
+			am_or_pm_string = " AM";
+		else
+			am_or_pm_string = " PM";
+		String ts_string = hour + ":" + minutestring + am_or_pm_string;
+		
+		int selector = random.nextInt(4);
+		
+		if(social_type.equals("facebook"))
+		{
+			if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
+				returnval = "I am on the air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;  
+			else if (selector == 1) // no greeting, "we", "live", "catch" timestamp first
+				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id;
+			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;
+			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id; 
+		}
+		else if(social_type.equals("twitter"))
+		{
+			if(selector == 0 || selector == 1)
+				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+			else if(selector == 2 || selector == 3)
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+		}
+		return returnval;
 	}
 	
 	
@@ -494,6 +785,11 @@ public class Station implements java.lang.Comparable<Station> {
 	    	return 1;
 	    else
 	    	return -1;
+	}
+	
+	public static void main(String[] args) {
+		Station s = new Station("wkyt");
+		s.resetAllLastAlerts();
 	}
 
 }

@@ -70,6 +70,7 @@ public class User implements java.lang.Comparable {
 		
 	public User(String inc_des_or_twit, String constructor_type)
 	{
+		System.out.println("User(): entering inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		//System.out.println("Creating user from inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		valid = false;
 		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  	
@@ -139,7 +140,7 @@ public class User implements java.lang.Comparable {
 			}
 			else
 			{
-				System.out.println("User constructor: valid = false");
+				System.out.println("User constructor: valid = false for inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 				valid = false;
 			}
 			rs.close();
@@ -175,7 +176,7 @@ public class User implements java.lang.Comparable {
 				}
 			}
 		}  	
-		
+		System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 	}
 	
 	public boolean isGlobalAdmin()
@@ -272,7 +273,7 @@ public class User implements java.lang.Comparable {
 			System.out.println("User.setLastAlert: social type was not \"facebook\" or \"twitter\". returning false.");
 			return false;
 		}
-		boolean returnval = false;
+		boolean returnval = false; 
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
@@ -325,14 +326,14 @@ public class User implements java.lang.Comparable {
 		return returnval;
 	}
 	
-	public long getFacebookWaitingPeriod()
+	public long getFacebookWaitingPeriodInMillis()
 	{
-		return facebook_alert_waiting_period;
+		return facebook_alert_waiting_period*1000;
 	}
 	
-	public long getTwitterWaitingPeriod()
+	public long getTwitterWaitingPeriodInMillis()
 	{
-		return twitter_alert_waiting_period;
+		return twitter_alert_waiting_period*1000;
 	}
 	
 	public JSONObject getJSONObject() // for now, returns EVERYTHING. Even secret tokens and stuff.
