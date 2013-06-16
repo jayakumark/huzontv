@@ -1,20 +1,5 @@
-/*
- * Date Format 1.2.3
- * (c) 2007-2009 Steven Levithan <stevenlevithan.com>
- * MIT license
- *
- * Includes enhancements by Scott Trenda <scott.trenda.net>
- * and Kris Kowal <cixar.com/~kris.kowal/>
- *
- * Accepts a date, a mask, or a date and a mask.
- * Returns a formatted version of the given date.
- * The date defaults to the current date/time.
- * The mask defaults to dateFormat.masks.default.
- */
-
-//var endpoint = "https://www.huzon.tv/endpoint";
 var endpoint = "https://localhost:8443/huzontv/endpoint";
-
+//var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -648,6 +633,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				
 				var designation = $('#function3_designation_select').val();
 				var reporter_homogeneity = 0;
+				var maw_int = $('#function3_mawindow_input').val();
 				$.ajax({
 					type: 'GET',
 					url: endpoint,
@@ -701,15 +687,33 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		else
 				        		{
 				        			var scores = []; 
-				        			//var moving_avg = [];
+				        			var moving_avg = [];
+				        			var ma = 0;
+				        			var sum = 0; 
+				        			var num = 0;
+				        			var ts = 0;
 				        			for(var x = 0; x < data.frames_ja.length; x++)
 				        			{
 				        				scores.push(data.frames_ja[x].reporters[designation].score_avg);
-				        				//moving_avg.push(data.frames_ja[x].moving_average);
+				        				
+				        				sum = 0;
+				        				num = 0;
+				        				// loop through all the frames, looking for timestamps in the moving average window in the past
+				        				ts = data.frames_ja[x].timestamp_in_ms;
+				        				for(var y = 0; y < data.frames_ja.length; y++) 
+					        			{
+				        					// if the timestamp of this frame is within the moving average window x seconds in the past, then add this designation's score
+				        					// to a running total.
+				        					if(data.frames_ja[y].timestamp_in_ms > (ts - (maw_int * 1000)) && data.frames_ja[y].timestamp_in_ms <= ts)
+				        					{
+				        						sum = sum + data.frames_ja[y].reporters[designation].score_avg;
+				        						num++;
+				        					}
+					        			}
+				        				ma = sum / num; // now derive the moving average for this designation
+				        				moving_avg.push(ma);
 				        			}
-				        			var plot1 = $.jqplot ('chart1', [scores
-				        			                                 //, moving_avg
-				        			                                 ],{
+				        			var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
 				        				axes: {
 				        					yaxis: {
 				        			            min:0,max:1
@@ -769,7 +773,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 						type: 'GET',
 						url: endpoint,
 						data: {
-				            method: "getAlertsForTimePeriod",
+				            method: "getAlertFrames",
 				            begin: begin,             
 				            end: end,
 				            mamodifier: $('#function4_mamodifier_input').val(),
@@ -801,14 +805,13 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 			        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 				        				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
 				        				rds = rds + "<br><img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
-				        				rds = rds + "<br>datestring:" + data.alert_frames_ja[x].datestring;
+				        				rds = rds + "<br>image_name:" + data.alert_frames_ja[x].image_name;
 				        				rds = rds + "<br>designation:" + data.alert_frames_ja[x].designation;
 				        				rds = rds + "<br>score for des:" + data.alert_frames_ja[x].score;
 				        				rds = rds + "<br>ma score:" + data.alert_frames_ja[x].moving_average;
 				        				rds = rds + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity_score;
 				        				rds = rds + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
 				        				rds = rds + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
-				        				rds = rds + "<br>window_index_of_max_score:" + data.alert_frames_ja[x].window_index_of_max_score;
 				        				rds = rds + "</div>";
 			        				}
 			        			}

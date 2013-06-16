@@ -72,7 +72,7 @@ public class User implements java.lang.Comparable {
 	{
 		//System.out.println("Creating user from inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		valid = false;
-		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  		ResultSet rs2 = null;  		Statement stmt2 = null;  		ResultSet rs3 = null; 		Statement stmt3 = null;
+		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  	
 		try
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
@@ -142,6 +142,9 @@ public class User implements java.lang.Comparable {
 				System.out.println("User constructor: valid = false");
 				valid = false;
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -159,8 +162,6 @@ public class User implements java.lang.Comparable {
 			try
 			{
 				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } 
-				if (rs2  != null){ rs2.close(); } if (stmt2  != null) { stmt2.close(); } 
-				if (rs3  != null){ rs3.close(); } if (stmt3  != null) { stmt3.close(); } 
 				if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
@@ -234,6 +235,8 @@ public class User implements java.lang.Comparable {
 	
 	public double getHomogeneity()
 	{
+		if(!valid)
+			return 2;
 		return homogeneity;
 	}
 	

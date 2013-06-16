@@ -93,9 +93,7 @@ public class Endpoint extends HttpServlet {
 					{
 						System.out.println("Endpoint.commitFrameDataAndAlert(): Looking up existing frame....");
 						JSONObject jo = new JSONObject(jsonpostbody);
-						ResultSet rs = null;
 						Connection con = null;
-						Statement stmt = null;
 						try
 						{
 							con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
@@ -140,8 +138,32 @@ public class Endpoint extends HttpServlet {
 							con.createStatement().execute("INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
 							con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jo.getInt("frame_rate") + "' WHERE call_letters='" + jo.getString("station") + "'");
 							con.close();
-							jsonresponse.put("response_status", "success");
-							jsonresponse.put("alert_triggered", "no"); // FIXME
+							Frame newframe = new Frame(jo.getLong("timestamp_in_ms"), jo.getString("station"));
+							if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
+							{	
+								JSONObject jo2 = processNewFrame(new Frame(jo.getLong("timestamp_in_ms"), jo.getString("station")));
+								jsonresponse.put("response_status", "success");
+								jsonresponse.put("alert_triggered", jo2.get("alert_triggered"));
+								if(jo2.get("alert_triggered").equals("yes"))
+								{
+									jsonresponse.put("designation", jo2.get("designation"));
+									SimpleEmailer se = new SimpleEmailer();
+									try {
+										se.sendMail("Alert triggered for " + jo2.get("designation"), "url=" + newframe.getURL(), "cyrus7580@gmail.com", "info@huzon.tv");
+									} catch (MessagingException e) {
+										e.printStackTrace();
+									}
+								}
+								if(jo2.get("alert_triggered").equals("no"))
+								{
+									jsonresponse.put("reason", jo2.get("reason"));
+								}
+							}
+							else
+							{
+								jsonresponse.put("message", "There was a problem inserting the data and/or building a Frame object from it.");
+								jsonresponse.put("response_status", "error");
+							}
 						}
 						catch(SQLException sqle)
 						{
@@ -161,10 +183,6 @@ public class Endpoint extends HttpServlet {
 						{
 							try
 							{
-								if (rs  != null)
-									rs.close();
-								if (stmt  != null)
-									stmt.close();
 								if (con  != null)
 									con.close();
 							}
@@ -895,101 +913,9 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-			/*	else if (method.equals("getFramesByDesignation"))
-				{	
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					
-					String begin = request.getParameter("begin");
-					String end = request.getParameter("end");
-					String designation = request.getParameter("designation");
-					String singlemodifier = request.getParameter("singlemodifier");
-					String mamodifier = request.getParameter("mamodifier");
-					String mawindow = request.getParameter("mawindow");
-					
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(begin == null)
-					{
-						jsonresponse.put("message", "A begin value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(end == null)
-					{
-						jsonresponse.put("message", "A end value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "A designation value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(singlemodifier == null)
-					{
-						jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(mamodifier == null)
-					{
-						jsonresponse.put("message", "A mamodifier value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(mawindow == null)
-					{
-						jsonresponse.put("message", "A mawindow value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user2 = new User(twitter_handle, "twitter_handle");
-						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
-							jsonresponse.put("response_status", "error");
-						}
-						else // twitter creds were OK
-						{
-							if(user2.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station parameter provided was invalid. ");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{	
-									jsonresponse.put("response_status", "success");
-									jsonresponse.put("frames_ja", station.getFramesByDesignation(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, designation, 
-											(new Double(singlemodifier)).doubleValue(), (new Double(mamodifier)).doubleValue(), (new Integer(mawindow)).intValue())); 
-								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}*/
-				else if (method.equals("getAlertsForTimePeriod"))
+				else if (method.equals("getAlertFrames"))
 				{
-					System.out.println("Endpoint begin getAlertsForTimePeriod");
+					System.out.println("Endpoint begin getAlertFrames");
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
 					String station_param = request.getParameter("station");
@@ -1200,365 +1126,101 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
+	// this is hardcoded with a 5 second moving average window, a .67 moving average threshold and a 1 single frame threshold
 	
-	JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, 
-			double ma_modifier_double, double single_modifier_double, int awp_twitter, int awp_facebook, boolean simulation)
+	JSONObject processNewFrame(Frame newframe)
 	{
-		
-		/* this function takes certain parameters and simulates what would happen if this were a realtime new 
-		 * frame coming into the system and we were checking for alerts. 
-		 * 
-		 * 1. It gets X frames, cycles through them, putting together a JSONArray of X frames with timestamp, image name and scores object for each frame.  (see structure below)
-		 * 2. It then cycles through the designations array getting an average score for each designation over the window, creating a designation_averages_ja and finding the max avg
-		 * 3. If the max average is greater than the moving average threshold for that person and <strike>the last frame</strike> any frame in the window is greater than the singlethresh... 
-		 * 4. then respond with all the information about that frame.
-		 * 
-		 */
-		
-		JSONObject jsonresponse = new JSONObject();
-		try
-		{
-			Station station_object = new Station(station); 
-			TreeSet<User> reporter_objects_ts = new TreeSet<User>();
-			TreeSet<String> reporter_strings_ts = station_object.getReporters();
-			Iterator<String> reporter_it = reporter_strings_ts.iterator();
-			while(reporter_it.hasNext())
+		JSONObject return_jo = new JSONObject();
+		System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
+		try{
+			// get all frames over the moving average window backward from this timestamp
+			Station station_object = new Station(newframe.getStation());
+			TreeSet<Frame> window_frames = station_object.getFrames(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), null, 0);
+			int num_frames_in_window = window_frames.size();
+			System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window.");
+			if(num_frames_in_window < 5)
 			{
-				reporter_objects_ts.add(new User(reporter_it.next(),"designation"));
+				System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
+				return_jo.put("alert_triggered", "no");
+				return_jo.put("reason", "not enough frames");
+				return return_jo;
 			}
-			//JSONArray dnh_ja = getDesignationsAndHomogeneities(station); // get the designations and homogeneities for WKYT
-			//JSONArray designations_ja = getReporterDesignations(station);
-			try
-			{
-				ResultSet rs = null;
-				Connection con = null;
-				Statement stmt = null;
-				try
-				{
-					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-					stmt = con.createStatement();
-					// search database for X frames
-					rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts_long + ") ORDER BY timestamp_in_seconds ASC"); 
-					rs.last();
-					jsonresponse.put("frames_processed", rs.getRow());  // get a row count
-					if(rs.getRow() == 0) // no frames at all
-					{
-						jsonresponse.put("message", "No frames for this entire window. Returning with next_frame.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(rs.getRow() < moving_average_window_int) // missing a frame
-					{
-						jsonresponse.put("message", "missing a frame in the target window, cant draw safe conclusions");
-						jsonresponse.put("error_code", "100");
-						jsonresponse.put("response_status", "error");
-					}
-					else // had all X frames
-					{	
-						System.out.println("Endpoint.processNewFrame(): had all " + moving_average_window_int + " frames.");
-						// check the ts frame. One of the designations' average scores has to be above their single threshold to continue. If not, quick failure.
-							rs.beforeFirst(); // go back to the beginning for parsing
-							JSONArray frames_ja = new JSONArray();
-							JSONObject current_frame_jo = null;
-							JSONObject current_frame_scores_jo = null;
-							/*
-							
-							{
-								"response_status": "success",
-								"frames":
-									[
-										{
-											"timestamp_in_seconds": 12312312,
-											"image_name": "url",
-											"scores":
-												{
-													"person_a": .984332,
-													"person_b": .3423423
-													...
-												}
-										}
-										...											
-									],
-								"averages":
-									[
-										{
-											"designation": "person_a",
-											"average": .9754
-										},
-										{
-											"designation": "person_b",
-											"average": .5432
-										},
-										...
-									]
-							}
-							*/
-							// convert the maw_int frames into a jsonarray called frames_ja
-							while(rs.next()) // get one row
-							{
-								current_frame_jo = new JSONObject();
-								current_frame_jo.put("image_name", rs.getString("image_name"));
-								current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
-								current_frame_scores_jo = new JSONObject();
-								Iterator<User> it = reporter_objects_ts.iterator();
-								User currentuser = null;
-								while(it.hasNext())
-								{
-									currentuser = it.next();
-									current_frame_scores_jo.put(currentuser.getDesignation(), rs.getDouble(currentuser.getDesignation() + "_avg"));
-								}
-								current_frame_jo.put("scores", current_frame_scores_jo);
-								frames_ja.put(current_frame_jo);
-							}
-							
-							/*
-							(designation_averages_ja)
-							[
-								{ "designation" : "guy_mcperson", "average": .4345 },
-								{ "designation" : "suzi_cue", "average": .6555 }
-								...
-							]
-							*/
-							
-							// compute the window averages for each designation
-							double person_total = 0.0;
-							double person_avg = 0.0;
-							JSONArray designation_averages_ja = new JSONArray(); // this is a simple jsonarray where we will put {"designation":"some_des","average":0.342} objects
-							JSONObject jo = new JSONObject();
-							double max_avg = 0.0;
-							String max_designation = "";
-							Iterator<User> it = reporter_objects_ts.iterator();
-							User currentuser = null;
-							while(it.hasNext())
-							{
-								currentuser = it.next();
-								jo = new JSONObject();
-								person_total = 0.0;							// the total for the current designation starts off as 0
-								for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
-								{	
-									person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(currentuser.getDesignation()); // add to the total for this person
-								}
-								person_avg = person_total/frames_ja.length();
-								jo.put("designation", currentuser.getDesignation());
-								jo.put("average", person_avg);
-								if(person_avg > max_avg)
-								{
-									max_avg = person_avg;
-									max_designation = currentuser.getDesignation();
-								}
-								designation_averages_ja.put(jo);
-							}
-														
-							System.out.println("Endpoint.processNewFrame(): max_designation=" + max_designation + " and max_avg=" + max_avg);
-							
-							// max_avg is now set to the highest average found for the designations
-							// max_designation is set to the designation of whomever that max_avg belonged to
-																			
-							String twitter_handle = null;
-							User user = new User(max_designation, "designation");
-							double max_homogeneity_double = user.getHomogeneity();
-							if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
-							{
-								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long,"seconds") + " max_designation=" + max_designation + " and max_avg=" + max_avg + " > " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh PAST THRESH");
-								// FIXME The above logic may not be right. It's conceivable that the max_avg is the highest, but not the most signficant.
-								// For instance, let's say the max avg is .9 but for that person, their homogeneity is .999
-								// There could be another avg that is .89 while their homogeneity is .895. 
-								// This is probably a minor concern since these should be canceled out by delta-checking anyway.
-								
-								// at this point we know the following:
-								// (a) the value of the highest moving average across the window
-								// (b) who that highest moving average belongs to
-								// we need to know (c) the maximum single frame score for the designation over the previous maw_int-1 frames
-								// and (d) for c, does that pass the designation's single thresh?
+			
+			String[] reporter_designations = newframe.getReporterDesignations();
+			double[] reporter_totals = new double[reporter_designations.length];
+			double[] reporter_moving_averages = new double[reporter_designations.length];
+			double[] reporter_moving_average_thresholds = new double[reporter_designations.length];
+			double[] reporter_single_thresholds = new double[reporter_designations.length];
 
-								// so, loop through the frames and check the scores for the designation
-								double max_frame_score_for_designation_with_max_average = 0.0;
-								int window_index_of_max_score_for_designation_with_max_average = 0;
-								long timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = 0L;
-								String image_name_of_frame_with_highest_score_in_window = "";
-								double currentscore = 0.0;
-								for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
-								{	
-									currentscore = frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(max_designation);
-									if(currentscore > max_frame_score_for_designation_with_max_average)
-									{
-										max_frame_score_for_designation_with_max_average = currentscore;
-										window_index_of_max_score_for_designation_with_max_average = j;
-										timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = frames_ja.getJSONObject(j).getLong("timestamp_in_seconds");
-										image_name_of_frame_with_highest_score_in_window = frames_ja.getJSONObject(j).getString("image_name");
-									}
-								}
-								double designation_score_for_last_frame_in_window = currentscore;
-								// now we additionally know:
-								// (c) the maximum single frame score for the designation, the index of that frame within the window, the name of the image, and the timestamp of it
-								// need to know: (d) does that score cross the single frame threshold?
-								if(max_frame_score_for_designation_with_max_average > (max_homogeneity_double * single_modifier_double)) 
-								{
-									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long,"seconds") + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " > " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh PAST THRESH");
-									
-									// (d) yes it does
-									long last_alert_twitter = user.getLastTwitterAlert();
-									boolean alert_triggered_twitter = false;
-									if((ts_long - last_alert_twitter) > awp_twitter)
-									{
-										user.setLastAlert(ts_long, "twitter");
-										alert_triggered_twitter = true;
-										jsonresponse.put("alert_triggered_twitter", "yes");
-										twitter_handle = user.getTwitterHandle();
-										if(twitter_handle != null)
-										{
-											jsonresponse.put("designation_twitter_handle",  user.getTwitterHandle());
-											
-											if(!user.getTwitterAccessToken().isEmpty() && !user.getTwitterAccessTokenSecret().isEmpty())
-											{
-												jsonresponse.put("twitter_access_token",user.getTwitterAccessToken());
-												jsonresponse.put("twitter_access_token_secret",user.getTwitterAccessTokenSecret());
-												if(!simulation)
-												{	
-													long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
-													jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
-													String message = getMessage("twitter", ts_long, twitter_redirect_id);
-													jsonresponse.put("twitter_message_firstperson", message);
-													boolean successful = updateAlertText(twitter_redirect_id, message);
-												}
-											}
-											else
-											{
-												if(!simulation)
-												{	
-													SimpleEmailer se = new SimpleEmailer();
-													try {
-														se.sendMail("Invalid Twitter info", "Alert fired, but twitter_stuff was null or invalid for " + max_designation , "cyrus7580@gmail.com", "info@huzon.tv");
-													} catch (MessagingException e) {
-														e.printStackTrace();
-													}
-												}
-											}
-										}
-									}
-									
-									
-									long last_alert_facebook = user.getLastFacebookAlert();
-									boolean alert_triggered_facebook = false;
-									System.out.println("Endpoint processNewFrame(): ts_long=" + ts_long + " last_alert_facebook=" + last_alert_facebook + " diff=" + (ts_long - last_alert_facebook) + " vs awp_facebook=" + awp_facebook);
-									if((ts_long - last_alert_facebook) > awp_facebook)
-									{	 
-										user.setLastAlert(ts_long, "facebook");
-										alert_triggered_facebook = true;
-										jsonresponse.put("alert_triggered_facebook", "yes");
-										JSONObject facebook_stuff = user.getFacebookSubAccount(); 
-										if(facebook_stuff != null)
-										{
-											jsonresponse.put("facebook_page_id",facebook_stuff.getLong("facebook_page_id"));
-											jsonresponse.put("facebook_page_access_token",facebook_stuff.getString("facebook_page_access_token"));
-											jsonresponse.put("facebook_page_name",facebook_stuff.getString("facebook_page_name"));
-											if(!simulation)
-											{	
-												long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
-												jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
-												String message = getMessage("facebook", ts_long, facebook_redirect_id);
-												jsonresponse.put("facebook_message_firstperson",message);
-												boolean successful = updateAlertText(facebook_redirect_id, message);
-											}
-										}
-										else
-										{
-											if(!simulation)
-											{	
-												SimpleEmailer se = new SimpleEmailer();
-												try {
-													se.sendMail("Invalid facebook info", "Alert fired, but facebook_stuff was null or invalid for designation " + max_designation + ". facebook_stuff=" + facebook_stuff, "cyrus7580@gmail.com", "info@huzon.tv");
-												} catch (MessagingException e) {
-													e.printStackTrace();
-												}
-											}
-										}
-									}
-									
-									// NOTE: The above is set up where "alert_triggered_[social_type]" can be set to "yes" even if the "[social_type]_stuff" is missing or invalid
-									// this is to note when an alert SHOULD have happened and update the database accordingly, even if the social account credentials are missing.
-									
-									if(alert_triggered_twitter || alert_triggered_facebook) // at least one of the two was true, add all the necessary information
-									{	
-										jsonresponse.put("alert_triggered", "yes");
-										jsonresponse.put("designation", max_designation);
-										jsonresponse.put("designation_moving_average_over_window", max_avg);
-										jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
-										jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
-										jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
-										jsonresponse.put("designation_display_name", user.getDisplayName());
-										jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
-										jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
-										jsonresponse.put("designation_single_threshold", max_homogeneity_double * single_modifier_double);
-										jsonresponse.put("datestring_of_last_frame_in_window", getLouisvilleDatestringFromTimestamp(ts_long,"seconds"));
-										jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getLouisvilleDatestringFromTimestamp(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average, "seconds"));
-										//jsonresponse.put("image_name_of_last_frame_in_window", getLouisvilleDatestringFromTimestamp(ts_long, "seconds") + ".jpg");
-										jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
-									}
-									else
-									{
-										jsonresponse.put("alert_triggered", "no");
-									}
-								}
-								else
-								{
-									System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long, "seconds") + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " <= " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh");
-									// (d) no it doesn't
-									jsonresponse.put("alert_triggered", "no");
-								}
-							}
-							else
-							{
-								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long, "seconds") + " max_designation=" + max_designation + " and max_avg=" + max_avg + " <= " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh");
-								jsonresponse.put("alert_triggered", "no");
-							}
-							//jsonresponse.put("designation_averages", designation_averages_ja);
-							jsonresponse.put("response_status", "success");
-							//jsonresponse.put("frames", frames_ja);
-					}
-				}
-				catch(SQLException sqle)
-				{
-					jsonresponse.put("message", "Error sqle.getMessage()=" + sqle.getMessage());
-					jsonresponse.put("response_status", "error");
-					sqle.printStackTrace();
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Endpoint processNewFrame", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
-				}
-				finally
-				{
-					try
-					{
-						if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-					}
-					catch(SQLException sqle)
-					{ 
-						jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
-						SimpleEmailer se = new SimpleEmailer();
-						try {
-							se.sendMail("SQLException in Endpoint processNewFrame", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-						} catch (MessagingException e) {
-							e.printStackTrace();
-						}
-					}
-				}   	
-				
-			}
-			catch(NumberFormatException nfe)
+			// loop through the frames in the window, calculating total designation_avg for each reporter
+					Iterator<Frame> it = window_frames.iterator();
+			Frame currentframe = null;
+			while(it.hasNext())
 			{
-				jsonresponse.put("message", "threshold was not a valid double value");
-				jsonresponse.put("response_status", "error");
-			}	
+				currentframe = it.next();
+				System.out.println("Endpoint.processNewFrame(): Examining " + currentframe.getImageName());
+				int x = 0;
+				while(x < reporter_designations.length)
+				{
+					if(reporter_designations[x].equals("alex_hayes") || reporter_designations[x].equals("kristen_kennedy"))
+						System.out.println("Endpoint.processNewFrame(): " + reporter_designations[x] + " score= " + currentframe.getScore(reporter_designations[x]));
+					reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
+					x++;
+				}
+			}
+			
+			// then divide the sum designation_avgs by dividing by the number of frames in the window
+			int x = 0;
+			double reporter_homogeneity = 0;
+			double max_moving_average = 0;
+			int max_moving_average_index = 0;
+			
+			while(x < reporter_totals.length)
+			{
+				reporter_moving_averages[x] = reporter_totals[x] / num_frames_in_window;
+				if(reporter_moving_averages[x] > max_moving_average)
+				{
+					max_moving_average = reporter_moving_averages[x];
+					max_moving_average_index = x;
+				}
+				if(reporter_moving_averages[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
+				{	
+					reporter_homogeneity = (new User(reporter_designations[x],"designation")).getHomogeneity();
+					reporter_moving_average_thresholds[x] = .67 * reporter_homogeneity;
+					reporter_single_thresholds[x] = reporter_homogeneity;
+				}
+				else
+				{
+					reporter_moving_average_thresholds[x] = 100;
+					reporter_single_thresholds[x] = 100;
+				}
+				x++;
+			}
+			
+			x = 0;
+			while(x < reporter_designations.length)
+			{
+				// does it pass the ma threshold and is it the highest?
+				if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
+				{
+					System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
+					return_jo.put("alert_triggered", "yes");
+					return_jo.put("designation", reporter_designations[x]);
+					return return_jo;
+				}
+				x++;
+			}
+			return_jo.put("alert_triggered", "no");
+			return_jo.put("reason", "none passed MA threshold");
 		}
 		catch(JSONException jsone)
 		{
-			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
+			jsone.printStackTrace();
 		}	
-		return jsonresponse;
+		return return_jo;
 	}
+	
+	
 	
 	long createAlertInDB(String station, String social_type, String designation, String image_name)
 	{
@@ -1834,29 +1496,6 @@ public class Endpoint extends HttpServlet {
 		return (cal.getTimeInMillis()/1000);
 	}
 	
-	private String getLouisvilleDatestringFromTimestamp(long timestamp, String seconds_or_ms)
-	{
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-		if(seconds_or_ms.equals("seconds"))
-			cal.setTimeInMillis(timestamp * 1000);
-		else if(seconds_or_ms.equals("ms"))
-			cal.setTimeInMillis(timestamp);
-		String year = new Integer(cal.get(Calendar.YEAR)).toString();
-		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
-		if(month.length() == 1) { month = "0" + month; }
-		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
-		if(day.length() == 1) { day = "0" + day;} 
-		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
-		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
-		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
-		if(minute.length() == 1) { minute = "0" + minute;} 
-		String second = new Integer(cal.get(Calendar.SECOND)).toString();
-		if(second.length() == 1) { second = "0" + second;} 
-		String datestring = year  + month + day + "_" + hour24 + minute + second;
-		return datestring;
-	}
-	
 	public JSONObject getFacebookAccessTokenFromAuthorizationCode(String code)
 	{
 		JSONObject jsonresponse = new JSONObject();
@@ -2044,4 +1683,369 @@ public class Endpoint extends HttpServlet {
         return successful;
 	}
 	
+	public static void main(String[] args) {
+		Endpoint e = new Endpoint();
+		e.processNewFrame(new Frame(1371291193612L, "wkyt"));
+	}
+	
 }
+
+/*
+JSONObject processNewFrame(long ts_long, String station, int moving_average_window_int, 
+		double ma_modifier_double, double single_modifier_double, int awp_twitter, int awp_facebook, boolean simulation)
+{
+	
+	 //* this function takes certain parameters and simulates what would happen if this were a realtime new 
+	 //* frame coming into the system and we were checking for alerts. 
+	 //* 
+	 //* 1. It gets X frames, cycles through them, putting together a JSONArray of X frames with timestamp, image name and scores object for each frame.  (see structure below)
+	 //* 2. It then cycles through the designations array getting an average score for each designation over the window, creating a designation_averages_ja and finding the max avg
+	 //* 3. If the max average is greater than the moving average threshold for that person and <strike>the last frame</strike> any frame in the window is greater than the singlethresh... 
+	 //* 4. then respond with all the information about that frame.
+	 
+	 
+	
+	JSONObject jsonresponse = new JSONObject();
+	try
+	{
+		Station station_object = new Station(station); 
+		TreeSet<User> reporter_objects_ts = new TreeSet<User>();
+		TreeSet<String> reporter_strings_ts = station_object.getReporters();
+		Iterator<String> reporter_it = reporter_strings_ts.iterator();
+		while(reporter_it.hasNext())
+		{
+			reporter_objects_ts.add(new User(reporter_it.next(),"designation"));
+		}
+		//JSONArray dnh_ja = getDesignationsAndHomogeneities(station); // get the designations and homogeneities for WKYT
+		//JSONArray designations_ja = getReporterDesignations(station);
+		try
+		{
+			ResultSet rs = null;
+			Connection con = null;
+			Statement stmt = null;
+			try
+			{
+				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+				stmt = con.createStatement();
+				// search database for X frames
+				rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE (timestamp_in_seconds > " + (ts_long - moving_average_window_int) + " AND timestamp_in_seconds <= " + ts_long + ") ORDER BY timestamp_in_seconds ASC"); 
+				rs.last();
+				jsonresponse.put("frames_processed", rs.getRow());  // get a row count
+				if(rs.getRow() == 0) // no frames at all
+				{
+					jsonresponse.put("message", "No frames for this entire window. Returning with next_frame.");
+					jsonresponse.put("response_status", "error");
+				}
+				else if(rs.getRow() < moving_average_window_int) // missing a frame
+				{
+					jsonresponse.put("message", "missing a frame in the target window, cant draw safe conclusions");
+					jsonresponse.put("error_code", "100");
+					jsonresponse.put("response_status", "error");
+				}
+				else // had all X frames
+				{	
+					System.out.println("Endpoint.processNewFrame(): had all " + moving_average_window_int + " frames.");
+					// check the ts frame. One of the designations' average scores has to be above their single threshold to continue. If not, quick failure.
+						rs.beforeFirst(); // go back to the beginning for parsing
+						JSONArray frames_ja = new JSONArray();
+						JSONObject current_frame_jo = null;
+						JSONObject current_frame_scores_jo = null;
+						
+						//{
+						//	"response_status": "success",
+						//	"frames":
+						//		[
+						//			{
+						//				"timestamp_in_seconds": 12312312,
+						//				"image_name": "url",
+						//				"scores":
+						//					{
+						//						"person_a": .984332,
+						//						"person_b": .3423423
+						//						...
+						//					}
+						//			}
+						//			...											
+						//		],
+						//	"averages":
+						//		[
+						//			{
+						//				"designation": "person_a",
+						//				"average": .9754
+						//			},
+						//			{
+						//				"designation": "person_b",
+						//				"average": .5432
+						//			},
+						//			...
+						//		]
+						//}
+						// convert the maw_int frames into a jsonarray called frames_ja
+						while(rs.next()) // get one row
+						{
+							current_frame_jo = new JSONObject();
+							current_frame_jo.put("image_name", rs.getString("image_name"));
+							current_frame_jo.put("timestamp_in_seconds", rs.getLong("timestamp_in_seconds"));
+							current_frame_scores_jo = new JSONObject();
+							Iterator<User> it = reporter_objects_ts.iterator();
+							User currentuser = null;
+							while(it.hasNext())
+							{
+								currentuser = it.next();
+								current_frame_scores_jo.put(currentuser.getDesignation(), rs.getDouble(currentuser.getDesignation() + "_avg"));
+							}
+							current_frame_jo.put("scores", current_frame_scores_jo);
+							frames_ja.put(current_frame_jo);
+						}
+						
+						
+						//(designation_averages_ja)
+						//[
+						//	{ "designation" : "guy_mcperson", "average": .4345 },
+						//	{ "designation" : "suzi_cue", "average": .6555 }
+						//	...
+						//]
+						
+						// compute the window averages for each designation
+						double person_total = 0.0;
+						double person_avg = 0.0;
+						JSONArray designation_averages_ja = new JSONArray(); // this is a simple jsonarray where we will put {"designation":"some_des","average":0.342} objects
+						JSONObject jo = new JSONObject();
+						double max_avg = 0.0;
+						String max_designation = "";
+						Iterator<User> it = reporter_objects_ts.iterator();
+						User currentuser = null;
+						while(it.hasNext())
+						{
+							currentuser = it.next();
+							jo = new JSONObject();
+							person_total = 0.0;							// the total for the current designation starts off as 0
+							for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
+							{	
+								person_total = person_total + frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(currentuser.getDesignation()); // add to the total for this person
+							}
+							person_avg = person_total/frames_ja.length();
+							jo.put("designation", currentuser.getDesignation());
+							jo.put("average", person_avg);
+							if(person_avg > max_avg)
+							{
+								max_avg = person_avg;
+								max_designation = currentuser.getDesignation();
+							}
+							designation_averages_ja.put(jo);
+						}
+													
+						System.out.println("Endpoint.processNewFrame(): max_designation=" + max_designation + " and max_avg=" + max_avg);
+						
+						// max_avg is now set to the highest average found for the designations
+						// max_designation is set to the designation of whomever that max_avg belonged to
+																		
+						String twitter_handle = null;
+						User user = new User(max_designation, "designation");
+						double max_homogeneity_double = user.getHomogeneity();
+						if(max_avg > (max_homogeneity_double * ma_modifier_double)) // the moving average is greater than the moving average threshold
+						{
+							System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long,"seconds") + " max_designation=" + max_designation + " and max_avg=" + max_avg + " > " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh PAST THRESH");
+							// FIXME The above logic may not be right. It's conceivable that the max_avg is the highest, but not the most signficant.
+							// For instance, let's say the max avg is .9 but for that person, their homogeneity is .999
+							// There could be another avg that is .89 while their homogeneity is .895. 
+							// This is probably a minor concern since these should be canceled out by delta-checking anyway.
+							
+							// at this point we know the following:
+							// (a) the value of the highest moving average across the window
+							// (b) who that highest moving average belongs to
+							// we need to know (c) the maximum single frame score for the designation over the previous maw_int-1 frames
+							// and (d) for c, does that pass the designation's single thresh?
+
+							// so, loop through the frames and check the scores for the designation
+							double max_frame_score_for_designation_with_max_average = 0.0;
+							int window_index_of_max_score_for_designation_with_max_average = 0;
+							long timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = 0L;
+							String image_name_of_frame_with_highest_score_in_window = "";
+							double currentscore = 0.0;
+							for(int j = 0; j < frames_ja.length(); j++) // loop through the frames for this window
+							{	
+								currentscore = frames_ja.getJSONObject(j).getJSONObject("scores").getDouble(max_designation);
+								if(currentscore > max_frame_score_for_designation_with_max_average)
+								{
+									max_frame_score_for_designation_with_max_average = currentscore;
+									window_index_of_max_score_for_designation_with_max_average = j;
+									timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average = frames_ja.getJSONObject(j).getLong("timestamp_in_seconds");
+									image_name_of_frame_with_highest_score_in_window = frames_ja.getJSONObject(j).getString("image_name");
+								}
+							}
+							double designation_score_for_last_frame_in_window = currentscore;
+							// now we additionally know:
+							// (c) the maximum single frame score for the designation, the index of that frame within the window, the name of the image, and the timestamp of it
+							// need to know: (d) does that score cross the single frame threshold?
+							if(max_frame_score_for_designation_with_max_average > (max_homogeneity_double * single_modifier_double)) 
+							{
+								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long,"seconds") + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " > " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh PAST THRESH");
+								
+								// (d) yes it does
+								long last_alert_twitter = user.getLastTwitterAlert();
+								boolean alert_triggered_twitter = false;
+								if((ts_long - last_alert_twitter) > awp_twitter)
+								{
+									user.setLastAlert(ts_long, "twitter");
+									alert_triggered_twitter = true;
+									jsonresponse.put("alert_triggered_twitter", "yes");
+									twitter_handle = user.getTwitterHandle();
+									if(twitter_handle != null)
+									{
+										jsonresponse.put("designation_twitter_handle",  user.getTwitterHandle());
+										
+										if(!user.getTwitterAccessToken().isEmpty() && !user.getTwitterAccessTokenSecret().isEmpty())
+										{
+											jsonresponse.put("twitter_access_token",user.getTwitterAccessToken());
+											jsonresponse.put("twitter_access_token_secret",user.getTwitterAccessTokenSecret());
+											if(!simulation)
+											{	
+												long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
+												jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
+												String message = getMessage("twitter", ts_long, twitter_redirect_id);
+												jsonresponse.put("twitter_message_firstperson", message);
+												boolean successful = updateAlertText(twitter_redirect_id, message);
+											}
+										}
+										else
+										{
+											if(!simulation)
+											{	
+												SimpleEmailer se = new SimpleEmailer();
+												try {
+													se.sendMail("Invalid Twitter info", "Alert fired, but twitter_stuff was null or invalid for " + max_designation , "cyrus7580@gmail.com", "info@huzon.tv");
+												} catch (MessagingException e) {
+													e.printStackTrace();
+												}
+											}
+										}
+									}
+								}
+								
+								
+								long last_alert_facebook = user.getLastFacebookAlert();
+								boolean alert_triggered_facebook = false;
+								System.out.println("Endpoint processNewFrame(): ts_long=" + ts_long + " last_alert_facebook=" + last_alert_facebook + " diff=" + (ts_long - last_alert_facebook) + " vs awp_facebook=" + awp_facebook);
+								if((ts_long - last_alert_facebook) > awp_facebook)
+								{	 
+									user.setLastAlert(ts_long, "facebook");
+									alert_triggered_facebook = true;
+									jsonresponse.put("alert_triggered_facebook", "yes");
+									JSONObject facebook_stuff = user.getFacebookSubAccount(); 
+									if(facebook_stuff != null)
+									{
+										jsonresponse.put("facebook_page_id",facebook_stuff.getLong("facebook_page_id"));
+										jsonresponse.put("facebook_page_access_token",facebook_stuff.getString("facebook_page_access_token"));
+										jsonresponse.put("facebook_page_name",facebook_stuff.getString("facebook_page_name"));
+										if(!simulation)
+										{	
+											long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
+											jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
+											String message = getMessage("facebook", ts_long, facebook_redirect_id);
+											jsonresponse.put("facebook_message_firstperson",message);
+											boolean successful = updateAlertText(facebook_redirect_id, message);
+										}
+									}
+									else
+									{
+										if(!simulation)
+										{	
+											SimpleEmailer se = new SimpleEmailer();
+											try {
+												se.sendMail("Invalid facebook info", "Alert fired, but facebook_stuff was null or invalid for designation " + max_designation + ". facebook_stuff=" + facebook_stuff, "cyrus7580@gmail.com", "info@huzon.tv");
+											} catch (MessagingException e) {
+												e.printStackTrace();
+											}
+										}
+									}
+								}
+								
+								// NOTE: The above is set up where "alert_triggered_[social_type]" can be set to "yes" even if the "[social_type]_stuff" is missing or invalid
+								// this is to note when an alert SHOULD have happened and update the database accordingly, even if the social account credentials are missing.
+								
+								if(alert_triggered_twitter || alert_triggered_facebook) // at least one of the two was true, add all the necessary information
+								{	
+									jsonresponse.put("alert_triggered", "yes");
+									jsonresponse.put("designation", max_designation);
+									jsonresponse.put("designation_moving_average_over_window", max_avg);
+									jsonresponse.put("designation_score_for_last_frame_in_window", designation_score_for_last_frame_in_window);
+									jsonresponse.put("designation_highest_frame_score_in_window", max_frame_score_for_designation_with_max_average);
+									jsonresponse.put("index_of_designation_highest_frame_score_in_window", window_index_of_max_score_for_designation_with_max_average);
+									jsonresponse.put("designation_display_name", user.getDisplayName());
+									jsonresponse.put("designation_homogeneity_score", max_homogeneity_double);
+									jsonresponse.put("designation_moving_average_threshold", max_homogeneity_double * ma_modifier_double);
+									jsonresponse.put("designation_single_threshold", max_homogeneity_double * single_modifier_double);
+									jsonresponse.put("datestring_of_last_frame_in_window", getLouisvilleDatestringFromTimestamp(ts_long,"seconds"));
+									jsonresponse.put("datestring_of_frame_with_highest_score_in_window", getLouisvilleDatestringFromTimestamp(timestamp_in_seconds_for_frame_with_highest_score_across_window_for_designation_with_max_average, "seconds"));
+									//jsonresponse.put("image_name_of_last_frame_in_window", getLouisvilleDatestringFromTimestamp(ts_long, "seconds") + ".jpg");
+									jsonresponse.put("image_name_of_frame_with_highest_score_in_window", image_name_of_frame_with_highest_score_in_window);
+								}
+								else
+								{
+									jsonresponse.put("alert_triggered", "no");
+								}
+							}
+							else
+							{
+								System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long, "seconds") + " max_frame_score in window=" + max_frame_score_for_designation_with_max_average + " <= " + (max_homogeneity_double * single_modifier_double) + " <-- single thresh");
+								// (d) no it doesn't
+								jsonresponse.put("alert_triggered", "no");
+							}
+						}
+						else
+						{
+							System.out.println("Endpoint.processNewFrame(): datestring=" + getLouisvilleDatestringFromTimestamp(ts_long, "seconds") + " max_designation=" + max_designation + " and max_avg=" + max_avg + " <= " + (max_homogeneity_double * ma_modifier_double) + " <-- ma thresh");
+							jsonresponse.put("alert_triggered", "no");
+						}
+						//jsonresponse.put("designation_averages", designation_averages_ja);
+						jsonresponse.put("response_status", "success");
+						//jsonresponse.put("frames", frames_ja);
+				}
+			}
+			catch(SQLException sqle)
+			{
+				jsonresponse.put("message", "Error sqle.getMessage()=" + sqle.getMessage());
+				jsonresponse.put("response_status", "error");
+				sqle.printStackTrace();
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint processNewFrame", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+			finally
+			{
+				try
+				{
+					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				}
+				catch(SQLException sqle)
+				{ 
+					jsonresponse.put("warning", "Problem closing resultset, statement and/or connection to the database.");
+					SimpleEmailer se = new SimpleEmailer();
+					try {
+						se.sendMail("SQLException in Endpoint processNewFrame", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					} catch (MessagingException e) {
+						e.printStackTrace();
+					}
+				}
+			}   	
+			
+		}
+		catch(NumberFormatException nfe)
+		{
+			jsonresponse.put("message", "threshold was not a valid double value");
+			jsonresponse.put("response_status", "error");
+		}	
+	}
+	catch(JSONException jsone)
+	{
+		System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
+	}	
+	return jsonresponse;
+}
+*/
+
+

@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TreeSet;
 
+import javax.mail.MessagingException;
+
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
@@ -23,7 +25,15 @@ public class Frame implements Comparable<Frame> {
 	String[] reporter_designations;
 	double[] reporter_avgs;
 	JSONArray[] reporter_score_arrays;
-	int[] reporter_nums; 
+	int[] reporter_nums;
+	
+	double[] reporter_moving_avgs; // starts out null until populated
+	int maw_int; // since the moving average can be over any window, we have to keep track of the window used to calculate moving averages
+	String max_ma_designation;
+	String second_max_ma_designation;
+	double max_ma;
+	double second_max_ma;
+	
 	
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
@@ -42,7 +52,7 @@ public class Frame implements Comparable<Frame> {
 		reporter_nums = inc_reporter_nums;
 	}
 	
-	/*
+	
 	public Frame(long inc_timestamp_in_ms, String inc_station)
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
@@ -56,15 +66,34 @@ public class Frame implements Comparable<Frame> {
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
+			
+			// calculate the number of reporters by looping through all columns and looking for "_avg"
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columncount = rsmd.getColumnCount();
+			int reportercount = 0;
+			int x = 1; 
+			while(x <= columncount)
+			{
+				if(rsmd.getColumnName(x).endsWith("_avg"))
+				{
+					reportercount++;
+				}
+				x++;
+			}
+
+			// now examine the row and extract all the information
 			if(rs.next())
 			{	
 				image_name = rs.getString("image_name");
 				s3_location = rs.getString("s3_location");
 				url = rs.getString("url");
 				frame_rate = rs.getInt("frame_rate");
-				ResultSetMetaData rsmd = rs.getMetaData();
-				int columncount = rsmd.getColumnCount();
-				int x = 1; int reporter_index = 0;
+				x = 1; 
+				int reporter_index = 0;
+				reporter_designations = new String[reportercount];
+				reporter_avgs = new double[reportercount];
+				reporter_score_arrays = new JSONArray[reportercount];
+				reporter_nums = new int[reportercount];
 				while(x <= columncount)
 				{
 					if(rsmd.getColumnName(x).endsWith("_avg"))
@@ -89,8 +118,11 @@ public class Frame implements Comparable<Frame> {
 			}
 			else
 			{
-				// error. This frame didn't exist in the specified table
+				timestamp_in_ms = 0;
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -110,7 +142,7 @@ public class Frame implements Comparable<Frame> {
 				sqle.printStackTrace();
 			}
 		}   		
-	}*/
+	}
 	
 	long getTimestampInMillis()
 	{
@@ -140,6 +172,172 @@ public class Frame implements Comparable<Frame> {
 	int getFrameRate()
 	{
 		return frame_rate;
+	}
+	
+	int getNumReporters()
+	{
+		return reporter_designations.length;
+	}
+	
+	String[] getReporterDesignations()
+	{
+		return reporter_designations;
+	}
+	
+	double getScore(String reporter_designation)
+	{
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_designations[x].equals(reporter_designation))
+				return reporter_avgs[x];
+			x++;
+		}
+		return 0;
+	}
+	
+	boolean populateMovingAverages(int inc_maw_int)
+	{
+		max_ma = 0;
+		second_max_ma = 0;
+		max_ma_designation = null;
+		second_max_ma_designation = null;
+		
+		reporter_moving_avgs = new double[reporter_designations.length];
+		maw_int = inc_maw_int;
+		Connection con = null;
+		Statement stmt = null;
+		ResultSet rs2 = null;
+		double ma_over_window = 0;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement();
+			rs2 = stmt.executeQuery("SELECT * FROM frames_" + getStation() + " WHERE (timestamp_in_ms > " + (timestamp_in_ms - maw_int*1000) + " AND timestamp_in_ms <= " + timestamp_in_ms + ")");
+			
+			// 6/12/2013 simplified this function. To see old vers2ion, check github prior to this date.
+			
+			// so what we're doing here is we've got a single frame with a single score above the single thresh.
+			// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
+			
+			rs2.last();
+			int num_frames_in_window = rs2.getRow();
+			
+			if(num_frames_in_window < maw_int) // only process this frame if there were enough prior frames to warrn
+			{
+				// NOT ENOUGH FRAMES (i.e. less than 1 per second) 
+				reporter_moving_avgs = null;
+				System.out.println("Endpoint.getAlertFrames(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
+				return false;
+			}
+			else
+			{
+				rs2.beforeFirst();
+				for(int x = 0; x < reporter_designations.length; x++)
+				{
+					int i = 0; 
+					double total = 0;
+					while(rs2.next()) // looping through all the frames in the moving average window before the current frame
+					{
+						total = total + rs2.getDouble(reporter_designations[x] + "_avg"); // the running total of the last maw_int frames
+						i++;
+					}
+					ma_over_window = total / i; // i should = num_frames_in_window
+					reporter_moving_avgs[x] = ma_over_window;
+				}
+
+				//double max_moving_average = 0;
+				//double second_max_moving_average = 0;
+				//String max_designation;
+				//String second_max_designation;
+				for(int x = 0; x < reporter_designations.length; x++)
+				{
+					if(reporter_moving_avgs[x] > max_ma)
+					{
+						second_max_ma = max_ma;
+						max_ma = reporter_moving_avgs[x];
+						second_max_ma_designation = max_ma_designation;
+						max_ma_designation = reporter_designations[x];
+					}
+				}
+				return true; // reporter_moving_avgs[], max_ma, second_max_ma, max_ma_designation, second_max_ma_designation should be set now.
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs2  != null){ rs2.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}   
+		return false; // something went wrong along the way
+	}
+	
+	
+	double getMovingAverage(int inc_maw_int, String current_designation)
+	{
+		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+			populateMovingAverages(inc_maw_int);
+			
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_designations[x].equals(current_designation))
+				return reporter_moving_avgs[x];
+			x++;
+		}
+		return 0;
+	}
+		
+	double getHighestMovingAverage(int inc_maw_int)
+	{
+		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+			populateMovingAverages(inc_maw_int);
+		
+		return max_ma;
+	}
+	
+	String getHighestMovingAverageDesignation(int inc_maw_int)
+	{
+		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+			populateMovingAverages(inc_maw_int);
+		
+		return max_ma_designation;
+	}
+	
+	double getSecondHighestMovingAverage(int inc_maw_int)
+	{
+		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+			populateMovingAverages(inc_maw_int);
+		
+		return second_max_ma;
+	}
+	
+	String getSecondHighestMovingAverageDesignation(int inc_maw_int)
+	{
+		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+			populateMovingAverages(inc_maw_int);
+		
+		return second_max_ma_designation;
 	}
 	
 	/* return object as:
