@@ -146,10 +146,11 @@ public class Endpoint extends HttpServlet {
 								jsonresponse.put("alert_triggered", jo2.get("alert_triggered"));
 								if(jo2.get("alert_triggered").equals("yes"))
 								{
-									jsonresponse.put("designation", jo2.get("designation"));
+									jsonresponse.put("designation", jo2.getString("designation"));
+									jsonresponse.put("social_type", jo2.getString("social_type"));
 									SimpleEmailer se = new SimpleEmailer();
 									try {
-										se.sendMail("Alert triggered for " + jo2.get("designation"), "url=" + newframe.getURL(), "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("Alert triggered for " + jo2.get("designation"), "url=" + newframe.getURL() + " social_type=" + jo2.getString("social_type"), "cyrus7580@gmail.com", "info@huzon.tv");
 									} catch (MessagingException e) {
 										e.printStackTrace();
 									}
@@ -1203,9 +1204,38 @@ public class Endpoint extends HttpServlet {
 				// does it pass the ma threshold and is it the highest?
 				if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
 				{
-					System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
-					return_jo.put("alert_triggered", "yes");
-					return_jo.put("designation", reporter_designations[x]);
+					boolean fb = false;
+					boolean tw = false;
+					User reporter = new User(reporter_designations[x], "designation");
+					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) > reporter.getFacebookWaitingPeriod())
+					{	
+						System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
+						return_jo.put("alert_triggered", "yes");
+						return_jo.put("social_type", "facebook");
+						return_jo.put("designation", reporter_designations[x]);
+						reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook");
+						fb = true;
+					}
+					
+					if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) > reporter.getTwitterWaitingPeriod())
+					{	
+						System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
+						return_jo.put("alert_triggered", "yes");
+						if(fb)
+							return_jo.put("social_type", "both");
+						else
+							return_jo.put("social_type", "facebook");
+						return_jo.put("designation", reporter_designations[x]);
+						reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter");
+						tw = true;
+					}
+					
+					if(fb == false && tw == false)
+					{
+						return_jo.put("alert_triggered", "no");
+						return_jo.put("reason", "Passed MA threshold, but was within waiting period of both facebook and twitter. Couldn't fire alert.");
+					}
+					
 					return return_jo;
 				}
 				x++;

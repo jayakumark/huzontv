@@ -269,7 +269,7 @@ public class User implements java.lang.Comparable {
 	{
 		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
 		{
-			System.out.println("Endpoint.setLastAlert: social type was not \"facebook\" or \"twitter\". returning false.");
+			System.out.println("User.setLastAlert: social type was not \"facebook\" or \"twitter\". returning false.");
 			return false;
 		}
 		boolean returnval = false;
@@ -284,9 +284,9 @@ public class User implements java.lang.Comparable {
 			while(rs.next())
 			{
 				if(social_type.equals("facebook"))
-					rs.updateLong("last_alert_facebook", alert_ts);
+					rs.updateLong("facebook_last_alert", alert_ts);
 				else												// we can just say "else" because we checked value of social_type above
-					rs.updateLong("last_alert_twitter", alert_ts);
+					rs.updateLong("twitter_last_alert", alert_ts);
 				rs.updateRow();
 			}
 			returnval = true;
@@ -297,7 +297,7 @@ public class User implements java.lang.Comparable {
 			returnval = false;
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("SQLException in User.setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -313,13 +313,23 @@ public class User implements java.lang.Comparable {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in User.setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
 			}
 		}  	
 		return returnval;
+	}
+	
+	public long getFacebookWaitingPeriod()
+	{
+		return facebook_alert_waiting_period;
+	}
+	
+	public long getTwitterWaitingPeriod()
+	{
+		return twitter_alert_waiting_period;
 	}
 	
 	public JSONObject getJSONObject() // for now, returns EVERYTHING. Even secret tokens and stuff.

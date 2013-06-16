@@ -103,7 +103,7 @@ public class Frame implements Comparable<Frame> {
 					}
 					else if(rsmd.getColumnName(x).endsWith("_scores"))
 					{
-						if(rs.getString(x).isEmpty())
+						if(rs.getString(x) == null || rs.getString(x).isEmpty())
 							reporter_score_arrays[reporter_index] = new JSONArray();
 						else
 							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
@@ -198,6 +198,7 @@ public class Frame implements Comparable<Frame> {
 	
 	boolean populateMovingAverages(int inc_maw_int)
 	{
+		//System.out.println("Frame.populateMovingAverages()");
 		max_ma = 0;
 		second_max_ma = 0;
 		max_ma_designation = null;
@@ -227,16 +228,16 @@ public class Frame implements Comparable<Frame> {
 			{
 				// NOT ENOUGH FRAMES (i.e. less than 1 per second) 
 				reporter_moving_avgs = null;
-				System.out.println("Endpoint.getAlertFrames(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
+				System.out.println("Frame.populateMovingAverages(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
 				return false;
 			}
 			else
 			{
-				rs2.beforeFirst();
 				for(int x = 0; x < reporter_designations.length; x++)
 				{
 					int i = 0; 
 					double total = 0;
+					rs2.beforeFirst();
 					while(rs2.next()) // looping through all the frames in the moving average window before the current frame
 					{
 						total = total + rs2.getDouble(reporter_designations[x] + "_avg"); // the running total of the last maw_int frames
@@ -295,8 +296,15 @@ public class Frame implements Comparable<Frame> {
 	
 	double getMovingAverage(int inc_maw_int, String current_designation)
 	{
+		//System.out.println("Frame.getMovingAverage(" + inc_maw_int + "," + current_designation + ")");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-			populateMovingAverages(inc_maw_int);
+		{
+			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
+			if(!successfullypopulated)
+			{
+				System.out.println("******** Moving averages population unsuccessful.");
+			}
+		}
 			
 		int x = 0;
 		while(x < reporter_designations.length)
@@ -310,32 +318,60 @@ public class Frame implements Comparable<Frame> {
 		
 	double getHighestMovingAverage(int inc_maw_int)
 	{
+		//System.out.println("Frame.getHighestMovingAverage()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-			populateMovingAverages(inc_maw_int);
+		{
+			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
+			if(!successfullypopulated)
+			{
+				System.out.println("******** Moving averages population unsuccessful.");
+			}
+		}
 		
 		return max_ma;
 	}
 	
 	String getHighestMovingAverageDesignation(int inc_maw_int)
 	{
+		//System.out.println("Frame.getHighestMovingAverageDesignation()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-			populateMovingAverages(inc_maw_int);
+		{
+			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
+			if(!successfullypopulated)
+			{
+				System.out.println("******** Moving averages population unsuccessful.");
+			}
+		}
 		
 		return max_ma_designation;
 	}
 	
 	double getSecondHighestMovingAverage(int inc_maw_int)
 	{
+		//System.out.println("Frame.getSecondHighestMovingAverage()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-			populateMovingAverages(inc_maw_int);
+		{
+			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
+			if(!successfullypopulated)
+			{
+				System.out.println("******** Moving averages population unsuccessful.");
+			}
+		}
 		
 		return second_max_ma;
 	}
 	
 	String getSecondHighestMovingAverageDesignation(int inc_maw_int)
 	{
+		//System.out.println("Frame.getSecondHighestMovingAverageDesignation()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-			populateMovingAverages(inc_maw_int);
+		{
+			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
+			if(!successfullypopulated)
+			{
+				System.out.println("******** Moving averages population unsuccessful.");
+			}
+		}
 		
 		return second_max_ma_designation;
 	}

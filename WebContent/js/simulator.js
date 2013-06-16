@@ -1,5 +1,5 @@
-var endpoint = "https://localhost:8443/huzontv/endpoint";
-//var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "https://localhost:8443/huzontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -795,10 +795,11 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		if(data.alert_frames_ja)
 			        			{	
 				        			data.alert_frames_ja.sort(function(a,b){
-				        				a = a.timestamp_in_seconds;
-				        				b = b.timestamp_in_seconds;
+				        				a = a.timestamp_in_ms;
+				        				b = b.timestamp_in_ms;
 				        				return a - b;
 				        			});
+				        			
 				        			
 			        				for(var x = 0; x < data.alert_frames_ja.length; x++)
 			        				{
@@ -807,9 +808,11 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        				rds = rds + "<br><img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
 				        				rds = rds + "<br>image_name:" + data.alert_frames_ja[x].image_name;
 				        				rds = rds + "<br>designation:" + data.alert_frames_ja[x].designation;
-				        				rds = rds + "<br>score for des:" + data.alert_frames_ja[x].score;
-				        				rds = rds + "<br>ma score:" + data.alert_frames_ja[x].moving_average;
-				        				rds = rds + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity_score;
+				        				rds = rds + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
+				        				rds = rds + "<br>score_for_frame_that_passed:" + data.alert_frames_ja[x].score_for_frame_that_passed;
+				        				rds = rds + "<br>ma_for_alert_frame:" + data.alert_frames_ja[x].ma_for_alert_frame;
+				        				rds = rds + "<br>ma_for_frame_that_passed:" + data.alert_frames_ja[x].ma_for_frame_that_passed;
+				        				rds = rds + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity;
 				        				rds = rds + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
 				        				rds = rds + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
 				        				rds = rds + "</div>";

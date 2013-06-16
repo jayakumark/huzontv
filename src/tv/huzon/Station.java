@@ -203,7 +203,7 @@ public class Station implements java.lang.Comparable<Station> {
 					}
 					else if(rsmd.getColumnName(x).endsWith("_scores"))
 					{
-						if(rs.getString(x).isEmpty())
+						if(rs.getString(x) == null || rs.getString(x).isEmpty())
 							reporter_score_arrays[reporter_index] = new JSONArray();
 						else
 							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
@@ -325,347 +325,6 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		return frames_ja;
 	}
-		
-	/*
-	public JSONArray getFramesByDesignationAndHomogeneityThreshold(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double, double delta_double)
-	{
-		JSONArray return_ja = new JSONArray();
-		try
-		{
-			User reporter = new User(designation, "designation");
-			double homogeneity_double = reporter.getHomogeneity();
-			//double modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-			double threshold = homogeneity_double * single_modifier_double;
-			//double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
-			
-				ResultSet rs = null;
-				Connection con = null;
-				Statement stmt = null;
-				try
-				{
-					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-					stmt = con.createStatement();
-					rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters()  + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); // get the frames in the time range
-					rs.last();
-					rs.beforeFirst(); // go back to the beginning for parsing
-					JSONObject current_frame_jo = null;
-					boolean all_others_below_delta = true;
-					double control_avg = 100;
-					double closest_avg = 0;
-					JSONArray designations = new JSONArray(getReporters()); 
-					double challenge_avg = 0;
-					String closest_designation = "";
-					while(rs.next()) // get one row
-					{
-						all_others_below_delta = true;
-						control_avg = rs.getDouble(designation + "_avg");
-						closest_avg = 0;
-						for(int d = 0; d < designations.length(); d++)
-						{	
-							if(!designations.getString(d).equals(designation)) // skip comparing this against itself
-							{	
-								challenge_avg = rs.getDouble(designations.getString(d) + "_avg");
-								if(challenge_avg > closest_avg)
-								{
-									closest_avg = challenge_avg;
-									closest_designation = designations.getString(d);
-								}
-								//System.out.println("\t\tChallenge avg=" + challenge_avg + " (" + designations.getString(d) + ")");
-								if((control_avg - challenge_avg) < delta_double) // this one did not satisfy the delta requirement
-								{
-									all_others_below_delta = false;
-									// could include a break here to save cycles, but want to get closest for informational purposes
-								}
-								
-							}
-						}
-						if(all_others_below_delta)
-						{
-							current_frame_jo = new JSONObject();
-							current_frame_jo.put("image_name", rs.getString("image_name"));
-							current_frame_jo.put("url", rs.getString("url"));
-							current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
-							current_frame_jo.put("score_average", rs.getDouble(designation + "_avg"));
-							current_frame_jo.put("homogeneity_score", homogeneity_double);
-							current_frame_jo.put("threshold", threshold);
-							current_frame_jo.put("closest_avg", closest_avg);
-							current_frame_jo.put("closest_designation", closest_designation);
-							return_ja.put(current_frame_jo);
-						}
-						else
-						{
-							//delta_suppressions++;
-						}
-					}
-				}
-				catch(SQLException sqle)
-				{
-					sqle.printStackTrace();
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Station.getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
-				}
-				finally
-				{
-					try
-					{
-						if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-					}
-					catch(SQLException sqle)
-					{ 
-						SimpleEmailer se = new SimpleEmailer();
-						try {
-							se.sendMail("SQLException in Station.getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-						} catch (MessagingException e) {
-							e.printStackTrace();
-						}
-					}
-				}   	
-			
-		}
-		catch(JSONException jsone)
-		{
-			
-		}
-		return return_ja;
-	}*/
-	
-	/*
-	public JSONArray getFramesByDesignation(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double, double ma_modifier_double, int mawindow_int)
-	{
-		JSONArray return_ja = new JSONArray();
-		User reporter = new User(designation, "designation");
-		double homogeneity_double = reporter.getHomogeneity();
-		//double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
-		//double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-	//	int mawindow_int = Integer.parseInt(mawindow);
-		int num_frames_in_mawindow = 0;
-		try
-		{
-			ResultSet rs = null;
-			Connection con = null;
-			Statement stmt = null;
-			Statement stmt2 = null;
-			ResultSet rs2 = null;
-			try
-			{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-				stmt = con.createStatement();
-				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); // get the frames in the time range
-				rs.last();
-				rs.beforeFirst(); // go back to the beginning for parsing
-				JSONObject current_frame_jo = null;
-				double total = 0.0;
-				double ma_over_window = 0.0;
-				while(rs.next())
-				{
-					current_frame_jo = new JSONObject();
-					current_frame_jo.put("image_name", rs.getString("image_name"));
-					current_frame_jo.put("timestamp_in_ms", rs.getLong("timestamp_in_ms"));
-					current_frame_jo.put("designation_score", rs.getDouble(designation + "_avg"));
-					current_frame_jo.put("homogeneity_score", homogeneity_double);
-					current_frame_jo.put("ma_threshold", homogeneity_double * ma_modifier_double);
-					current_frame_jo.put("single_threshold", homogeneity_double * single_modifier_double);
-					stmt2 = con.createStatement();
-					rs2 = stmt2.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + (rs.getLong("timestamp_in_ms") - (mawindow_int*1000)) + " AND timestamp_in_ms <= " + rs.getLong("timestamp_in_ms") + ")");
-					total = 0;
-					num_frames_in_mawindow = 0;
-					while(rs2.next())
-					{
-						total = total + rs2.getDouble(designation + "_avg");
-						num_frames_in_mawindow++;
-					}
-					//ma_over_window = (total - lowest_score_in_window) / (mawindow_int - 1);
-					ma_over_window = total / num_frames_in_mawindow;
-					current_frame_jo.put("moving_average", ma_over_window);
-					current_frame_jo.put("num_frames_in_mawindow", num_frames_in_mawindow);
-					return_ja.put(current_frame_jo);
-				}
-			}
-			catch(SQLException sqle)
-			{
-				sqle.printStackTrace();
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-			finally
-			{
-				try
-				{
-					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-				}
-				catch(SQLException sqle)
-				{ 
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Endpoint getFramesByDesignationAndHomogeneityThreshold", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
-				}
-			}   		
-		}
-		catch(JSONException jsone)
-		{
-			
-		}
-		return return_ja;
-	}
-	*/
-	
-	/*
-	boolean testFrameForMovingAverage(long ts, int maw_int, String current_designation, double current_homogeneity, double ma_modifier_double)
-	{
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs2 = null;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs2 = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + (ts - maw_int*1000) + " AND timestamp_in_ms < " + ts + ")");
-			
-			// 6/12/2013 simplified this function. To see old vers2ion, check github prior to this date.
-			
-			// so what we're doing here is we've got a single frame with a single score above the single thresh.
-			// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
-			
-			rs2.last();
-			int num_frames_in_window = rs2.getRow();
-			rs2.beforeFirst();
-			int i = 0; 
-			double total = 0;
-			double ma_over_window = 0;
-			
-			
-			if(num_frames_in_window < maw_int) // only process this frame if there were enough prior frames to warrn
-			{
-				// NOT ENOUGH FRAMES (i.e. less than 1 per second)
-				System.out.println("Endpoint.getAlertFrames(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
-			}
-			else // there were enough frames
-			{
-			
-				while(rs2.next()) // looping through all the frames in the moving average window before the current frame
-				{
-					total = total + rs2.getDouble(current_designation + "_avg"); // the running total of the last maw_int frames
-					i++;
-				}
-				ma_over_window = total / i; // i should = num_frames_in_window
-				System.out.println("Endpoint.getAlertFrames(): there were enough frames. ma_over_window=" + ma_over_window);
-			}
-			
-			if(ma_over_window > (current_homogeneity * ma_modifier_double))
-				return true;
-			else
-				return false;
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs2  != null){ rs2.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}   
-		return false; // if it reaches here, something has failed.
-	}
-	
-
-	double getMovingAverage(long ts, int maw_int, String current_designation)
-	{
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs2 = null;
-		double ma_over_window = 0;
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-			stmt = con.createStatement();
-			rs2 = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + (ts - maw_int*1000) + " AND timestamp_in_ms <= " + ts + ")");
-			
-			// 6/12/2013 simplified this function. To see old vers2ion, check github prior to this date.
-			
-			// so what we're doing here is we've got a single frame with a single score above the single thresh.
-			// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
-			
-			rs2.last();
-			int num_frames_in_window = rs2.getRow();
-			rs2.beforeFirst();
-			int i = 0; 
-			double total = 0;
-			
-			if(num_frames_in_window < maw_int) // only process this frame if there were enough prior frames to warrn
-			{
-				// NOT ENOUGH FRAMES (i.e. less than 1 per second)
-				System.out.println("Endpoint.getAlertFrames(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
-			}
-			else // there were enough frames
-			{
-			
-				while(rs2.next()) // looping through all the frames in the moving average window before the current frame
-				{
-					total = total + rs2.getDouble(current_designation + "_avg"); // the running total of the last maw_int frames
-					i++;
-				}
-				ma_over_window = total / i; // i should = num_frames_in_window
-				System.out.println("Endpoint.getAlertFrames(): there were enough frames. ma_over_window=" + ma_over_window);
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
-		}
-		finally
-		{
-			try
-			{
-				if (rs2  != null){ rs2.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
-			}
-		}   
-		return ma_over_window; // if it reaches here, something has failed.
-	}
-*/
 	
 	JSONArray getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, double delta_double)
 	{
@@ -681,10 +340,8 @@ public class Station implements java.lang.Comparable<Station> {
 			Statement stmt2 = null;
 			ResultSet rs2 = null;
 			long ts = 0L;
-			double total = 0.0;
 			double current_homogeneity;
 			String current_designation;
-			double ma_over_window = 0.0;
 			try
 			{
 				Iterator<String> it = reporters.iterator();
@@ -692,7 +349,7 @@ public class Station implements java.lang.Comparable<Station> {
 				while(it.hasNext()) // looping through reporters
 				{
 					currentreporter = new User(it.next(), "designation");
-					System.out.println("Endpoint.getAlertFrames(): looping reporters. " + currentreporter.getDesignation());
+					System.out.println("Endpoint.gAF(): looping reporters. " + currentreporter.getDesignation());
 					current_homogeneity = currentreporter.getHomogeneity();
 					current_designation = currentreporter.getDesignation();
 					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
@@ -711,15 +368,16 @@ public class Station implements java.lang.Comparable<Station> {
 					while(frames_past_single_thresh_it.hasNext())
 					{
 						currentframe = frames_past_single_thresh_it.next();
+						System.out.println("Looking up moving average of " + current_designation + " with maw_int=" + maw_int);
 						moving_average = currentframe.getMovingAverage(maw_int, current_designation);
 						if(moving_average > (current_homogeneity * ma_modifier_double) && 
-								moving_average == subsequentframe.getHighestMovingAverage(maw_int))
+								moving_average == currentframe.getHighestMovingAverage(maw_int))
 						{
 							frame_that_passed = currentframe;
 						}
 						else // initial frame didn't pass, look for subsequent frames that pass the ma threshold.
 						{
-							System.out.println("Endpoint.getAlertFrames(): moving average DID NOT pass req threshold. ma_over_window=" + ma_over_window + " thresh=" + (current_homogeneity * ma_modifier_double) + " checking next mawindow_int -1 frames");
+							System.out.println("Station.gAF(): ma of current DID NOT pass req thresh. ma=" + moving_average + " thresh=" + (current_homogeneity * ma_modifier_double));
 							stmt2 = con.createStatement();
 							// get frames after the current ts within the maw_int window
 							ts = currentframe.getTimestampInMillis();
@@ -740,7 +398,13 @@ public class Station implements java.lang.Comparable<Station> {
 									frame_that_passed = subsequentframe;
 									break;
 								}
+								else
+								{
+									System.out.println("Endpoint.gAF(): ma of subsequent DID NOT pass req thresh. ma=" + moving_average + " thresh=" + (current_homogeneity * ma_modifier_double));
+								}
 							}
+							rs2.close();
+							stmt2.close();
 							if(frame_that_passed != null) 
 								break; // get out of the loop
 						}
@@ -748,19 +412,20 @@ public class Station implements java.lang.Comparable<Station> {
 					if(frame_that_passed != null) 
 					{
 						JSONObject jo2add = currentframe.getAsJSONObject(true);
-						current_frame_jo.put("designation", current_designation);
-						current_frame_jo.put("twitter_handle", currentreporter.getTwitterHandle());
-						current_frame_jo.put("moving_average", ma_over_window);
-						current_frame_jo.put("homogeneity", current_homogeneity);
-						current_frame_jo.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
-						current_frame_jo.put("single_threshold", (current_homogeneity * single_modifier_double));
+						jo2add.put("designation", current_designation);
+						jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage(maw_int, current_designation));
+						jo2add.put("ma_for_frame_that_passed", frame_that_passed.getMovingAverage(maw_int, current_designation));
+						jo2add.put("score_for_alert_frame", currentframe.getScore(current_designation));
+						jo2add.put("score_for_frame_that_passed", frame_that_passed.getScore(current_designation));
+						jo2add.put("homogeneity", current_homogeneity);
+						jo2add.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
+						jo2add.put("single_threshold", (current_homogeneity * single_modifier_double));
 						alert_frames_ja.put(jo2add);
 					}
 				}
 				rs.close();
 				stmt.close();
-				rs2.close();
-				stmt2.close();
+				
 				con.close();
 			}
 			catch(SQLException sqle)
@@ -828,29 +493,5 @@ public class Station implements java.lang.Comparable<Station> {
 	    else
 	    	return -1;
 	}
-	
-	/*
-	private String getLouisvilleDatestringFromTimestamp(long timestamp, String seconds_or_ms)
-	{
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-		if(seconds_or_ms.equals("seconds"))
-			cal.setTimeInMillis(timestamp * 1000);
-		else if(seconds_or_ms.equals("ms"))
-			cal.setTimeInMillis(timestamp);
-		String year = new Integer(cal.get(Calendar.YEAR)).toString();
-		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
-		if(month.length() == 1) { month = "0" + month; }
-		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
-		if(day.length() == 1) { day = "0" + day;} 
-		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
-		if(hour24.length() == 1) { hour24 = "0" + hour24;} 
-		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
-		if(minute.length() == 1) { minute = "0" + minute;} 
-		String second = new Integer(cal.get(Calendar.SECOND)).toString();
-		if(second.length() == 1) { second = "0" + second;} 
-		String datestring = year  + month + day + "_" + hour24 + minute + second;
-		return datestring;
-	}*/
 
 }
