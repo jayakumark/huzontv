@@ -185,12 +185,13 @@ public class Endpoint extends HttpServlet {
 						Frame newframe = new Frame(jo.getLong("timestamp_in_ms"), jo.getString("station"));
 						if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
 						{	
-							JSONObject jo2 = processNewFrame(new Frame(jo.getLong("timestamp_in_ms"), jo.getString("station")));
+							JSONObject jo2 = processNewFrame(newframe);
 							jsonresponse.put("response_status", "success");
 							jsonresponse.put("alert_triggered", jo2.get("alert_triggered"));
 							jsonresponse.put("alert_fired", jo2.get("alert_fired"));
 							if(jo2.get("alert_triggered").equals("yes") && jo2.getString("alert_fired").equals("yes"))
 							{
+								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
 								jsonresponse.put("image_name_of_frame_in_window_that_passed_single_thresh", jo2.getString("image_name_of_frame_in_window_that_passed_single_thresh"));
 								jsonresponse.put("designation", jo2.getString("designation"));
 								jsonresponse.put("social_type", jo2.getString("social_type"));
@@ -203,11 +204,12 @@ public class Endpoint extends HttpServlet {
 									e.printStackTrace();
 								}
 								Station station_object = new Station(jo.getString("station"));
-								JSONArray frames_ja = station_object.getFramesAsJSONArray(jo.getLong("timestamp_in_ms") - 6000, jo.getLong("timestamp_in_ms") + 3000, false);
+								JSONArray frames_ja = station_object.getFramesAsJSONArray(jo.getLong("timestamp_in_ms") - 6000, jo.getLong("timestamp_in_ms") + 3000, true);
 								jsonresponse.put("frames_ja", frames_ja);
 							}
 							if(jo2.get("alert_fired").equals("no"))
 							{
+								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
 								jsonresponse.put("reason", jo2.get("reason"));
 							}
 						}
@@ -1150,7 +1152,7 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 					}
-				}
+				} 
 				else
 				{
 					jsonresponse.put("message", "Unknown method " + method); // we have already checked for null above
@@ -1187,6 +1189,7 @@ public class Endpoint extends HttpServlet {
 			{
 				System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
 				return_jo.put("alert_triggered", "no");
+				return_jo.put("alert_fired", "no");
 				return_jo.put("reason", "not enough frames");
 				return return_jo;
 			}
@@ -1254,6 +1257,19 @@ public class Endpoint extends HttpServlet {
 					passed_ma_thresh = true;
 					designation_that_passed_ma_thresh = reporter_designations[x];
 					User reporter = new User(designation_that_passed_ma_thresh, "designation");
+					
+					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) < reporter.getFacebookWaitingPeriodInMillis()
+							&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) < reporter.getTwitterWaitingPeriodInMillis()))
+					{	
+						return_jo.put("alert_triggered", "no");
+						return_jo.put("social_type", "neither");
+						return_jo.put("alert_fired", "no");
+						return_jo.put("reason", "Passed MA threshold, unknown if passed single frame thresh because user within waiting period of both facebook and twitter and couldn't fire alert, regardless.");
+						return_jo.put("designation", reporter_designations[x]);
+						return return_jo;
+					}
+
+					// at this point, a reporter passed ma_thresh and is without fb or twit waiting periods (so an alert is possible. Check single frame thresh)
 					JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
 					System.out.println("Looking for frame in window that passes single thresh");
 					for(int y = 0; y < frames_ja.length(); y++)
@@ -1273,7 +1289,7 @@ public class Endpoint extends HttpServlet {
 						boolean fb = false;
 						boolean tw = false;
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) > reporter.getFacebookWaitingPeriodInMillis())
+						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) >= reporter.getFacebookWaitingPeriodInMillis())
 						{	
 							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
 							return_jo.put("alert_triggered", "yes");
@@ -1284,7 +1300,7 @@ public class Endpoint extends HttpServlet {
 							fb = true;
 						}
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) > reporter.getTwitterWaitingPeriodInMillis())
+						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) >= reporter.getTwitterWaitingPeriodInMillis())
 						{	
 							System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
 							return_jo.put("alert_triggered", "yes");

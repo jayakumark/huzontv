@@ -634,6 +634,8 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				var designation = $('#function3_designation_select').val();
 				var reporter_homogeneity = 0;
 				var maw_int = $('#function3_mawindow_input').val();
+				var singlemodifier = $('#function3_singlemodifier_input').val();
+				var mamodifier = $('#function3_mamodifier_input').val()
 				$.ajax({
 					type: 'GET',
 					url: endpoint,
@@ -686,65 +688,8 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		}	
 				        		else
 				        		{
-				        			var scores = []; 
-				        			var moving_avg = [];
-				        			var ma = 0;
-				        			var sum = 0; 
-				        			var num = 0;
-				        			var ts = 0;
-				        			for(var x = 0; x < data.frames_ja.length; x++)
-				        			{
-				        				scores.push(data.frames_ja[x].reporters[designation].score_avg);
-				        				
-				        				sum = 0;
-				        				num = 0;
-				        				// loop through all the frames, looking for timestamps in the moving average window in the past
-				        				ts = data.frames_ja[x].timestamp_in_ms;
-				        				for(var y = 0; y < data.frames_ja.length; y++) 
-					        			{
-				        					// if the timestamp of this frame is within the moving average window x seconds in the past, then add this designation's score
-				        					// to a running total.
-				        					if(data.frames_ja[y].timestamp_in_ms > (ts - (maw_int * 1000)) && data.frames_ja[y].timestamp_in_ms <= ts)
-				        					{
-				        						sum = sum + data.frames_ja[y].reporters[designation].score_avg;
-				        						num++;
-				        					}
-					        			}
-				        				ma = sum / num; // now derive the moving average for this designation
-				        				moving_avg.push(ma);
-				        			}
-				        			var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
-				        				axes: {
-				        					yaxis: {
-				        			            min:0,max:1
-				        			        }
-				        				}
-				        				,
-				        				canvasOverlay: {
-				        					show: true,
-				        			        objects: [
-				        			                  {horizontalLine: {
-							        			            name: 'pebbles',
-							        			            y: (reporter_homogeneity * $('#function3_singlemodifier_input').val()),
-							        			            lineWidth: 3,
-							        			            color: 'rgb(100, 55, 124)',
-							        			            shadow: true,
-							        			            lineCap: 'butt',
-							        			            xOffset: 0
-							        			          }},  
-				        			          {dashedHorizontalLine: {
-				        			            name: 'bam-bam',
-				        			            y: (reporter_homogeneity * $('#function3_mamodifier_input').val()),
-				        			            lineWidth: 4,
-				        			            dashPattern: [8, 16],
-				        			            lineCap: 'round',
-				        			            xOffset: '25',
-				        			            color: 'rgb(66, 98, 144)',
-				        			            shadow: false
-				        			          }}
-				        			        ]
-				        			      }
-				        			    });
+				        			graphFrameScoresAndMovingAverages(data.frames_ja, designation, reporter_homogeneity, singlemodifier, mamodifier, maw_int);
+				        		
 				        		}
 				        	}
 				        }
@@ -991,24 +936,27 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		else
 				        		{
 				        			timestamps_ja = data.timestamps_ja;
-				        			rds = rds + "<div>" + data.timestamps_ja.length + " frames in range</div>";
-					        		/*for(var x = 0; x < data.timestamps_ja.length; x++)
-					        		{
-					        			rds = rds + "<div>" + data.timestamps_ja[x] + "</div>";
-					        		}
-					        		$("#results_div").html(rds);*/
+				        			timestamps_ja.sort();
+				        			$("#results_div").append("<div>" + data.timestamps_ja.length + " frames in range</div>");
 					        		
-					        		timestamps_ja.sort();
-					        		
-					        		// now use the frames to simulate 
-					        		//simulateNewFrame(timestamps_ja[0], station);
-					        		
-					        		for(var x = 0; x < data.timestamps_ja.length; x++)
-					        		{
-										//alert("simulating new frame with current_ts=" + current_ts + " end=" + end);
-										rds = rds + simulateNewFrame(timestamps_ja[x],station);
-					        		}	// end of for loop
-					        		$("#results_div").html(rds);
+				        			
+				        			var frames_ja = [];
+				        			var length = data.timestamps_ja.length;
+				        			var index = 0;
+				        			var currentframe = null;
+					        		var doFrame = function(){
+					        			if(index < length)
+					        			{
+					        				currentframe = simulateNewFrame(data.timestamps_ja[index], station);
+					        				//alert(JSON.stringify(currentframe));
+					        				frames_ja.push(currentframe);
+					        				//alert(JSON.stringify(frames_ja));
+					        				graphFrameScoresAndMovingAverages(frames_ja, "victor_puente", 0.939645, 1, .67, 5);
+					        			}
+					        			index++;
+					        		};
+					        		// 264 copies.
+					        		setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);
 				        		}
 				        	}
 				        }
@@ -1027,9 +975,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	
 }
 
-function simulateNewFrame(timestamp_in_ms, station)
-{
-	var returnstring = "";
+var simulateNewFrame = function(timestamp_in_ms, station){
+//function simulateNewFrame(timestamp_in_ms, station) {
+	var rds = "";
+	var frame_to_display = null;
 	var jsonpostbody = { 
 			timestamp_in_ms: timestamp_in_ms,
 			station: station,
@@ -1050,87 +999,111 @@ function simulateNewFrame(timestamp_in_ms, station)
         		$("#results_div").html("error message=" + data.message);
         	else
         	{
+        		rds = "<div style=\"border: 1px black solid;display:inline-block\">";
+        		
         		if(data.alert_triggered === "yes" && data.alert_fired === "yes")
         		{
-        			returnstring = "<div style=\"border: 1px black solid;display:inline-block\">";
-    				returnstring = returnstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
-    				returnstring = returnstring + "<tr>";
-    				returnstring = returnstring + "		<td style=\"text-align:right;vertical-align:middle\">";
+    				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
+    				rds = rds + "<tr>";
+    				rds = rds + "		<td style=\"text-align:right;vertical-align:middle\">";
     				if(data.social_type == "twitter" || data.social_type == "both")
-    					returnstring = returnstring + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
+    					rds = rds + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
     				if(data.social_type == "facebook" || data.social_type == "both")
-    					returnstring = returnstring + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
-    				returnstring = returnstring + "		</td>";
-    				returnstring = returnstring + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
-    				returnstring = returnstring + "	</tr>";
-    				returnstring = returnstring + "</table>";
-    				returnstring = returnstring + "<br><img src=\"" + data.url + "\" style=\"width:426px;height:240px\">";
-    				returnstring = returnstring + "<br>image_name: " + data.image_name;
-    				returnstring = returnstring + "<br>(passing) image_name: " + data.image_name_of_frame_in_window_that_passed_single_thresh;
-    				returnstring = returnstring + "<br>designation: " + data.designation;
-    				
+    					rds = rds + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
+    				rds = rds + "		</td>";
+    				rds = rds + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
+    				rds = rds + "	</tr>";
+    				rds = rds + "</table>";
+    			//	rds = rds + "<br><img src=\"" + data.url + "\" style=\"width:426px;height:240px\">";
+    			//	rds = rds + "<br>image_name: " + data.image_name;
+    			//	rds = rds + "<br>(passing) image_name: " + data.image_name_of_frame_in_window_that_passed_single_thresh;
+    			//	rds = rds + "<br>designation: " + data.designation;
+    				/*
+    				var index_of_fired_alert = 0;
+    				for(var x = 0; x < data.frames_ja.length; x++)
+    				{
+    					if(data.frames_ja[x].image_name === data.image_name)
+    					{
+    						index_of_fired_alert = x;
+    						break;
+    					}
+    				}	
+    				frame_to_display = data.frames_ja[index_of_fired_alert];*/
     				// 4
-    				var first_index = 0;
+    				/*var first_index = 0;
     				var second_index = Math.floor(data.frames_ja.length / 3);
     				var third_index = Math.floor(data.frames_ja.length * 2 / 3);
     				var fourth_index = data.frames_ja.length-1;
-    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
-    				returnstring = returnstring + "	<tr>";
-    				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[first_index].url + "\" style=\"width:213px;height:120px\">";
-    				returnstring = returnstring + "		</td>";
-    				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[second_index].url + "\" style=\"width:213px;height:120px\">";
-    				returnstring = returnstring + "		</td>";
-    				returnstring = returnstring + "	</tr>";
-    				returnstring = returnstring + "	<tr>";
-    				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[third_index].url + "\" style=\"width:213px;height:120px\">";
-    				returnstring = returnstring + "		</td>";
-    				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[fourth_index].url + "\" style=\"width:213px;height:120px\">";
-    				returnstring = returnstring + "		</td>";
-    				returnstring = returnstring + "	</tr>";
-        			returnstring = returnstring + "</table>";
+    				rds = rds + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
+    				rds = rds + "	<tr>";
+    				rds = rds + "		<td>";
+    				rds = rds + "			<img src=\"" + data.frames_ja[first_index].url + "\" style=\"width:213px;height:120px\">";
+    				rds = rds + "		</td>";
+    				rds = rds + "		<td>";
+    				rds = rds + "			<img src=\"" + data.frames_ja[second_index].url + "\" style=\"width:213px;height:120px\">";
+    				rds = rds + "		</td>";
+    				rds = rds + "	</tr>";
+    				rds = rds + "	<tr>";
+    				rds = rds + "		<td>";
+    				rds = rds + "			<img src=\"" + data.frames_ja[third_index].url + "\" style=\"width:213px;height:120px\">";
+    				rds = rds + "		</td>";
+    				rds = rds + "		<td>";
+    				rds = rds + "			<img src=\"" + data.frames_ja[fourth_index].url + "\" style=\"width:213px;height:120px\">";
+    				rds = rds + "		</td>";
+    				rds = rds + "	</tr>";
+        			rds = rds + "</table>";
     				
     				// 9
     				
-    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
+    				rds = rds + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
         			for(var x = 0; x < data.frames_ja.length && x < 18; x = x + 2)
         			{	
         				if(((x + 6) % 6) == 0)
-        					returnstring = returnstring + "	<tr>";
-        				returnstring = returnstring + "		<td>";
-        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:142px;height:80px\">";
-        				returnstring = returnstring + "		</td>";
+        					rds = rds + "	<tr>";
+        				rds = rds + "		<td>";
+        				rds = rds + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:142px;height:80px\">";
+        				rds = rds + "		</td>";
         				if(((x + 1) % 6) == 0)
-        					returnstring = returnstring + "	</tr>";
+        					rds = rds + "	</tr>";
         			}
         			if(((x + 1) % 6) != 0)
-    					returnstring = returnstring + "	</tr>";
-        			returnstring = returnstring + "</table>";
+    					rds = rds + "	</tr>";
+        			rds = rds + "</table>";
     				
     				
     				// 16
-    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
+    				rds = rds + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
         			for(var x = 0; x < data.frames_ja.length && x < 16; x++)
         			{	
         				if(((x + 4) % 4) == 0)
-        					returnstring = returnstring + "	<tr>";
-        				returnstring = returnstring + "		<td>";
-        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:107px;height:60px\">";
-        				returnstring = returnstring + "		</td>";
+        					rds = rds + "	<tr>";
+        				rds = rds + "		<td>";
+        				rds = rds + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:107px;height:60px\">";
+        				rds = rds + "		</td>";
         				if(((x + 1) % 4) == 0)
-        					returnstring = returnstring + "	</tr>";
+        					rds = rds + "	</tr>";
         			}
         			if(((x + 1) % 4) != 0)
-    					returnstring = returnstring + "	</tr>";
-        			returnstring = returnstring + "</table>";
+    					rds = rds + "	</tr>";
+        			rds = rds + "</table>";
         			
-        			
-        			
-        			returnstring = returnstring + "</div>";
+        			rds = rds + "</div>";*/
         		}
+        		
+        		// alert or not, display frame
+        		frame_to_display = data.frame_jo;
+        		rds = rds + "<img src=\"" + frame_to_display.url + "\" style=\"width:250px;height:141px\">";
+				rds = rds + "<br>" + frame_to_display.image_name;
+				//rds = rds + "<br>avg4des:"+ data.frames_ja[x].reporters[designation].score_avg;
+				//rds = rds + "<br>homogeneity:" + reporter_homogeneity;
+				//rds = rds + "<br>threshold:" + (reporter_homogeneity * $('#function2_singlemodifier_input').val());
+				//rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
+				//rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
+				//rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
+				rds = rds + "</div>";
+        		$("#results_div").append(rds);
+        		//alert('f2d=' + JSON.stringify(frame_to_display));
+        		//return frame_to_display;
         	}
         }
         ,
@@ -1139,8 +1112,71 @@ function simulateNewFrame(timestamp_in_ms, station)
             console.log(textStatus, errorThrown);
         }
 	});
-	return returnstring;
+	//alert("reached end of simulateNewFrame()... shouldn't happen");
+	return frame_to_display;
 }
 	
+function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, singlemodifier, mamodifier, maw_int)
+{
+	var scores = []; 
+	var moving_avg = [];
+	var ma = 0;
+	var sum = 0; 
+	var num = 0;
+	var ts = 0;
+	for(var x = 0; x < frames_ja.length; x++)
+	{
+		scores.push(frames_ja[x].reporters[designation].score_avg);
+		
+		sum = 0;
+		num = 0;
+		// loop through all the frames, looking for timestamps in the moving average window in the past
+		ts = frames_ja[x].timestamp_in_ms;
+		for(var y = 0; y < frames_ja.length; y++) 
+		{
+			// if the timestamp of this frame is within the moving average window x seconds in the past, then add this designation's score
+			// to a running total.
+			if(frames_ja[y].timestamp_in_ms > (ts - (maw_int * 1000)) && frames_ja[y].timestamp_in_ms <= ts)
+			{
+				sum = sum + frames_ja[y].reporters[designation].score_avg;
+				num++;
+			}
+		}
+		ma = sum / num; // now derive the moving average for this designation
+		moving_avg.push(ma);
+	}
+	var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
+		axes: {
+			yaxis: {
+	            min:0,max:1
+	        }
+		}
+		,
+		canvasOverlay: {
+			show: true,
+	        objects: [
+	                  {horizontalLine: {
+    			            name: 'pebbles',
+    			            y: (reporter_homogeneity * singlemodifier),
+    			            lineWidth: 3,
+    			            color: 'rgb(100, 55, 124)',
+    			            shadow: true,
+    			            lineCap: 'butt',
+    			            xOffset: 0
+    			          }},  
+	          {dashedHorizontalLine: {
+	            name: 'bam-bam',
+	            y: (reporter_homogeneity * mamodifier),
+	            lineWidth: 4,
+	            dashPattern: [8, 16],
+	            lineCap: 'round',
+	            xOffset: '25',
+	            color: 'rgb(66, 98, 144)',
+	            shadow: false
+	          }}
+	        ]
+	      }
+	    });
+}
 
 
