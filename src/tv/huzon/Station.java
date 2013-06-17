@@ -259,7 +259,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement();
-			System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+			System.out.println("Station.getFrameTimestamps(): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
 			while(rs.next()) // at least one row exists
 			{
@@ -300,7 +300,7 @@ public class Station implements java.lang.Comparable<Station> {
 			stmt = con.createStatement();
 			if(designation == null) // get all frames
 			{	
-				System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+				System.out.println("Station.getFrames(no designation): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
 			}
 			else if(designation != null) // get all frames where designation is above single thresh
@@ -308,7 +308,7 @@ public class Station implements java.lang.Comparable<Station> {
 				User reporter = new User(designation, "designation");
 				double homogeneity_double = reporter.getHomogeneity();
 				double threshold = homogeneity_double * single_modifier_double;
-				System.out.println("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
+				System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 			}
 		
@@ -406,7 +406,7 @@ public class Station implements java.lang.Comparable<Station> {
 					Iterator<Frame> frames_past_single_thresh_it = frames_past_single_thresh.iterator();
 					Frame currentframe = null;
 					Frame subsequentframe = null;
-					Frame frame_that_passed = null;
+					Frame frame_that_passed_ma_thresh = null;
 					double moving_average = 0.0;
 					while(frames_past_single_thresh_it.hasNext())
 					{
@@ -416,7 +416,7 @@ public class Station implements java.lang.Comparable<Station> {
 						if(moving_average > (current_homogeneity * ma_modifier_double) && 
 								moving_average == currentframe.getHighestMovingAverage(maw_int))
 						{
-							frame_that_passed = currentframe;
+							frame_that_passed_ma_thresh = currentframe;
 						}
 						else // initial frame didn't pass, look for subsequent frames that pass the ma threshold.
 						{
@@ -438,7 +438,7 @@ public class Station implements java.lang.Comparable<Station> {
 								if(moving_average > (current_homogeneity * ma_modifier_double) && 
 										moving_average == subsequentframe.getHighestMovingAverage(maw_int))
 								{
-									frame_that_passed = subsequentframe;
+									frame_that_passed_ma_thresh = subsequentframe;
 									break;
 								}
 								else
@@ -448,18 +448,19 @@ public class Station implements java.lang.Comparable<Station> {
 							}
 							rs2.close();
 							stmt2.close();
-							if(frame_that_passed != null) 
+							if(frame_that_passed_ma_thresh != null) 
 								break; // get out of the loop
 						}
 					}
-					if(frame_that_passed != null) 
+					if(frame_that_passed_ma_thresh != null) 
 					{
 						JSONObject jo2add = currentframe.getAsJSONObject(true);
 						jo2add.put("designation", current_designation);
 						jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage(maw_int, current_designation));
-						jo2add.put("ma_for_frame_that_passed", frame_that_passed.getMovingAverage(maw_int, current_designation));
+						jo2add.put("ma_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getMovingAverage(maw_int, current_designation));
 						jo2add.put("score_for_alert_frame", currentframe.getScore(current_designation));
-						jo2add.put("score_for_frame_that_passed", frame_that_passed.getScore(current_designation));
+						jo2add.put("score_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getScore(current_designation));
+						jo2add.put("image_name_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getImageName());
 						jo2add.put("homogeneity", current_homogeneity);
 						jo2add.put("ma_threshold",  (current_homogeneity * ma_modifier_double));
 						jo2add.put("single_threshold", (current_homogeneity * single_modifier_double));

@@ -70,7 +70,7 @@ public class User implements java.lang.Comparable {
 		
 	public User(String inc_des_or_twit, String constructor_type)
 	{
-		System.out.println("User(): entering inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
+		//System.out.println("User(): entering inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		//System.out.println("Creating user from inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		valid = false;
 		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  	
@@ -176,7 +176,7 @@ public class User implements java.lang.Comparable {
 				}
 			}
 		}  	
-		System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
+		//System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 	}
 	
 	public boolean isGlobalAdmin()

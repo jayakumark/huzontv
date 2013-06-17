@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		else
 		{
 			var mds = "";
-    		mds = mds + "<div style=\"font-size:16;color:green\">You are administering " + administering_station + "</div>";
+    	//	mds = mds + "<div style=\"font-size:16;color:green\">You are administering " + administering_station + "</div>";
     		
     		$.ajax({
     			type: 'GET',
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
     	        		mds = mds + "<div style=\"font-size:16;color:red\">error getting station designations</div>";
     	        	else
     	        	{
-    	        		mds = mds + "<div style=\"font-size:16;color:green\">Designations successfully retrieved. " + JSON.stringify(data.reporters_ja) + "</div>";
+    	        		//mds = mds + "<div style=\"font-size:16;color:green\">Designations successfully retrieved.</div>";
     	        		reporters_ja = data.reporters_ja;
     	        		displayAvailableFunctions();
     	        	}
@@ -809,9 +809,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        				rds = rds + "<br>image_name:" + data.alert_frames_ja[x].image_name;
 				        				rds = rds + "<br>designation:" + data.alert_frames_ja[x].designation;
 				        				rds = rds + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
-				        				rds = rds + "<br>score_for_frame_that_passed:" + data.alert_frames_ja[x].score_for_frame_that_passed;
+				        				rds = rds + "<br>score_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].score_for_frame_that_passed_ma_thresh;
 				        				rds = rds + "<br>ma_for_alert_frame:" + data.alert_frames_ja[x].ma_for_alert_frame;
-				        				rds = rds + "<br>ma_for_frame_that_passed:" + data.alert_frames_ja[x].ma_for_frame_that_passed;
+				        				rds = rds + "<br>ma_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].ma_for_frame_that_passed_ma_thresh;
+				        				rds = rds + "<br>image_name_for_frame_that_passed_ma_thresh:<br>" + data.alert_frames_ja[x].image_name_for_frame_that_passed_ma_thresh;
 				        				rds = rds + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity;
 				        				rds = rds + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
 				        				rds = rds + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
@@ -990,6 +991,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		else
 				        		{
 				        			timestamps_ja = data.timestamps_ja;
+				        			rds = rds + "<div>" + data.timestamps_ja.length + " frames in range</div>";
 					        		/*for(var x = 0; x < data.timestamps_ja.length; x++)
 					        		{
 					        			rds = rds + "<div>" + data.timestamps_ja[x] + "</div>";
@@ -1050,7 +1052,7 @@ function simulateNewFrame(timestamp_in_ms, station)
         	{
         		if(data.alert_triggered === "yes" && data.alert_fired === "yes")
         		{
-        			returnstring = "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
+        			returnstring = "<div style=\"border: 1px black solid;display:inline-block\">";
     				returnstring = returnstring + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
     				returnstring = returnstring + "<tr>";
     				returnstring = returnstring + "		<td style=\"text-align:right;vertical-align:middle\">";
@@ -1064,8 +1066,23 @@ function simulateNewFrame(timestamp_in_ms, station)
     				returnstring = returnstring + "</table>";
     				returnstring = returnstring + "<br><img src=\"" + data.url + "\" style=\"width:250px;height:141px\">";
     				returnstring = returnstring + "<br>image_name: " + data.image_name;
+    				returnstring = returnstring + "<br>(passing) image_name: " + data.image_name_of_frame_in_window_that_passed_single_thresh;
     				returnstring = returnstring + "<br>designation: " + data.designation;
-    				returnstring = returnstring + "</div>";
+    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;\">";
+        			for(var x = 0; x < data.frames_ja.length && x < 16; x++)
+        			{	
+        				if(((x + 4) % 4) == 0)
+        					returnstring = returnstring + "	<tr>";
+        				returnstring = returnstring + "		<td>";
+        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:64px;height:36px\">";
+        				returnstring = returnstring + "		</td>";
+        				if(((x + 1) % 4) == 0)
+        					returnstring = returnstring + "	</tr>";
+        			}
+        			if(((x + 1) % 4) != 0)
+    					returnstring = returnstring + "	</tr>";
+        			returnstring = returnstring + "</table>";
+        			returnstring = returnstring + "</div>";
         		}
         	}
         }

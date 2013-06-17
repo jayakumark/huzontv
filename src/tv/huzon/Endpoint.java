@@ -54,7 +54,7 @@ public class Endpoint extends HttpServlet {
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		System.out.println("tv.huzon.Endpoint.doPost(): entering...");
+		//System.out.println("tv.huzon.Endpoint.doPost(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
 		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
 		PrintWriter out = response.getWriter();
@@ -91,11 +91,12 @@ public class Endpoint extends HttpServlet {
 					}	
 					else
 					{
-						System.out.println("Endpoint.commitFrameDataAndAlert(): Looking up existing frame....");
+						
 						JSONObject jo = new JSONObject(jsonpostbody);
 						boolean simulation = false;
-						if(jo.getString("simulation") != null && (jo.getString("simulation").equals("yes") || jo.getString("simulation").equals("true")))
+						if(jo.has("simulation") && (jo.getString("simulation").equals("yes") || jo.getString("simulation").equals("true")))
 						{ 
+							System.out.println("Endpoint.commitFrameDataAndAlert(): This is a simulation. Looking up existing frame....");
 							simulation = true;
 							// no need to do anything here. The frame (if it exists in the db) gets constructed and processed below.
 						}
@@ -105,7 +106,6 @@ public class Endpoint extends HttpServlet {
 							try
 							{
 								con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-								
 								double currentavgscore = 0.0;
 								double reporter_total = 0.0;
 								Station station = new Station(jo.getString("station"));
@@ -142,7 +142,7 @@ public class Endpoint extends HttpServlet {
 								}
 								fieldsstring = fieldsstring.substring(0,fieldsstring.length() - 2) + ")";
 								valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";
-								System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
+								//System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
 								con.createStatement().execute("INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
 								con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jo.getInt("frame_rate") + "' WHERE call_letters='" + jo.getString("station") + "'");
 								con.close();
@@ -191,6 +191,7 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("alert_fired", jo2.get("alert_fired"));
 							if(jo2.get("alert_triggered").equals("yes") && jo2.getString("alert_fired").equals("yes"))
 							{
+								jsonresponse.put("image_name_of_frame_in_window_that_passed_single_thresh", jo2.getString("image_name_of_frame_in_window_that_passed_single_thresh"));
 								jsonresponse.put("designation", jo2.getString("designation"));
 								jsonresponse.put("social_type", jo2.getString("social_type"));
 								jsonresponse.put("url", newframe.getURL());
@@ -201,6 +202,9 @@ public class Endpoint extends HttpServlet {
 								} catch (MessagingException e) {
 									e.printStackTrace();
 								}
+								Station station_object = new Station(jo.getString("station"));
+								JSONArray frames_ja = station_object.getFramesAsJSONArray(jo.getLong("timestamp_in_ms") - 6000, jo.getLong("timestamp_in_ms") + 3000, false);
+								jsonresponse.put("frames_ja", frames_ja);
 							}
 							if(jo2.get("alert_fired").equals("no"))
 							{
@@ -238,7 +242,7 @@ public class Endpoint extends HttpServlet {
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		System.out.println("tv.huzon.Endpoint.doGet(): entering...");
+		//System.out.println("tv.huzon.Endpoint.doGet(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
 		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
 		PrintWriter out = response.getWriter();
@@ -1178,7 +1182,7 @@ public class Endpoint extends HttpServlet {
 			Station station_object = new Station(newframe.getStation());
 			TreeSet<Frame> window_frames = station_object.getFrames(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), null, 0);
 			int num_frames_in_window = window_frames.size();
-			System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window.");
+			System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
 			if(num_frames_in_window < 5)
 			{
 				System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
@@ -1199,7 +1203,7 @@ public class Endpoint extends HttpServlet {
 			while(it.hasNext())
 			{
 				currentframe = it.next();
-				System.out.println("Endpoint.processNewFrame(): Examining " + currentframe.getImageName());
+				//System.out.println("Endpoint.processNewFrame(): Examining " + currentframe.getImageName());
 				int x = 0;
 				while(x < reporter_designations.length)
 				{
@@ -1236,52 +1240,82 @@ public class Endpoint extends HttpServlet {
 				x++;
 			}
 			
+			boolean passed_ma_thresh = false;
+			boolean frame_in_window_passed_single_thresh = false;
+			String designation_that_passed_ma_thresh = "";
+			long timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = 0L;
+			String image_name_of_frame_in_window_that_passed_single_thresh = "";
 			x = 0;
 			while(x < reporter_designations.length)
 			{
 				// does it pass the ma threshold and is it the highest?
 				if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
 				{
-					System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
-					boolean fb = false;
-					boolean tw = false;
-					User reporter = new User(reporter_designations[x], "designation");
-					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) > reporter.getFacebookWaitingPeriodInMillis())
-					{	
-						System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
-						return_jo.put("alert_triggered", "yes");
-						return_jo.put("alert_fired", "yes");
-						return_jo.put("social_type", "facebook");
-						return_jo.put("designation", reporter_designations[x]);
-						reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook");
-						fb = true;
-					}
-					
-					if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) > reporter.getTwitterWaitingPeriodInMillis())
-					{	
-						System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
-						return_jo.put("alert_triggered", "yes");
-						return_jo.put("alert_fired", "yes");
-						if(fb)
-							return_jo.put("social_type", "both");
-						else
-							return_jo.put("social_type", "facebook");
-						return_jo.put("designation", reporter_designations[x]);
-						reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter");
-						tw = true;
-					}
-					
-					if(fb == false && tw == false)
+					passed_ma_thresh = true;
+					designation_that_passed_ma_thresh = reporter_designations[x];
+					User reporter = new User(designation_that_passed_ma_thresh, "designation");
+					JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
+					System.out.println("Looking for frame in window that passes single thresh");
+					for(int y = 0; y < frames_ja.length(); y++)
 					{
-						return_jo.put("alert_triggered", "yes");
-						return_jo.put("social_type", "neither");
-						return_jo.put("alert_fired", "no");
-						return_jo.put("designation", reporter_designations[x]);
-						return_jo.put("reason", "Passed MA threshold, but was within waiting period of both facebook and twitter. Couldn't fire alert.");
+						System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
+						if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
+						{
+							frame_in_window_passed_single_thresh = true;
+							timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = frames_ja.getJSONObject(y).getLong("timestamp_in_ms");
+							image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
+							break; // important to prevent getting later frames that may have also passed
+						}
 					}
-					
-					return return_jo;
-				}
+					if(frame_in_window_passed_single_thresh)// frame in window passed single thresh
+					{	
+						System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
+						boolean fb = false;
+						boolean tw = false;
+						
+						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) > reporter.getFacebookWaitingPeriodInMillis())
+						{	
+							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
+							return_jo.put("alert_triggered", "yes");
+							return_jo.put("alert_fired", "yes");
+							return_jo.put("social_type", "facebook");
+							
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook");
+							fb = true;
+						}
+						
+						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) > reporter.getTwitterWaitingPeriodInMillis())
+						{	
+							System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
+							return_jo.put("alert_triggered", "yes");
+							return_jo.put("alert_fired", "yes");
+							if(fb)
+								return_jo.put("social_type", "both");
+							else
+								return_jo.put("social_type", "facebook");
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter");
+							tw = true;
+						}
+						
+						if(fb == false && tw == false)
+						{
+							return_jo.put("alert_triggered", "yes");
+							return_jo.put("social_type", "neither");
+							return_jo.put("alert_fired", "no");
+							return_jo.put("reason", "Passed MA threshold, but was within waiting period of both facebook and twitter. Couldn't fire alert.");
+						}
+						return_jo.put("designation", reporter_designations[x]);
+						return_jo.put("image_name_of_frame_in_window_that_passed_single_thresh", image_name_of_frame_in_window_that_passed_single_thresh);
+						return return_jo;
+					}
+					else
+					{
+						return_jo.put("alert_triggered", "no");
+						return_jo.put("alert_fired", "no");
+						return_jo.put("reason", designation_that_passed_ma_thresh + " passed MA threshold, but none of the frames in the window passed single thresh");
+						return return_jo;
+					}
+				} 
 				x++;
 			}
 			return_jo.put("alert_triggered", "no");
