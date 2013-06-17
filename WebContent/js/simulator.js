@@ -1,5 +1,5 @@
-var endpoint = "https://localhost:8443/huzontv/endpoint";
-//var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "https://localhost:8443/huzontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -984,7 +984,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		$("#results_div").html("error message=" + data.message);
 				        	else
 				        	{
-				        		if(data.timestamps_ja.length > 100)
+				        		if(data.timestamps_ja.length > 250)
 				        		{
 				        			alert("too many frames. Try a smaller window.");
 				        		}	
@@ -1064,7 +1064,7 @@ function simulateNewFrame(timestamp_in_ms, station)
     				returnstring = returnstring + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
     				returnstring = returnstring + "	</tr>";
     				returnstring = returnstring + "</table>";
-    				returnstring = returnstring + "<br><img src=\"" + data.url + "\" style=\"width:250px;height:141px\">";
+    				returnstring = returnstring + "<br><img src=\"" + data.url + "\" style=\"width:426px;height:240px\">";
     				returnstring = returnstring + "<br>image_name: " + data.image_name;
     				returnstring = returnstring + "<br>(passing) image_name: " + data.image_name_of_frame_in_window_that_passed_single_thresh;
     				returnstring = returnstring + "<br>designation: " + data.designation;
@@ -1077,18 +1077,18 @@ function simulateNewFrame(timestamp_in_ms, station)
     				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
     				returnstring = returnstring + "	<tr>";
     				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[first_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[first_index].url + "\" style=\"width:213px;height:120px\">";
     				returnstring = returnstring + "		</td>";
     				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[second_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[second_index].url + "\" style=\"width:213px;height:120px\">";
     				returnstring = returnstring + "		</td>";
     				returnstring = returnstring + "	</tr>";
     				returnstring = returnstring + "	<tr>";
     				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[third_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[third_index].url + "\" style=\"width:213px;height:120px\">";
     				returnstring = returnstring + "		</td>";
     				returnstring = returnstring + "		<td>";
-    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[fourth_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[fourth_index].url + "\" style=\"width:213px;height:120px\">";
     				returnstring = returnstring + "		</td>";
     				returnstring = returnstring + "	</tr>";
         			returnstring = returnstring + "</table>";
@@ -1101,7 +1101,7 @@ function simulateNewFrame(timestamp_in_ms, station)
         				if(((x + 6) % 6) == 0)
         					returnstring = returnstring + "	<tr>";
         				returnstring = returnstring + "		<td>";
-        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:128px;height:72px\">";
+        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:142px;height:80px\">";
         				returnstring = returnstring + "		</td>";
         				if(((x + 1) % 6) == 0)
         					returnstring = returnstring + "	</tr>";
@@ -1118,7 +1118,7 @@ function simulateNewFrame(timestamp_in_ms, station)
         				if(((x + 4) % 4) == 0)
         					returnstring = returnstring + "	<tr>";
         				returnstring = returnstring + "		<td>";
-        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:96px;height:54px\">";
+        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:107px;height:60px\">";
         				returnstring = returnstring + "		</td>";
         				if(((x + 1) % 4) == 0)
         					returnstring = returnstring + "	</tr>";
