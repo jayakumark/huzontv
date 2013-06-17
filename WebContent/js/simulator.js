@@ -1068,13 +1068,57 @@ function simulateNewFrame(timestamp_in_ms, station)
     				returnstring = returnstring + "<br>image_name: " + data.image_name;
     				returnstring = returnstring + "<br>(passing) image_name: " + data.image_name_of_frame_in_window_that_passed_single_thresh;
     				returnstring = returnstring + "<br>designation: " + data.designation;
-    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;\">";
+    				
+    				// 4
+    				var first_index = 0;
+    				var second_index = Math.floor(data.frames_ja.length / 3);
+    				var third_index = Math.floor(data.frames_ja.length * 2 / 3);
+    				var fourth_index = data.frames_ja.length-1;
+    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
+    				returnstring = returnstring + "	<tr>";
+    				returnstring = returnstring + "		<td>";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[first_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "		</td>";
+    				returnstring = returnstring + "		<td>";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[second_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "		</td>";
+    				returnstring = returnstring + "	</tr>";
+    				returnstring = returnstring + "	<tr>";
+    				returnstring = returnstring + "		<td>";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[third_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "		</td>";
+    				returnstring = returnstring + "		<td>";
+    				returnstring = returnstring + "			<img src=\"" + data.frames_ja[fourth_index].url + "\" style=\"width:192px;height:108px\">";
+    				returnstring = returnstring + "		</td>";
+    				returnstring = returnstring + "	</tr>";
+        			returnstring = returnstring + "</table>";
+    				
+    				// 9
+    				
+    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
+        			for(var x = 0; x < data.frames_ja.length && x < 18; x = x + 2)
+        			{	
+        				if(((x + 6) % 6) == 0)
+        					returnstring = returnstring + "	<tr>";
+        				returnstring = returnstring + "		<td>";
+        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:128px;height:72px\">";
+        				returnstring = returnstring + "		</td>";
+        				if(((x + 1) % 6) == 0)
+        					returnstring = returnstring + "	</tr>";
+        			}
+        			if(((x + 1) % 6) != 0)
+    					returnstring = returnstring + "	</tr>";
+        			returnstring = returnstring + "</table>";
+    				
+    				
+    				// 16
+    				returnstring = returnstring + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
         			for(var x = 0; x < data.frames_ja.length && x < 16; x++)
         			{	
         				if(((x + 4) % 4) == 0)
         					returnstring = returnstring + "	<tr>";
         				returnstring = returnstring + "		<td>";
-        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:64px;height:36px\">";
+        				returnstring = returnstring + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:96px;height:54px\">";
         				returnstring = returnstring + "		</td>";
         				if(((x + 1) % 4) == 0)
         					returnstring = returnstring + "	</tr>";
@@ -1082,6 +1126,9 @@ function simulateNewFrame(timestamp_in_ms, station)
         			if(((x + 1) % 4) != 0)
     					returnstring = returnstring + "	</tr>";
         			returnstring = returnstring + "</table>";
+        			
+        			
+        			
         			returnstring = returnstring + "</div>";
         		}
         	}

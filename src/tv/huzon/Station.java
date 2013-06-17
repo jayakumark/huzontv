@@ -454,7 +454,7 @@ public class Station implements java.lang.Comparable<Station> {
 					}
 					if(frame_that_passed_ma_thresh != null) 
 					{
-						JSONObject jo2add = currentframe.getAsJSONObject(true);
+						JSONObject jo2add = frame_that_passed_ma_thresh.getAsJSONObject(true);
 						jo2add.put("designation", current_designation);
 						jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage(maw_int, current_designation));
 						jo2add.put("ma_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getMovingAverage(maw_int, current_designation));
