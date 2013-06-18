@@ -373,7 +373,6 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		System.out.println("Endpoint.getAlertFrames() begin");
 		JSONArray alert_frames_ja = new JSONArray();
-		JSONObject current_frame_jo = new JSONObject();
 		try
 		{
 			TreeSet<String> reporters = getReporters();
@@ -400,7 +399,7 @@ public class Station implements java.lang.Comparable<Station> {
 					// get frames where this designation crosses the single frame threshold
 					rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms >= " + (1000*begin_long) + " AND timestamp_in_ms <= " + (1000*end_long) + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_ms ASC");
 					rs.last();
-					System.out.println("Endpoint.getAlertFrames() found " + rs.getRow()  + " frames over threshold (" + current_homogeneity + " * " + single_modifier_double + "=" +  (current_homogeneity * single_modifier_double) + ") for " + currentreporter.getDesignation());
+					System.out.println("Station.gAF() found " + rs.getRow()  + " frames over threshold (" + current_homogeneity + " * " + single_modifier_double + "=" +  (current_homogeneity * single_modifier_double) + ") for " + currentreporter.getDesignation());
 					rs.beforeFirst();
 					TreeSet<Frame> frames_past_single_thresh = getFramesFromResultSet(rs);
 					Iterator<Frame> frames_past_single_thresh_it = frames_past_single_thresh.iterator();
@@ -413,43 +412,50 @@ public class Station implements java.lang.Comparable<Station> {
 						currentframe = frames_past_single_thresh_it.next();
 						System.out.println("Looking up moving average of " + current_designation + " with maw_int=" + maw_int);
 						moving_average = currentframe.getMovingAverage(maw_int, current_designation);
-						if(moving_average > (current_homogeneity * ma_modifier_double) && 
-								moving_average == currentframe.getHighestMovingAverage(maw_int))
+						if(moving_average == -1)
 						{
-							frame_that_passed_ma_thresh = currentframe;
+							System.out.println("Station.getAlertFrames(): There were not enough frames in this window. Skip this frame.");
 						}
-						else // initial frame didn't pass, look for subsequent frames that pass the ma threshold.
+						else
 						{
-							System.out.println("Station.gAF(): ma of current DID NOT pass req thresh. ma=" + moving_average + " thresh=" + (current_homogeneity * ma_modifier_double));
-							stmt2 = con.createStatement();
-							// get frames after the current ts within the maw_int window
-							ts = currentframe.getTimestampInMillis();
-							System.out.println("executing SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + ts + " AND timestamp_in_ms <= " + (ts + 1000*maw_int) + ") ORDER BY timestamp_in_ms ASC");
-							rs2 = stmt2.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + ts + " AND timestamp_in_ms <= " + (ts + 1000*maw_int) + ") ORDER BY timestamp_in_ms ASC");
-							rs2.last();
-							System.out.println("Got " + rs2.getRow() + " subsequent frames.");
-							rs2.beforeFirst();
-							TreeSet<Frame> subsequent_frames = getFramesFromResultSet(rs2);
-							Iterator<Frame> subsequent_frames_it = subsequent_frames.iterator();
-							while(subsequent_frames_it.hasNext())
+							if(moving_average > (current_homogeneity * ma_modifier_double) && 
+									moving_average == currentframe.getHighestMovingAverage(maw_int))
 							{
-								subsequentframe = subsequent_frames_it.next();
-								moving_average = subsequentframe.getMovingAverage(maw_int, current_designation);
-								if(moving_average > (current_homogeneity * ma_modifier_double) && 
-										moving_average == subsequentframe.getHighestMovingAverage(maw_int))
-								{
-									frame_that_passed_ma_thresh = subsequentframe;
-									break;
-								}
-								else
-								{
-									System.out.println("Endpoint.gAF(): ma of subsequent DID NOT pass req thresh. ma=" + moving_average + " thresh=" + (current_homogeneity * ma_modifier_double));
-								}
+								frame_that_passed_ma_thresh = currentframe;
 							}
-							rs2.close();
-							stmt2.close();
-							if(frame_that_passed_ma_thresh != null) 
-								break; // get out of the loop
+							else // initial frame didn't pass, look for subsequent frames that pass the ma threshold.
+							{
+								System.out.println("Station.gAF(): ma of current DID NOT pass req thresh. ma=" + moving_average + " thresh=" + (current_homogeneity * ma_modifier_double));
+								stmt2 = con.createStatement();
+								// get frames after the current ts within the maw_int window
+								ts = currentframe.getTimestampInMillis();
+								System.out.println("executing SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + ts + " AND timestamp_in_ms <= " + (ts + 1000*maw_int) + ") ORDER BY timestamp_in_ms ASC");
+								rs2 = stmt2.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms > " + ts + " AND timestamp_in_ms <= " + (ts + 1000*maw_int) + ") ORDER BY timestamp_in_ms ASC");
+								rs2.last();
+								System.out.println("Got " + rs2.getRow() + " subsequent frames.");
+								rs2.beforeFirst();
+								TreeSet<Frame> subsequent_frames = getFramesFromResultSet(rs2);
+								Iterator<Frame> subsequent_frames_it = subsequent_frames.iterator();
+								while(subsequent_frames_it.hasNext())
+								{
+									subsequentframe = subsequent_frames_it.next();
+									moving_average = subsequentframe.getMovingAverage(maw_int, current_designation);
+									if(moving_average > (current_homogeneity * ma_modifier_double) && 
+											moving_average == subsequentframe.getHighestMovingAverage(maw_int))
+									{
+										frame_that_passed_ma_thresh = subsequentframe;
+										break;
+									}
+									else
+									{
+										System.out.println("Endpoint.gAF(): ma of subsequent DID NOT pass req thresh. ma=" + moving_average + " thresh=" + (current_homogeneity * ma_modifier_double));
+									}
+								}
+								rs2.close();
+								stmt2.close();
+								if(frame_that_passed_ma_thresh != null) 
+									break; // get out of the loop
+							}
 						}
 					}
 					if(frame_that_passed_ma_thresh != null) 
@@ -506,7 +512,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 
 	// DANGEROUS!!!! This will reset all alerts for every active reporter at this station
-	boolean resetAllLastAlerts()
+	boolean resetProductionAlertTimers()
 	{
 		System.out.println("resetting all last alerts");
 		Iterator<String> it = reporters.iterator();
@@ -529,6 +535,64 @@ public class Station implements java.lang.Comparable<Station> {
 				{
 					rs.updateLong("facebook_last_alert", 0);
 					rs.updateLong("twitter_last_alert", 0);
+					rs.updateRow();
+				}
+				rs.close();
+				stmt.close();
+				con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Station.resetAllLastAlerts()", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Station.resetAllLastAlerts()", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}   		
+		return true;
+	}
+	
+	boolean resetTestAlertTimers()
+	{
+		System.out.println("resetting all last alerts");
+		Iterator<String> it = reporters.iterator();
+		String query = "SELECT * FROM people WHERE ("; 
+		while(it.hasNext())
+		{
+			query = query + "`designation`='" + it.next() + "' OR ";
+		}
+		query = query.substring(0,query.length() - 4) + ")";
+		Connection con = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		try
+		{
+				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				// get frames where this designation crosses the single frame threshold
+				rs = stmt.executeQuery(query);
+				while(rs.next())
+				{
+					rs.updateLong("facebook_last_alert_test", 0);
+					rs.updateLong("twitter_last_alert_test", 0);
 					rs.updateRow();
 				}
 				rs.close();
@@ -673,9 +737,6 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnval;
 	} 
 	
-	
-
-	
 	private String[] morning_greetings = {"Good morning", "Morning"};
 	private String[] afternoon_greetings = {"Good afternoon", "Afternoon"};
 	private String[] evening_greetings = {"Good evening", "Evening"};
@@ -789,8 +850,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	public static void main(String[] args) {
-		Station s = new Station("wkyt");
-		s.resetAllLastAlerts();
+		//Station s = new Station("wkyt");
 	}
 
 }

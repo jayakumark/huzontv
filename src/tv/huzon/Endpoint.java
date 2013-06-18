@@ -6,13 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -27,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
@@ -185,10 +180,32 @@ public class Endpoint extends HttpServlet {
 						Frame newframe = new Frame(jo.getLong("timestamp_in_ms"), jo.getString("station"));
 						if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
 						{	
-							JSONObject jo2 = processNewFrame(newframe);
+							JSONObject jo2 = processNewFrame(newframe, simulation);
 							jsonresponse.put("response_status", "success");
 							jsonresponse.put("alert_triggered", jo2.get("alert_triggered"));
 							jsonresponse.put("alert_fired", jo2.get("alert_fired"));
+							if(simulation) // then return additional info to the simulator. If not, don't.
+							{	
+								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
+								
+								// uncomment these three lines to send huge amounts of frame score data to the simulator (for creating context collages)
+								//Station station_object = new Station(jo.getString("station"));
+								//JSONArray frames_ja = station_object.getFramesAsJSONArray(jo.getLong("timestamp_in_ms") - 6000, jo.getLong("timestamp_in_ms") + 3000, true);
+								//jsonresponse.put("frames_ja", frames_ja);
+								
+								if(jo2.get("alert_triggered").equals("yes") && jo2.getString("alert_fired").equals("yes"))
+								{
+									jsonresponse.put("image_name_of_frame_in_window_that_passed_single_thresh", jo2.getString("image_name_of_frame_in_window_that_passed_single_thresh"));
+									jsonresponse.put("designation", jo2.getString("designation"));
+									jsonresponse.put("social_type", jo2.getString("social_type"));
+								}
+								if(jo2.has("reason"))
+								{
+									jsonresponse.put("reason", jo2.get("reason")); 
+								}
+							}
+							
+							/*
 							if(jo2.get("alert_triggered").equals("yes") && jo2.getString("alert_fired").equals("yes"))
 							{
 								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
@@ -211,7 +228,8 @@ public class Endpoint extends HttpServlet {
 							{
 								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
 								jsonresponse.put("reason", jo2.get("reason"));
-							}
+							}*/
+							
 						}
 						else
 						{
@@ -1099,7 +1117,10 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("resetAllLastAlerts"))
+				//***
+				// VERY DANGEROUS!!! 
+				//***
+				else if (method.equals("resetProductionAlertTimers"))
 				{
 					System.out.println("Endpoint begin getAlertFrames");
 					String twitter_handle = request.getParameter("twitter_handle");
@@ -1141,7 +1162,61 @@ public class Endpoint extends HttpServlet {
 								}
 								else
 								{	
-									station.resetAllLastAlerts();
+									station.resetProductionAlertTimers();
+									jsonresponse.put("response_status", "success");
+								}
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
+						}
+					}
+				} 
+				else if (method.equals("resetTestAlertTimers"))
+				{
+					System.out.println("Endpoint begin getAlertFrames");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String station_param = request.getParameter("station");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(station_param == null)
+					{
+						jsonresponse.put("message", "A station value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user2 = new User(twitter_handle, "twitter_handle");
+						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							if(user2.isGlobalAdmin())
+							{
+								Station station = new Station(station_param);
+								if(!station.isValid())
+								{
+									jsonresponse.put("message", "The station parameter provided was invalid. ");
+									jsonresponse.put("response_status", "error");
+								}
+								else
+								{	
+									station.resetTestAlertTimers();
 									jsonresponse.put("response_status", "success");
 								}
 							}
@@ -1175,7 +1250,7 @@ public class Endpoint extends HttpServlet {
 	
 	// this is hardcoded with a 5 second moving average window, a .67 moving average threshold and a 1 single frame threshold
 	
-	JSONObject processNewFrame(Frame newframe)
+	JSONObject processNewFrame(Frame newframe, boolean simulation)
 	{
 		JSONObject return_jo = new JSONObject();
 		System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
@@ -1243,10 +1318,11 @@ public class Endpoint extends HttpServlet {
 				x++;
 			}
 			
-			boolean passed_ma_thresh = false;
+			//boolean passed_ma_thresh = false;
+			//long timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = 0L;
 			boolean frame_in_window_passed_single_thresh = false;
 			String designation_that_passed_ma_thresh = "";
-			long timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = 0L;
+			
 			String image_name_of_frame_in_window_that_passed_single_thresh = "";
 			x = 0;
 			while(x < reporter_designations.length)
@@ -1254,12 +1330,12 @@ public class Endpoint extends HttpServlet {
 				// does it pass the ma threshold and is it the highest?
 				if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
 				{
-					passed_ma_thresh = true;
+					//passed_ma_thresh = true;
 					designation_that_passed_ma_thresh = reporter_designations[x];
 					User reporter = new User(designation_that_passed_ma_thresh, "designation");
 					
-					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) < reporter.getFacebookWaitingPeriodInMillis()
-							&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) < reporter.getTwitterWaitingPeriodInMillis()))
+					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
+							&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
 					{	
 						return_jo.put("alert_triggered", "no");
 						return_jo.put("social_type", "neither");
@@ -1278,7 +1354,7 @@ public class Endpoint extends HttpServlet {
 						if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
 						{
 							frame_in_window_passed_single_thresh = true;
-							timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = frames_ja.getJSONObject(y).getLong("timestamp_in_ms");
+							//timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = frames_ja.getJSONObject(y).getLong("timestamp_in_ms");
 							image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
 							break; // important to prevent getting later frames that may have also passed
 						}
@@ -1289,31 +1365,41 @@ public class Endpoint extends HttpServlet {
 						boolean fb = false;
 						boolean tw = false;
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) >= reporter.getFacebookWaitingPeriodInMillis())
+						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
 						{	
-							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert()) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
+							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
 							return_jo.put("alert_triggered", "yes");
 							return_jo.put("alert_fired", "yes");
 							return_jo.put("social_type", "facebook");
-							
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook");
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation);
 							fb = true;
 						}
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) >= reporter.getTwitterWaitingPeriodInMillis())
+						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
 						{	
-							System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert() + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert()) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
+							System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
 							return_jo.put("alert_triggered", "yes");
 							return_jo.put("alert_fired", "yes");
 							if(fb)
 								return_jo.put("social_type", "both");
 							else
-								return_jo.put("social_type", "facebook");
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter");
+								return_jo.put("social_type", "twitter");
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation);
 							tw = true;
 						}
 						
-						if(fb == false && tw == false)
+						// temporary hardcode email on new alert
+						if(fb || tw)
+						{
+							SimpleEmailer se = new SimpleEmailer();
+							try {
+								se.sendMail("Alert triggered for " + reporter_designations[x], "url=" + newframe.getURL() + " tw=" + tw + " fb=" + fb, "cyrus7580@gmail.com", "info@huzon.tv");
+							} catch (MessagingException e) {
+								e.printStackTrace();
+							}
+						}
+						
+						if(!fb && !tw)
 						{
 							return_jo.put("alert_triggered", "yes");
 							return_jo.put("social_type", "neither");
@@ -1406,8 +1492,7 @@ public class Endpoint extends HttpServlet {
 	
 	
 	public static void main(String[] args) {
-		Endpoint e = new Endpoint();
-		e.processNewFrame(new Frame(1371291193612L, "wkyt"));
+		//Endpoint e = new Endpoint();
 	}
 	
 }

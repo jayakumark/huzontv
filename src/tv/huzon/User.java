@@ -8,7 +8,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
@@ -23,7 +22,7 @@ import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-public class User implements java.lang.Comparable {
+public class User implements java.lang.Comparable<User> {
 
 	/**
 	 * @param args
@@ -42,6 +41,8 @@ public class User implements java.lang.Comparable {
 	private int facebook_delete_after;
 	private long twitter_last_alert;
 	private long facebook_last_alert;
+	private long twitter_last_alert_test;
+	private long facebook_last_alert_test;
 	private String twitter_handle;
 	private String twitter_access_token;
 	private String twitter_access_token_secret;
@@ -98,6 +99,8 @@ public class User implements java.lang.Comparable {
 				facebook_delete_after = rs.getInt("facebook_delete_after");
 				twitter_last_alert = rs.getLong("twitter_last_alert");
 				facebook_last_alert = rs.getLong("facebook_last_alert");
+				twitter_last_alert_test = rs.getLong("twitter_last_alert_test");
+				facebook_last_alert_test = rs.getLong("facebook_last_alert_test");
 				twitter_handle = rs.getString("twitter_handle");
 				twitter_access_token = rs.getString("twitter_access_token");
 				twitter_access_token_secret = rs.getString("twitter_access_token_secret");
@@ -179,6 +182,11 @@ public class User implements java.lang.Comparable {
 		//System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 	}
 	
+	public String getEmail()
+	{
+		return email;
+	}
+	
 	public boolean isGlobalAdmin()
 	{
 		return global_admin;
@@ -219,13 +227,17 @@ public class User implements java.lang.Comparable {
 		return twitter_handle;
 	}
 	
-	public long getLastTwitterAlert()
+	public long getLastTwitterAlert(boolean simulation)
 	{
+		if(simulation)
+			return twitter_last_alert_test;
 		return twitter_last_alert;
 	}
 	
-	public long getLastFacebookAlert()
+	public long getLastFacebookAlert(boolean simulation)
 	{
+		if(simulation)
+			return facebook_last_alert_test;
 		return facebook_last_alert;
 	}
 	
@@ -266,7 +278,7 @@ public class User implements java.lang.Comparable {
 		return facebook_access_token_expires;
 	}
 	
-	boolean setLastAlert(long alert_ts, String social_type)
+	boolean setLastAlert(long alert_ts, String social_type, boolean simulation)
 	{
 		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
 		{
@@ -285,9 +297,19 @@ public class User implements java.lang.Comparable {
 			while(rs.next())
 			{
 				if(social_type.equals("facebook"))
-					rs.updateLong("facebook_last_alert", alert_ts);
+				{
+					if(simulation)
+						rs.updateLong("facebook_last_alert_test", alert_ts);
+					else
+						rs.updateLong("facebook_last_alert", alert_ts);
+				}
 				else												// we can just say "else" because we checked value of social_type above
-					rs.updateLong("twitter_last_alert", alert_ts);
+				{
+					if(simulation)
+						rs.updateLong("twitter_last_alert_test", alert_ts);
+					else
+						rs.updateLong("twitter_last_alert", alert_ts);
+				}
 				rs.updateRow();
 			}
 			returnval = true;
@@ -698,7 +720,7 @@ public class User implements java.lang.Comparable {
 		return returnval;
 	}
 	
-	public int compareTo(Object o) // this sorts by designation alphabetically
+	public int compareTo(User o) // this sorts by designation alphabetically
 	{
 	    String otherdesignation = ((User)o).getDesignation();
 	    int x = otherdesignation.compareTo(designation);

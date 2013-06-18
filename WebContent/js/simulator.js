@@ -450,6 +450,15 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130615_180105\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Designation: <select id=\"function6_designation_select\">";
+	fds = fds + "							<option value=\"none\">none</option>";
+	for(var a = 0; a < reporters_ja.length; a++)
+	{
+		fds = fds + "							<option value=\"" + reporters_ja[a] + "\">" + reporters_ja[a] + "</option>";
+	}	
+	fds = fds + "	</select> ";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function6_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
@@ -884,12 +893,43 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var end = d.getTime()/1000;
 				var timestamps_ja = null;
-				
+				var designation = $('#function6_designation_select').val();
+				var dograph = false;
+				var reporter_homogeneity = 0;
+				if(designation !== "none")
+				{
+					dograph = true;
+					$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "getUser",
+				            designation: designation,
+		    	            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
+						},
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error: " + data.message);
+				        	else
+				        	{
+				        		reporter_homogeneity = data.user_jo.homogeneity;
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				}
 				$.ajax({
 					type: 'GET',
 					url: endpoint,
 					data: {
-			            method: "resetAllLastAlerts",
+			            method: "resetTestAlertTimers",
 			            station: station,
 			            twitter_handle: twitter_handle,
 			            twitter_access_token: twitter_access_token
@@ -951,7 +991,8 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					        				//alert(JSON.stringify(currentframe));
 					        				frames_ja.push(currentframe);
 					        				//alert(JSON.stringify(frames_ja));
-					        				graphFrameScoresAndMovingAverages(frames_ja, "victor_puente", 0.939645, 1, .67, 5);
+					        				if(dograph)
+					        					graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, 1, .67, 5);
 					        			}
 					        			index++;
 					        		};
@@ -1118,6 +1159,7 @@ var simulateNewFrame = function(timestamp_in_ms, station){
 	
 function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, singlemodifier, mamodifier, maw_int)
 {
+	$("#chart1").html("");
 	var scores = []; 
 	var moving_avg = [];
 	var ma = 0;

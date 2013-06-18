@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
@@ -45,7 +44,6 @@ public class Frame implements Comparable<Frame> {
 		url = inc_url;
 		frame_rate = inc_frame_rate;
 		station = inc_station;
-		int x = 0;
 		reporter_designations = inc_reporter_designations;
 		reporter_avgs = inc_reporter_avgs;
 		reporter_score_arrays = inc_reporter_score_arrays;
@@ -308,7 +306,8 @@ public class Frame implements Comparable<Frame> {
 			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
 			if(!successfullypopulated)
 			{
-				System.out.println("******** Moving averages population unsuccessful.");
+				System.out.println("******** Moving averages population unsuccessful. returning double value of -1");
+				return -1;
 			}
 		}
 			
@@ -330,7 +329,8 @@ public class Frame implements Comparable<Frame> {
 			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
 			if(!successfullypopulated)
 			{
-				System.out.println("******** Moving averages population unsuccessful.");
+				System.out.println("******** Moving averages population unsuccessful. returning double value of -1");
+				return -1;
 			}
 		}
 		
@@ -345,7 +345,8 @@ public class Frame implements Comparable<Frame> {
 			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
 			if(!successfullypopulated)
 			{
-				System.out.println("******** Moving averages population unsuccessful.");
+				System.out.println("******** Moving averages population unsuccessful. returning null");
+				return null;
 			}
 		}
 		
@@ -360,7 +361,8 @@ public class Frame implements Comparable<Frame> {
 			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
 			if(!successfullypopulated)
 			{
-				System.out.println("******** Moving averages population unsuccessful.");
+				System.out.println("******** Moving averages population unsuccessful. returning double value of -1");
+				return -1;
 			}
 		}
 		
@@ -375,7 +377,8 @@ public class Frame implements Comparable<Frame> {
 			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
 			if(!successfullypopulated)
 			{
-				System.out.println("******** Moving averages population unsuccessful.");
+				System.out.println("******** Moving averages population unsuccessful. returning double value of 0.0");
+				return null;
 			}
 		}
 		

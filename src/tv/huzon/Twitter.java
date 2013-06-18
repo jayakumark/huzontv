@@ -2,7 +2,6 @@ package tv.huzon;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -180,7 +179,7 @@ public class Twitter {
 		     
 		String oauth_token = "";
 		String oauth_token_secret = "";
-		String oauth_callback_confirmed = "";
+		//String oauth_callback_confirmed = "";
 		  
 		// I'm using Apache HTTPCore to make the connection and process the request. In theory, you could use HTTPClient, but HTTPClient defaults to the wrong RFC encoding, which has to be tweaked.
 		HttpParams params = new SyncBasicHttpParams();
@@ -267,7 +266,9 @@ public class Twitter {
 								else if(currenttoken.startsWith("oauth_token_secret="))
 									oauth_token_secret = currenttoken.substring(currenttoken.indexOf("=") + 1);
 								else if(currenttoken.startsWith("oauth_callback_confirmed="))
-									oauth_callback_confirmed = currenttoken.substring(currenttoken.indexOf("=") + 1);
+								{
+									//oauth_callback_confirmed = currenttoken.substring(currenttoken.indexOf("=") + 1);
+								}
 								else
 								{
 									System.out.println("Warning... twitter returned a key we weren't looking for.");
