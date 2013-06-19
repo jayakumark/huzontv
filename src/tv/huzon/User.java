@@ -182,6 +182,11 @@ public class User implements java.lang.Comparable<User> {
 		//System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 	}
 	
+	public long getFacebookPageID()
+	{
+		return facebook_page_id;
+	}
+	
 	public String getFacebookPageAccessToken()
 	{
 		return facebook_page_access_token;

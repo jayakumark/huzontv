@@ -38,6 +38,7 @@ import com.amazonaws.util.json.JSONObject;
 import facebook4j.Facebook;
 import facebook4j.FacebookException;
 import facebook4j.FacebookFactory;
+import facebook4j.Media;
 import facebook4j.PostUpdate;
 import facebook4j.auth.AccessToken;
 
@@ -1443,9 +1444,9 @@ public class Endpoint extends HttpServlet {
 							    System.out.println("TEMP DIR=" + tmpdir);
 							    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
 							    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-							    //
-							    
 							    File f = new File(tmpdir + "/image.jpg");
+							    //
+							   
 								Twitter twitter = new Twitter();
 								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id);
@@ -1481,14 +1482,25 @@ public class Endpoint extends HttpServlet {
 								long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id);
 								
-								PostUpdate post = new PostUpdate(message)
-			                    	.picture(new URL(newframe.getURL()));
-			                    	//.name("name")
-			                    	//.caption("caption")
-			                    	//.description("description");
+								// download file first
+								URL image_url = new URL(newframe.getURL());
+							    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
+							    String tmpdir = System.getProperty("java.io.tmpdir");
+							    System.out.println("TEMP DIR=" + tmpdir);
+							    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
+							    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+							    File f = new File(tmpdir + "/image.jpg");
+							    //
+								
+								/*PostUpdate post = new PostUpdate(message)
+			                    	.picture(new URL(newframe.getURL()))
+			                    	.name("")
+			                    	.caption("")
+			                    	.description("");*/
 								String facebookresponse = "";
 								try {
-									facebookresponse = facebook.postFeed(post);
+									//facebookresponse = facebook.postFeed(post);
+									facebookresponse = facebook.postPhoto(new Long(test_user.getFacebookPageID()).toString(), new Media(f), message, "33684860765", false);
 								} catch (FacebookException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();

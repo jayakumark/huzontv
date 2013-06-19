@@ -2,6 +2,7 @@ package tv.huzon;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Enumeration;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
@@ -52,6 +53,12 @@ public class RedirectServlet extends HttpServlet {
 			{
 				String ip_address = request.getRemoteAddr();
 				String referrer = request.getHeader("referer");
+				/*Enumeration<String> headerNames = request.getHeaderNames();
+			    while(headerNames.hasMoreElements()) 
+			    {
+			      String headerName = headerNames.nextElement();
+			      System.out.println(headerName + "\t" + request.getHeader(headerName));
+			    }*/
 				if(referrer == null)
 				{
 					referrer = "";
