@@ -36,6 +36,8 @@ public class Station implements java.lang.Comparable<Station> {
 	private boolean valid;
 	private int frame_rate; // milliseconds per frame
 	private String s3_bucket_public_hostname;
+	private String livestream_url;
+	private String livestream_url_alias;
 	
 	public Station(String inc_call_letters)
 	{
@@ -55,6 +57,8 @@ public class Station implements java.lang.Comparable<Station> {
 				state = rs.getString("state");
 				dma_2013 = rs.getInt("dma_2013");
 				frame_rate = rs.getInt("frame_rate");
+				livestream_url = rs.getString("livestream_url");
+				livestream_url_alias = rs.getString("livestream_url_alias");
 				reporters = new TreeSet<String>();
 				StringTokenizer st = new StringTokenizer(rs.getString("reporters")," ");
 				while(st.hasMoreTokens())
@@ -105,6 +109,16 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 		}  	
 		
+	}
+	
+	public String getLiveStreamURL()
+	{
+		return livestream_url;
+	}
+	
+	public String getLiveStreamURLAlias()
+	{
+		return livestream_url_alias;
 	}
 	
 	public boolean isValid()
@@ -349,7 +363,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			currentframe = it.next();
 			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
-			frames_ja.put(currentframe.getAsJSONObject(get_score_data));
+			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null)); // no designation specified
 		}
 		return frames_ja;
 	}
@@ -364,7 +378,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			currentframe = it.next();
 			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
-			frames_ja.put(currentframe.getAsJSONObject(get_score_data));
+			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null)); // no designation specified
 		}
 		return frames_ja;
 	}
@@ -460,7 +474,7 @@ public class Station implements java.lang.Comparable<Station> {
 					}
 					if(frame_that_passed_ma_thresh != null) 
 					{
-						JSONObject jo2add = frame_that_passed_ma_thresh.getAsJSONObject(true);
+						JSONObject jo2add = frame_that_passed_ma_thresh.getAsJSONObject(true, null); // no designation specified
 						jo2add.put("designation", current_designation);
 						jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage(maw_int, current_designation));
 						jo2add.put("ma_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getMovingAverage(maw_int, current_designation));
@@ -628,7 +642,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return true;
 	}
 	
-
+/*
 	JSONArray getFiredAlerts(String station, long begin_long, long end_long)
 	{
 		JSONArray returnval = null;
@@ -735,7 +749,7 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 		}  	
 		return returnval;
-	} 
+	} */
 	
 	private String[] morning_greetings = {"Good morning", "Morning"};
 	private String[] afternoon_greetings = {"Good afternoon", "Afternoon"};
@@ -744,12 +758,12 @@ public class Station implements java.lang.Comparable<Station> {
 	private String[] objects = {"Lexington", "Bluegrass", "Central Kentucky", "everyone", "folks", "viewers"};
 	
 	
-	String getMessage(String social_type, long timestamp_in_seconds, long redirect_id)
+	String getMessage(String social_type, long timestamp_in_ms, long redirect_id)
 	{
 		String returnval = "";
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-		cal.setTimeInMillis(timestamp_in_seconds * 1000);
+		cal.setTimeInMillis(timestamp_in_ms);
 		ArrayList<String> greeting_choices = new ArrayList<String>();
 		if(cal.get(Calendar.HOUR_OF_DAY) < 12)
 		{	
@@ -799,20 +813,20 @@ public class Station implements java.lang.Comparable<Station> {
 		if(social_type.equals("facebook"))
 		{
 			if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
-				returnval = "I am on the air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;  
+				returnval = "I am on the air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;  
 			else if (selector == 1) // no greeting, "we", "live", "catch" timestamp first
-				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id;
+				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
 			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " -- " + ts_string;
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;
 			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id; 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id; 
 		}
 		else if(social_type.equals("twitter"))
 		{
 			if(selector == 0 || selector == 1)
-				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #wkyt";  
 			else if(selector == 2 || selector == 3)
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: huzon.wkyt.com/livestream?id=" + redirect_id + " #wkyt";  
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #wkyt";  
 		}
 		return returnval;
 	}
@@ -850,7 +864,8 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	public static void main(String[] args) {
-		//Station s = new Station("wkyt");
+		Station s = new Station("wkyt");
+		s.resetProductionAlertTimers();
 	}
 
 }

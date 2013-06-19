@@ -751,7 +751,7 @@ public class Twitter {
 				 String responseBody = EntityUtils.toString(response2.getEntity());
 				 System.out.println("response=" + responseBody);
 				 // error checking here. Otherwise, status should be updated.
-				 
+				 jsonresponse = new JSONObject(responseBody);
 				 conn.close();
 			 }   
 			 catch(HttpException he) 
@@ -779,16 +779,20 @@ public class Twitter {
 		 } 
 		 catch(JSONException jsone)
 		 {
-			 
+			 jsone.printStackTrace();
 		 }
 		 catch(IOException ioe)
 		 {
-			 
+			 ioe.printStackTrace();
 		 }
 		 return jsonresponse;
 	}
 
-	public JSONObject updateStatusWithMedia(String access_token, String access_token_secret, String text, String image_url)
+	// does not work with absolute (i.e. http://) urls. Only local files.
+	// returns a valid JSONObject, regardless
+	// if it spoke to twitter and did the update succesfully, it returns just the object.
+	// if any error occurs, whether from twitter or failing to talk to twitter entirely, an response_status=error is sent back
+	public JSONObject updateStatusWithMedia(String access_token, String access_token_secret, String text, File file) throws JSONException
 	{
 		JSONObject jsonresponse = new JSONObject();
 		
@@ -811,13 +815,13 @@ public class Twitter {
 		// the parameter string must be in alphabetical order, "text" parameter added at end
 		String parameter_string = "oauth_consumer_key=" + twitter_consumer_key + "&oauth_nonce=" + oauth_nonce + "&oauth_signature_method=" + oauth_signature_method + 
 		    		"&oauth_timestamp=" + oauth_timestamp + "&oauth_token=" + encode(oauth_token) + "&oauth_version=1.0";//&status=" + encode(text);	
-		System.out.println("parameter_string=" + parameter_string);
+		System.out.println("Twitter.updateStatusWithMedia(): parameter_string=" + parameter_string);
 		
 		String twitter_endpoint = "http://api.twitter.com/1.1/statuses/update_with_media.json";
 		String twitter_endpoint_host = "api.twitter.com";
 		String twitter_endpoint_path = "/1.1/statuses/update_with_media.json";
 		String signature_base_string = get_or_post + "&"+ encode(twitter_endpoint) + "&" + encode(parameter_string);
-		System.out.println("signature_base_string=" + signature_base_string);
+		 System.out.println("Twitter.updateStatusWithMedia(): signature_base_string=" + signature_base_string);
 	    String oauth_signature = "";
 	    try {
 	    	oauth_signature = computeSignature(signature_base_string, twitter_consumer_secret + "&" + encode(oauth_token_secret));  
@@ -829,7 +833,7 @@ public class Twitter {
 		}
 	    String authorization_header_string = "OAuth oauth_consumer_key=\"" + twitter_consumer_key + "\",oauth_signature_method=\"HMAC-SHA1\",oauth_timestamp=\"" + oauth_timestamp + 
 	    		"\",oauth_nonce=\"" + oauth_nonce + "\",oauth_version=\"1.0\",oauth_signature=\"" + encode(oauth_signature) + "\",oauth_token=\"" + encode(oauth_token) + "\"";
-	    System.out.println("authorization_header_string=" + authorization_header_string);
+	    System.out.println("Twitter.updateStatusWithMedia(): authorization_header_string=" + authorization_header_string);
 		
 		
 	    HttpParams params = new SyncBasicHttpParams();
@@ -866,62 +870,64 @@ public class Twitter {
 				   new InetSocketAddress(host.getHostName(), host.getPort()), 0);
 				 conn.bind(socket, params);*/
 				 
-				 
+				 System.out.println("Twitter.updateStatusWithMedia(): params all set, creating socket.");
 				 Socket socket = new Socket(host.getHostName(), host.getPort());
 				 conn.bind(socket, params);
 				 
 				 BasicHttpEntityEnclosingRequest request2 = new BasicHttpEntityEnclosingRequest("POST", twitter_endpoint_path);
 				 // need to add status parameter to this POST
 				 MultipartEntity reqEntity = new MultipartEntity();
-				 FileBody sb_image = new FileBody(new File(image_url));
+				 FileBody sb_image = new FileBody(file);
 				 StringBody sb_status = new StringBody(text);
 				 reqEntity.addPart("status", sb_status);
 				 reqEntity.addPart("media[]", sb_image);
 				 request2.setEntity(reqEntity);
 				 
+				
 				 //request2.setEntity( new StringEntity("media[]=" + encode(image_url) + "&status=" + encode(text), "multipart/form-data; boundary=---1234", "UTF-8"));
 				 request2.setParams(params);
+				
 				 request2.addHeader("Authorization", authorization_header_string);
+				 System.out.println("Twitter.updateStatusWithMedia(): Entity, params and header added to request. Preprocessing and executing...");
 				 httpexecutor.preProcess(request2, httpproc, context);
 				 HttpResponse response2 = httpexecutor.execute(request2, conn, context);
+				 System.out.println("Twitter.updateStatusWithMedia(): ... done. Postprocessing...");
 				 response2.setParams(params);
 				 httpexecutor.postProcess(response2, httpproc, context);
 				 String responseBody = EntityUtils.toString(response2.getEntity());
-				 System.out.println("response=" + responseBody);
+				 System.out.println("Twitter.updateStatusWithMedia(): done. response=" + responseBody);
 				 // error checking here. Otherwise, status should be updated.
-				 
+				 jsonresponse = new JSONObject(responseBody);
 				 conn.close();
 			 }   
 			 catch(HttpException he) 
 			 {	
 				 System.out.println(he.getMessage());
 				 jsonresponse.put("response_status", "error");
-				 jsonresponse.put("message", "updateStatus HttpException message=" + he.getMessage());
+				 jsonresponse.put("message", "updateStatusWithMedia HttpException message=" + he.getMessage());
 			 } 
 			/* catch(NoSuchAlgorithmException nsae) 
 			 {	
 				 System.out.println(nsae.getMessage());
-				 jsonresponse.put("response_status", "error");
-				 jsonresponse.put("message", "updateStatus NoSuchAlgorithmException message=" + nsae.getMessage());
+				  jsonresponse.put("response_status", "error");
+				 jsonresponse.put("message", "updateStatusWithMedia HttpException message=" + he.getMessage());
 			 } 					
 			 catch(KeyManagementException kme) 
 			 {	
 				 System.out.println(kme.getMessage());
-				 jsonresponse.put("response_status", "error");
-				 jsonresponse.put("message", "updateStatus KeyManagementException message=" + kme.getMessage());
+				  jsonresponse.put("response_status", "error");
+				 jsonresponse.put("message", "updateStatusWithMedia HttpException message=" + he.getMessage());
 			 } 	*/
 			 finally 
 			 {
 				 conn.close();
 			 }	
-		 } 
-		 catch(JSONException jsone)
-		 {
-			 
 		 }
 		 catch(IOException ioe)
 		 {
-			 
+			 ioe.printStackTrace();
+			 jsonresponse.put("response_status", "error");
+			 jsonresponse.put("message", "updateStatusWithMedia IOException message=" + ioe.getMessage());
 		 }
 		 return jsonresponse;
 	}

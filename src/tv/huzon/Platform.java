@@ -79,7 +79,7 @@ public class Platform {
 	
 
 	
-	long createAlertInDB(String station, String social_type, String designation, String image_name)
+	long createAlertInDB(Station station_object, String social_type, String designation, String image_name)
 	{
 		long returnval = -1L;
 		ResultSet rs = null;
@@ -89,11 +89,11 @@ public class Platform {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_name`,`livestream_url`,`station`) "
-	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')");
+			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`) "
+	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "')");
 			stmt.executeUpdate(
-	                    "INSERT INTO alerts (`social_type`,`designation`,`image_name`,`livestream_url`,`station`) "
-	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + "www.wkyt.com/livestream" + "','" + station + "')",
+	                    "INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`) "
+	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "')",
 	                    Statement.RETURN_GENERATED_KEYS);
 			
 		    rs = stmt.getGeneratedKeys();
@@ -166,8 +166,8 @@ public class Platform {
 	}
 	
 
-	/*
-	boolean updateAlertText(long id_long, String actual_text)
+	
+	boolean updateAlertText(long alert_id_long, String text)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -177,10 +177,10 @@ public class Platform {
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + id_long + "'"); 
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
 			{
-				rs.updateString("actual_text", actual_text);
+				rs.updateString("text", text);
 				rs.updateRow();
 				returnval = true;
 			}
@@ -193,7 +193,7 @@ public class Platform {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint updateAlertText", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("SQLException in Platform.updateAlertText", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -209,7 +209,7 @@ public class Platform {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in Platform.updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -217,8 +217,91 @@ public class Platform {
 		}  	
 		return returnval;
 	}
-*/
-	
+
+	boolean updateSocialItemID(long alert_id_long, String social_item_id_string)
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
+			if(rs.next())
+			{
+				rs.updateString("social_item_id", social_item_id_string);
+				rs.updateRow();
+				returnval = true;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Platform.updateSocialItemID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Platform.updateSocialItemID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
+	}
+
+	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
+					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");
+			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
+					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");
+			returnval = true;
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("RedirectServlet.putRedirectHitInDB(): Problem closing resultset, statement and/or connection to the database."); 
+			}
+		}  	
+		return returnval;
+	}
 	
 	public boolean isNumeric(String incoming_string) // only works for whole numbers, positive and negative
 	{

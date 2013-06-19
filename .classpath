@@ -18,5 +18,6 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/facebook4j-core-1.1.9.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

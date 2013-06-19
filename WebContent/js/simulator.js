@@ -265,10 +265,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function1_begin_input\" size=13 value=\"20130615_180100\"> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function1_begin_input\" size=13 value=\"20130618_121450\"> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130615_180105\" size=13> ";
+	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130618_121515\" size=13> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "  						<input id=\"function1_go_button\" type=button value=\"GO\">";
@@ -301,10 +301,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function2_begin_input\" size=13 value=\"20130615_180100\"> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function2_begin_input\" size=13 value=\"20130618_121450\"> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function2_end_input\" value=\"20130615_180105\" size=13> ";
+	fds = fds + "						End: <input type=\"text\" id=\"function2_end_input\" value=\"20130618_121515\" size=13> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function2_go_button\" type=button value=\"GO\">";
@@ -344,10 +344,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function3_mawindow_input\" value=\"5\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130615_180100\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130618_121450\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function3_end_input\" value=\"20130615_180105\" size=13>";
+	fds = fds + "						End: <input type=\"text\" id=\"function3_end_input\" value=\"20130618_121515\" size=13>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function3_go_button\" type=button value=\"GO\">";
@@ -383,10 +383,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130615_180100\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130618_121450\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130615_180105\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130618_121515\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
@@ -405,10 +405,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130615_180100\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130618_121450\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130615_180105\" size=13>";
+	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130618_121515\" size=13>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function5_go_button\" type=button value=\"GO\">";
@@ -444,10 +444,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	//fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	//fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130615_180100\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130618_121450\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130615_180105\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130618_121515\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Designation: <select id=\"function6_designation_select\">";
@@ -805,6 +805,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            method: "getFrames",
 				            begin: begin,             
 				            end: end,
+				            get_score_data: "false",
 				            station: station,
 		    	            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
@@ -987,7 +988,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					        		var doFrame = function(){
 					        			if(index < length)
 					        			{
-					        				currentframe = simulateNewFrame(data.timestamps_ja[index], station);
+					        				if(designation)
+					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, designation);
+					        				else
+					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, null);
 					        				//alert(JSON.stringify(currentframe));
 					        				frames_ja.push(currentframe);
 					        				//alert(JSON.stringify(frames_ja));
@@ -1016,15 +1020,29 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	
 }
 
-var simulateNewFrame = function(timestamp_in_ms, station){
+var simulateNewFrame = function(timestamp_in_ms, station, designation){
 //function simulateNewFrame(timestamp_in_ms, station) {
 	var rds = "";
 	var frame_to_display = null;
-	var jsonpostbody = { 
-			timestamp_in_ms: timestamp_in_ms,
-			station: station,
-            simulation: "true"
-		};
+	var jsonpostbody;
+	
+	if(typeof designation === undefined || designation === null)
+	{	
+		jsonpostbody = { 
+				timestamp_in_ms: timestamp_in_ms,
+				station: station,
+	            simulation: "true"
+			};
+	}
+	else
+	{
+		jsonpostbody = { 
+				timestamp_in_ms: timestamp_in_ms,
+				station: station,
+	            simulation: "true",
+	            designation: designation
+			};
+	}
 	
 	$.ajax({
 		type: 'POST',
@@ -1135,6 +1153,12 @@ var simulateNewFrame = function(timestamp_in_ms, station){
         		frame_to_display = data.frame_jo;
         		rds = rds + "<img src=\"" + frame_to_display.url + "\" style=\"width:250px;height:141px\">";
 				rds = rds + "<br>" + frame_to_display.image_name;
+				if(frame_to_display.designation)
+					rds = rds + "<br>des: " + frame_to_display.designation;
+				if(frame_to_display.designation_homogeneity)
+					rds = rds + "<br>des homogeneity: " + frame_to_display.designation_homogeneity;
+				if(frame_to_display.designation_moving_average)
+					rds = rds + "<br>des ma: " + frame_to_display.designation_moving_average;
 				//rds = rds + "<br>avg4des:"+ data.frames_ja[x].reporters[designation].score_avg;
 				//rds = rds + "<br>homogeneity:" + reporter_homogeneity;
 				//rds = rds + "<br>threshold:" + (reporter_homogeneity * $('#function2_singlemodifier_input').val());

@@ -23,7 +23,7 @@ public class Frame implements Comparable<Frame> {
 	String station;
 	String[] reporter_designations;
 	double[] reporter_avgs;
-	JSONArray[] reporter_score_arrays;
+	//JSONArray[] reporter_score_arrays;
 	int[] reporter_nums;
 	
 	double[] reporter_moving_avgs; // starts out null until populated
@@ -46,7 +46,7 @@ public class Frame implements Comparable<Frame> {
 		station = inc_station;
 		reporter_designations = inc_reporter_designations;
 		reporter_avgs = inc_reporter_avgs;
-		reporter_score_arrays = inc_reporter_score_arrays;
+		//reporter_score_arrays = inc_reporter_score_arrays;
 		reporter_nums = inc_reporter_nums;
 	}
 	
@@ -90,7 +90,7 @@ public class Frame implements Comparable<Frame> {
 				int reporter_index = 0;
 				reporter_designations = new String[reportercount];
 				reporter_avgs = new double[reportercount];
-				reporter_score_arrays = new JSONArray[reportercount];
+				//reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
 				while(x <= columncount)
 				{
@@ -98,13 +98,6 @@ public class Frame implements Comparable<Frame> {
 					{
 						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
 						reporter_avgs[reporter_index] = rs.getDouble(x);
-					}
-					else if(rsmd.getColumnName(x).endsWith("_scores"))
-					{
-						if(rs.getString(x) == null || rs.getString(x).isEmpty())
-							reporter_score_arrays[reporter_index] = new JSONArray();
-						else
-							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
 					}
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
@@ -125,9 +118,6 @@ public class Frame implements Comparable<Frame> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		finally
 		{
@@ -385,6 +375,29 @@ public class Frame implements Comparable<Frame> {
 		return second_max_ma_designation;
 	}
 	
+	double getMovingAverageForDesignation(String designation, int inc_maw_int)
+	{
+		//System.out.println("Frame.getSecondHighestMovingAverageDesignation()");
+		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+		{
+			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
+			if(!successfullypopulated)
+			{
+				System.out.println("******** Moving averages population unsuccessful. returning double value of 0.0");
+				return -1;
+			}
+		}
+		
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_designations[x].equals(designation))
+				return reporter_moving_avgs[x];
+			x++;
+		}
+		return 0;
+	}
+	
 	/* return object as:
 	 * 
 	 * {
@@ -412,7 +425,7 @@ public class Frame implements Comparable<Frame> {
 	 *
 	 */
 	
-	JSONObject getAsJSONObject(boolean get_score_data)
+	JSONObject getAsJSONObject(boolean get_score_data, String designation)
 	{
 		JSONObject jo = new JSONObject();
 		try
@@ -423,6 +436,15 @@ public class Frame implements Comparable<Frame> {
 			jo.put("timestamp_in_ms", timestamp_in_ms);
 			jo.put("frame_rate", frame_rate);
 			jo.put("station", station);
+			if(designation != null)
+			{
+				System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " was specified by the simulator. Returning specialized information.");
+				double homogeneity = new User(designation,"designation").getHomogeneity();
+				jo.put("designation", designation);
+				jo.put("designation_homogeneity", homogeneity);
+				jo.put("designation_moving_average", getMovingAverageForDesignation(designation, 5));
+			}
+			//jo.put("highest_designation", getHighestDesig)
 			if(get_score_data)
 			{	
 				int x = 0;
@@ -434,7 +456,6 @@ public class Frame implements Comparable<Frame> {
 					jo2.put("designation", reporter_designations[x]);
 					jo2.put("score_avg", reporter_avgs[x]);
 					jo2.put("num", reporter_nums[x]);
-					jo2.put("scores", reporter_score_arrays[x]);
 					reporter_jo.put(reporter_designations[x],jo2);
 					x++;
 				}

@@ -11,6 +11,9 @@
         <dependent-module archiveName="httpmime-4.2.3.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//home/cyrus/Desktop/libraries/httpmime-4.2.3.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="facebook4j-core-1.1.9.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//home/cyrus/Desktop/libraries/facebook4j-core-1.1.9.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="java-output-path" value="/huzontv/build/classes"/>
         <property name="context-root" value="huzontv"/>
     </wb-module>
