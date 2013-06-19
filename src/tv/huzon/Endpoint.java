@@ -1390,7 +1390,7 @@ public class Endpoint extends HttpServlet {
 							return_jo.put("alert_triggered", "yes");
 							return_jo.put("alert_fired", "yes");
 							return_jo.put("social_type", "facebook");
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation);
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert whether posting successful or not
 							fb = true;
 						}
 						
@@ -1403,7 +1403,7 @@ public class Endpoint extends HttpServlet {
 								return_jo.put("social_type", "both");
 							else
 								return_jo.put("social_type", "twitter");
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation);
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert whether posting successful or not
 							tw = true;
 						}
 						
@@ -1423,30 +1423,22 @@ public class Endpoint extends HttpServlet {
 						
 						if(tw || fb)
 						{	
+							// this might be problematic if two alerts from two stations happen at EXACTLY the same time. image.jpg could be overwritten and wrong. FIXME
+							// download file first
+							URL image_url = new URL(newframe.getURL());
+						    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
+						    String tmpdir = System.getProperty("java.io.tmpdir");
+						    System.out.println("TEMP DIR=" + tmpdir);
+						    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
+						    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+						    File f = new File(tmpdir + "/image.jpg");
+						    //
 							Platform p = new Platform();
 							if(tw)
 							{
-								/*
-								 * 
-								 * 					long twitter_redirect_id = createAlertInDB("wkyt", "twitter", max_designation ,image_name_of_frame_with_highest_score_in_window); 
-													jsonresponse.put("twitter_redirect_id", twitter_redirect_id);
-													String message = getMessage("twitter", ts_long, twitter_redirect_id);
-													jsonresponse.put("twitter_message_firstperson", message);
-													boolean successful = updateAlertText(twitter_redirect_id, message);
-								 */
 								System.out.println("Endpoint.processNewFrame(): Firing tweet for " + reporter.getDisplayName());
 								User test_user = new User("huzon_master", "designation");
 								
-								// download file first
-								URL image_url = new URL(newframe.getURL());
-							    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
-							    String tmpdir = System.getProperty("java.io.tmpdir");
-							    System.out.println("TEMP DIR=" + tmpdir);
-							    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
-							    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-							    File f = new File(tmpdir + "/image.jpg");
-							    //
-							   
 								Twitter twitter = new Twitter();
 								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id);
@@ -1462,14 +1454,6 @@ public class Endpoint extends HttpServlet {
 							
 							if(fb)
 							{
-								/*
-								 * 
-								 * 				long facebook_redirect_id = createAlertInDB("wkyt", "facebook", max_designation, image_name_of_frame_with_highest_score_in_window); 
-												jsonresponse.put("facebook_redirect_id", facebook_redirect_id);
-												String message = getMessage("facebook", ts_long, facebook_redirect_id);
-												jsonresponse.put("facebook_message_firstperson",message);
-												boolean successful = updateAlertText(facebook_redirect_id, message);
-								 */
 								System.out.println("Endpoint.processNewFrame(): Firing facebook post for " + reporter.getDisplayName());
 								User test_user = new User("huzon_master", "designation");
 								
@@ -1481,17 +1465,7 @@ public class Endpoint extends HttpServlet {
 								
 								long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id);
-								
-								// download file first
-								URL image_url = new URL(newframe.getURL());
-							    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
-							    String tmpdir = System.getProperty("java.io.tmpdir");
-							    System.out.println("TEMP DIR=" + tmpdir);
-							    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
-							    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-							    File f = new File(tmpdir + "/image.jpg");
-							    //
-								
+																
 								/*PostUpdate post = new PostUpdate(message)
 			                    	.picture(new URL(newframe.getURL()))
 			                    	.name("")
@@ -1500,10 +1474,39 @@ public class Endpoint extends HttpServlet {
 								String facebookresponse = "";
 								try {
 									//facebookresponse = facebook.postFeed(post);
-									facebookresponse = facebook.postPhoto(new Long(test_user.getFacebookPageID()).toString(), new Media(f), message, "33684860765", false);
+									facebookresponse = facebook.postPhoto(new Long(test_user.getFacebookPageID()).toString(), new Media(f), message, "33684860765", false); // FIXME hardcode to wkyt station
+									
 								} catch (FacebookException e) {
 									// TODO Auto-generated catch block
-									e.printStackTrace();
+									// {statusCode=400, responseAsString='{"error":{"message":"Error validating access token: User 1315750 has not authorized application 176524552501035.","type":"OAuthException","code":190,"error_subcode":458}}
+									if((e.getErrorCode() == 190) || (e.getErrorCode() == 100))
+									{
+										test_user.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
+										SimpleEmailer se = new SimpleEmailer();
+										try {
+											se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", test_user.getDisplayName() + 
+													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
+															"has become disconnected from huzon.tv. This can happen for several reasons:\n\n- huzon.tv access to your account has expired (60 days)" + 
+															"\n- You disabled the huzon.tv app in your FB privacy configuration\n- Your FB account was never linked to huzon.tv in the first place"+
+															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
+															"Thanks!\n\nhuzon.tv staff"
+														,"cyrus7580@gmail.com", // FIXME --> this needs to be the email address of the person. 
+														"info@huzon.tv");
+										} catch (MessagingException me) {
+											me.printStackTrace();
+										}
+									}
+									else
+									{	
+										e.printStackTrace();
+										SimpleEmailer se = new SimpleEmailer();
+										try {
+											se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", test_user.getDesignation() + " " + new Long(test_user.getFacebookPageID()).toString() + " " + 
+														message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
+										} catch (MessagingException me) {
+											me.printStackTrace();
+										}
+									}
 								}
 								boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 								boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);

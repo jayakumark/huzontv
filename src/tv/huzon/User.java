@@ -480,6 +480,15 @@ public class User implements java.lang.Comparable<User> {
 		return returnval;
 	}
 	
+	boolean resetFacebookCredentialsInDB()
+	{
+		boolean reset_top_level = setFacebookAccessTokenExpiresAndUID("", 0L, 0L);
+		boolean reset_sub_account = resetFacebookSubAccountIdNameAndAccessToken();
+		if(reset_top_level && reset_sub_account)
+			return true;
+		return false;
+	}
+	
 	boolean setFacebookAccessTokenExpiresAndUID(String access_token, long expires_timestamp, long fb_uid)
 	{
 		boolean returnval = false;
@@ -656,6 +665,59 @@ public class User implements java.lang.Comparable<User> {
 			e.printStackTrace();
 		}
 		return return_jo;
+	}
+	
+	boolean resetFacebookSubAccountIdNameAndAccessToken()
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_page_access_token", "");
+				rs.updateString("facebook_page_name", "");
+				rs.updateLong("facebook_page_id", 0);
+				rs.updateRow();
+				returnval = true;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+			}
+		}  	
+		return returnval;
 	}
 	
 	boolean setFacebookSubAccountIdNameAndAccessToken(String id, JSONArray fb_subaccounts_ja)

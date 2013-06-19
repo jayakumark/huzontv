@@ -64,7 +64,7 @@ public class RedirectServlet extends HttpServlet {
 					referrer = "";
 				}
 				Platform p = new Platform();
-				boolean successful = p.putRedirectHitInDB(alert_object.getStation(), Long.parseLong(id), referrer, ip_address, alert_object.getDesignation());
+				boolean successful = p.putRedirectHitInDB(station_object.getCallLetters(), Long.parseLong(id), referrer, ip_address, alert_object.getDesignation());
 				if(!successful)
 				{
 					SimpleEmailer se = new SimpleEmailer();

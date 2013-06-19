@@ -41,6 +41,13 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public Station(String inc_call_letters)
 	{
+		System.err.println("Station init()");
+		try {
+		        Class.forName("com.mysql.jdbc.Driver");
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		valid = false;
 		ResultSet rs = null;
 		Connection con = null;

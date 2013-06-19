@@ -27,6 +27,13 @@ public class Platform {
 	
 	public Platform()
 	{
+		System.err.println("Platform init()");
+		try {
+		        Class.forName("com.mysql.jdbc.Driver");
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		stations = new TreeSet<Station>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -42,6 +49,9 @@ public class Platform {
 				currentstation = new Station(rs.getString("call_letters"));
 				stations.add(currentstation);
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle) { sqle.printStackTrace(); }
 		finally
@@ -112,7 +122,7 @@ public class Platform {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint createAlertInDB", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("SQLException in Platform.createAlertInDB", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -128,7 +138,7 @@ public class Platform {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint createAlertInDB", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in Platform.createAlertInDB", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
@@ -167,7 +177,7 @@ public class Platform {
 	
 
 	
-	boolean updateAlertText(long alert_id_long, String text)
+	boolean updateAlertText(long alert_id_long, String actual_text)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -180,7 +190,7 @@ public class Platform {
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
 			{
-				rs.updateString("text", text);
+				rs.updateString("actual_text", actual_text);
 				rs.updateRow();
 				returnval = true;
 			}
@@ -272,28 +282,35 @@ public class Platform {
 	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
 	{
 		boolean returnval = false;
-		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
-					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");
-			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`) " +
-					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "')");
+			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`, `station`) " +
+					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "','" + station + "')");
+			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`, `station`) " +
+					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "','" + station + "')");
 			returnval = true;
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Platform.putRedirectHitInDB", "Error putting redirect hit in db. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
 			try
 			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 

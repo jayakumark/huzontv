@@ -22,11 +22,16 @@ public class Alert {
 	Timestamp creation_timestamp;
 	String designation;
 	String station_str;
-	String text;
+	String actual_text;
 	String social_item_id;
 	
 	public Alert(long inc_id)
 	{
+		try {
+	        Class.forName("com.mysql.jdbc.Driver");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} 
 		id = inc_id;
 		ResultSet rs = null;
 		Connection con = null;
@@ -45,12 +50,18 @@ public class Alert {
 				creation_timestamp = rs.getTimestamp("creation_timestamp");
 				designation = rs.getString("designation");
 				station_str = rs.getString("station");
-				text = rs.getString("text");
+				actual_text = rs.getString("actual_text");
 				social_item_id = rs.getString("social_item_id");
 			}
 			else
 			{
 				id = -1L; // indicates failed lookup
+				SimpleEmailer se = new SimpleEmailer();
+				try {
+					se.sendMail("SQLException in Alert.constructor", "Failed lookup for id=" + inc_id, "cyrus7580@gmail.com", "info@huzon.tv");
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 			rs.close();
 			stmt.close();
@@ -59,6 +70,12 @@ public class Alert {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Alert.constructor", "Error getting table row. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -103,9 +120,9 @@ public class Alert {
 		return station_str;
 	}
 	
-	String getText()
+	String getActualText()
 	{
-		return text;
+		return actual_text;
 	}
 	
 	String getSocialItemID()
