@@ -1480,6 +1480,8 @@ public class Endpoint extends HttpServlet {
 	
 	JSONObject processNewFrame(Frame newframe, boolean simulation)
 	{
+		simulation = true; // FIXME temporarily prevent any real alerts from going out until I'm awake to watch them
+		
 		JSONObject return_jo = new JSONObject();
 		// return_jo form:
 		// {
@@ -1704,6 +1706,17 @@ public class Endpoint extends HttpServlet {
 								{	
 									twitter_triggered = true; // <---------------
 									reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert regardless of credentials or successful posting
+									
+									if(simulation)
+									{
+										// send emails to admin on simulation since nothing goes to twitter, ok to turn this off if you want
+										try {
+											se.sendMail("Tweet triggered for " + reporter.getDesignation(), "url=" + newframe.getURL(), admin_user.getEmail(), "info@huzon.tv");
+										} catch (MessagingException e) {
+											e.printStackTrace();
+										}
+									}
+									
 									// check to see that reporter has twitter credentials on file. If not, email the reporter and send email to admin.
 									if(reporter.getTwitterAccessToken() == null || reporter.getTwitterAccessToken().equals("") || reporter.getTwitterAccessTokenSecret() == null || reporter.getTwitterAccessTokenSecret().equals(""))
 									{
@@ -1789,6 +1802,17 @@ public class Endpoint extends HttpServlet {
 								{
 									facebook_triggered = true; // <---------------
 									reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert regardless of credentials or successful posting
+									
+									if(simulation)
+									{
+										// send emails to admin on simulation since nothing goes to facebook, ok to turn this off if you want
+										try {
+											se.sendMail("FB triggered for " + reporter.getDesignation(), "url=" + newframe.getURL(), admin_user.getEmail(), "info@huzon.tv");
+										} catch (MessagingException e) {
+											e.printStackTrace();
+										}
+									}
+									
 									if(reporter.getFacebookPageAccessToken() == null || reporter.getFacebookPageAccessToken().equals(""))
 									{
 										facebook_successful = false; 

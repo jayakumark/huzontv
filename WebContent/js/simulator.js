@@ -1,5 +1,5 @@
-var endpoint = "https://localhost:8443/huzontv/endpoint";
-//var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "https://localhost:8443/huzontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
