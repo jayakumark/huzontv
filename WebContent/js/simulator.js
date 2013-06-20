@@ -1,5 +1,5 @@
-//var endpoint = "https://localhost:8443/huzontv/endpoint";
-var endpoint = "https://www.huzon.tv/endpoint";
+var endpoint = "https://localhost:8443/huzontv/endpoint";
+//var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -268,10 +268,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function1_begin_input\" size=13 value=\"20130618_121450\"> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function1_begin_input\" size=13 value=\"20130619_230355\"> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130618_121515\" size=13> ";
+	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130619_230410\" size=13> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "  						<input id=\"function1_go_button\" type=button value=\"GO\">";
@@ -304,10 +304,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function2_begin_input\" size=13 value=\"20130618_121450\"> ";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function2_begin_input\" size=13 value=\"20130619_230355\"> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function2_end_input\" value=\"20130618_121515\" size=13> ";
+	fds = fds + "						End: <input type=\"text\" id=\"function2_end_input\" value=\"20130619_230410\" size=13> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function2_go_button\" type=button value=\"GO\">";
@@ -347,10 +347,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function3_mawindow_input\" value=\"5\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130618_121450\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function3_begin_input\" size=13 value=\"20130619_230355\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function3_end_input\" value=\"20130618_121515\" size=13>";
+	fds = fds + "						End: <input type=\"text\" id=\"function3_end_input\" value=\"20130619_230410\" size=13>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function3_go_button\" type=button value=\"GO\">";
@@ -386,10 +386,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130618_121450\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130619_230355\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130618_121515\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130619_230410\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
@@ -408,10 +408,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130618_121450\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function5_begin_input\" size=13 value=\"20130619_230355\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130618_121515\" size=13>";
+	fds = fds + "						End: <input type=\"text\" id=\"function5_end_input\" value=\"20130619_230410\" size=13>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function5_go_button\" type=button value=\"GO\">";
@@ -432,10 +432,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	//fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	//fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130618_121450\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130619_230355\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130618_121515\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130619_230410\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Designation: <select id=\"function6_designation_select\">";
@@ -1132,14 +1132,14 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
         	{
         		rds = "<div style=\"border: 1px black solid;display:inline-block\">";
         		
-        		if(data.alert_triggered === "yes" && data.alert_fired === "yes")
+        		if(data.alert_triggered && (data.twitter_fired || data.facebook_fired))
         		{
     				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
     				rds = rds + "<tr>";
     				rds = rds + "		<td style=\"text-align:right;vertical-align:middle\">";
-    				if(data.social_type == "twitter" || data.social_type == "both")
+    				if(data.twitter_fired == true)
     					rds = rds + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
-    				if(data.social_type == "facebook" || data.social_type == "both")
+    				if(data.facebook_fired == true)
     					rds = rds + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
     				rds = rds + "		</td>";
     				rds = rds + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
@@ -1224,6 +1224,7 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
         		// alert or not, display frame
         		frame_to_display = data.frame_jo;
         		rds = rds + "<img src=\"" + frame_to_display.url + "\" style=\"width:250px;height:141px\">";
+        		
 				rds = rds + "<br>" + frame_to_display.image_name;
 				if(frame_to_display.designation)
 					rds = rds + "<br>des: " + frame_to_display.designation;
@@ -1237,6 +1238,8 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
 				//rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
 				//rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
 				//rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
+				data.frame_jo = "suppressed for readability";
+				rds = rds + "<br>frame processing response:" + JSON.stringify(data);
 				rds = rds + "</div>";
         		$("#results_div").append(rds);
         		//alert('f2d=' + JSON.stringify(frame_to_display));
