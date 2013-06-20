@@ -150,7 +150,8 @@ var reporters_ja;
 
 document.addEventListener('DOMContentLoaded', function () {
 		
-	
+	//docCookies.setItem("twitter_access_token", "");
+	//docCookies.setItem("twitter_handle", "");
 	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
@@ -427,21 +428,6 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
-	/*fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	// alert waiting periods should be separated, but this function doesn't actually use one
-	//fds = fds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
-	fds = fds + "					</td>";*/
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
 	//fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	//fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
 	//fds = fds + "					</td>";
@@ -467,6 +453,59 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "			</table>";
 	fds = fds + "		</td>";
 	fds = fds + "	</tr>";
+	
+	fds = fds + "	<tr>";
+	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	/*fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	fds = fds + "						<b>Function 7:</b> Get fired alerts for time range (inclusive)";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function7_begin_input\" size=13 value=\"20130409_050000\">";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						End: <input type=\"text\" id=\"function7_end_input\" value=\"20130409_060000\" size=13>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "   					<input id=\"function7_go_button\" type=button value=\"GO\">";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "			</table>";*/
+	fds = fds + "		</td>";
+	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
+	fds = fds + "						<b>Function 8:</b> Delete an alert";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Designation: <select id=\"function8_designation_select\">";
+	for(var a = 0; a < reporters_ja.length; a++)
+	{
+		fds = fds + "							<option value=\"" + reporters_ja[a] + "\">" + reporters_ja[a] + "</option>";
+	}	
+	fds = fds + "							</select>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Type: <input type=\"text\" id=\"function8_social_type_input\" size=13 value=\"twitter\">";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Item ID: <input type=\"text\" id=\"function8_id_input\" value=\"\" size=13>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "   					<input id=\"function8_go_button\" type=button value=\"GO\">";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "			</table>";
+	fds = fds + "		</td>";
+	fds = fds + "		</td>";
+	fds = fds + "	</tr>";
+	
 	fds = fds + "</table>";
 	$("#functions_div").html(fds);
 	
@@ -1013,10 +1052,41 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            console.log(textStatus, errorThrown);
 				        }
 					});
-				
-				
-				
-				
+			});
+	
+	$("#function8_go_button").click(
+			function () {
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "deleteAlert",
+				            designation: $('#function8_designation_select').val(),
+				            social_type: $('#function8_social_type_input').val(),             
+				            id: $('#function8_id_input').val(),
+				            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
+						},
+				        dataType: 'json',
+				        async: false,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error message=" + data.message);
+				        	else
+				        	{
+				        		rds = JSON.stringify(data);
+				        		$("#results_div").html(rds);
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
 				return;
 			});
 	

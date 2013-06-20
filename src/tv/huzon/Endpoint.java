@@ -1388,6 +1388,97 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 					}
+				}
+				else if (method.equals("deleteAlert"))
+				{	
+					System.out.println("Endpoint begin getAlertFrames");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String social_type = request.getParameter("social_type");
+					String designation = request.getParameter("designation");
+					String id = request.getParameter("id");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(social_type == null)
+					{
+						jsonresponse.put("message", "A social_type value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							if(user.isGlobalAdmin())
+							{
+								User target_user = new User(designation, "designation");
+								if(social_type.equals("facebook"))
+								{
+									boolean successful = target_user.deleteFacebookPost(id);
+									if(successful)
+									{
+										jsonresponse.put("response_status", "success");
+										jsonresponse.put("response_from_facebook", "true");
+									}
+									else
+									{
+										jsonresponse.put("message", "Error. Could not delete from facebook. Unknown error. Try using graph api explorer instead.");
+										jsonresponse.put("response_status", "error");
+									}
+								}
+								else if(social_type.equals("twitter"))
+								{
+									if(!user.getTwitterAccessToken().isEmpty() && !user.getTwitterAccessTokenSecret().isEmpty())
+									{	
+										Twitter twitter = new Twitter();
+										JSONObject response_from_twitter = twitter.deleteStatus(target_user.getTwitterAccessToken(), target_user.getTwitterAccessTokenSecret(), id);
+										jsonresponse.put("response_status", "success");
+										jsonresponse.put("response_from_twitter", response_from_twitter);
+									}
+									else
+									{
+										jsonresponse.put("message", "Error. Could not get user twitter access token and secret");
+										jsonresponse.put("response_status", "error");
+									}
+								}
+								else
+								{
+									jsonresponse.put("message", "Error deleting alert. social_type must be twitter or facebook.");
+									jsonresponse.put("response_status", "error");
+								}
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
+						}
+					}	
 				} 
 				else
 				{
@@ -1414,86 +1505,547 @@ public class Endpoint extends HttpServlet {
 	JSONObject processNewFrame(Frame newframe, boolean simulation)
 	{
 		JSONObject return_jo = new JSONObject();
+		// return_jo form:
+		// {
+		// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
+		//		(if !alert_triggered, then)							
+		//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
+		//
+		//      twitter_triggered: true or false,
+		//		twitter_fired: true or false,
+		//		twitter_successful: true or false,					// means alert posted and returned an id (or failed)
+		//		(if !twitter_successful, then)
+		//			twitter_failure_message: some message about why twitter failed,	
+		//
+		//      facebook_triggered: true or false,
+		// 		facebook_fired: true or false,
+		//		facebook_successful: true or false,					// means alert posted and returned an id (or failed)
+		//		(if !facebook_successful, then)
+		//			facebook_failure_message: some message about why facebook failed,		
+		// }
+		
+		boolean alert_triggered = false;
+		String alert_triggered_failure_message = "";
+		boolean twitter_triggered = false;
+		boolean twitter_fired = false;
+		boolean twitter_successful = false;
+		String twitter_failure_message = "";
+		boolean facebook_triggered = false;
+		boolean facebook_fired = false;
+		boolean facebook_successful = false;
+		String facebook_failure_message = "";
+		// 1. Check to make sure there are enough frames in the moving average window to draw a conclusion
+		// 2. calculate the moving averages for each reporter from the frames
+		// 3. If a designation passes the moving avg threshold AND that moving average is the highest among all others
+		// 	  {
+		//    4. If the designation that passed ma thresh also passes single thresh for one of the frames
+		//		 {
+		//		 5.	If reporter not in twitter waiting period 
+		//			{
+		//				if user has twitter credentials on file
+		//				{
+		//					try to create tweet
+		//					if tweet is not successful
+		//					{
+		//						send email to reporter and notify admin
+		//					}
+		//				}
+		//			}
+		// 		6.  if reporter not in facebook waiting period
+		//			{
+		//				if user has facebook credentials on file
+		//				{
+		//					try to create facebook post
+		//					if facebook post not successful
+		//					{
+		//						send email to reporter and notify admin
+		//					}
+		//				}
+		//			}
+		//		  }
+		//	   }
+		
+		
+		
+		User admin_user = new User("huzon_master", "designation");
+		SimpleEmailer se = new SimpleEmailer();
 		System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
-		try{
+		try
+		{
+			
 			// get all frames over the moving average window backward from this timestamp
 			Station station_object = new Station(newframe.getStation());
 			TreeSet<Frame> window_frames = station_object.getFrames(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), null, 0);
 			int num_frames_in_window = window_frames.size();
 			System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
-			if(num_frames_in_window < 5)
-			{
-				System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
-				return_jo.put("alert_triggered", "no");
-				return_jo.put("alert_fired", "no");
-				return_jo.put("reason", "not enough frames");
-				return return_jo;
-			}
 			
-			String[] reporter_designations = newframe.getReporterDesignations();
-			double[] reporter_totals = new double[reporter_designations.length];
-			double[] reporter_moving_averages = new double[reporter_designations.length];
-			double[] reporter_moving_average_thresholds = new double[reporter_designations.length];
-			double[] reporter_single_thresholds = new double[reporter_designations.length];
-
-			// loop through the frames in the window, calculating total designation_avg for each reporter
-					Iterator<Frame> it = window_frames.iterator();
-			Frame currentframe = null;
-			while(it.hasNext())
+			/***
+			 *     __             _____  _   _  _____ _____  _   __    _  _    ____________  ___  ___  ___ _____ _____ 
+			 *    /  |           /  __ \| | | ||  ___/  __ \| | / /  _| || |_  |  ___| ___ \/ _ \ |  \/  ||  ___/  ___|
+			 *    `| |   ______  | /  \/| |_| || |__ | /  \/| |/ /  |_  __  _| | |_  | |_/ / /_\ \| .  . || |__ \ `--. 
+			 *     | |  |______| | |    |  _  ||  __|| |    |    \   _| || |_  |  _| |    /|  _  || |\/| ||  __| `--. \
+			 *    _| |_          | \__/\| | | || |___| \__/\| |\  \ |_  __  _| | |   | |\ \| | | || |  | || |___/\__/ /
+			 *    \___/           \____/\_| |_/\____/ \____/\_| \_/   |_||_|   \_|   \_| \_\_| |_/\_|  |_/\____/\____/ 
+			 *                                                                                                         
+			 *                                                                                                         
+			 */
+			if(num_frames_in_window < 5)  // all response boolean values remain false and return
 			{
-				currentframe = it.next();
-				//System.out.println("Endpoint.processNewFrame(): Examining " + currentframe.getImageName());
-				int x = 0;
-				while(x < reporter_designations.length)
+				alert_triggered_failure_message = "not enough frames in window";
+				System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
+			}
+			else
+			{
+				/***
+				 *     _____            _____   ___   _     _____   ___  ________  _   _     ___  _   _ _____  _____ 
+				 *    / __  \          /  __ \ / _ \ | |   /  __ \  |  \/  |  _  || | | |   / _ \| | | |  __ \/  ___|
+				 *    `' / /'  ______  | /  \// /_\ \| |   | /  \/  | .  . | | | || | | |  / /_\ \ | | | |  \/\ `--. 
+				 *      / /   |______| | |    |  _  || |   | |      | |\/| | | | || | | |  |  _  | | | | | __  `--. \
+				 *    ./ /___          | \__/\| | | || |___| \__/\  | |  | \ \_/ /\ \_/ /  | | | \ \_/ / |_\ \/\__/ /
+				 *    \_____/           \____/\_| |_/\_____/\____/  \_|  |_/\___/  \___/   \_| |_/\___/ \____/\____/ 
+				 *                                                                                                   
+				 *                                                                                                   
+				 */
+				String[] reporter_designations = newframe.getReporterDesignations();
+				double[] reporter_totals = new double[reporter_designations.length];
+				double[] reporter_moving_averages = new double[reporter_designations.length];
+				double[] reporter_moving_average_thresholds = new double[reporter_designations.length];
+				double[] reporter_single_thresholds = new double[reporter_designations.length];
+
+				Iterator<Frame> it = window_frames.iterator();
+				Frame currentframe = null;
+				while(it.hasNext())
 				{
-					//if(reporter_designations[x].equals("alex_hayes") || reporter_designations[x].equals("kristen_kennedy"))
-					//	System.out.println("Endpoint.processNewFrame(): " + reporter_designations[x] + " score= " + currentframe.getScore(reporter_designations[x]));
-					reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
+					currentframe = it.next();
+					int x = 0;
+					while(x < reporter_designations.length)
+					{
+						reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
+						x++;
+					}
+				}
+				
+				// then divide the sum designation_avgs by dividing by the number of frames in the window
+				int x = 0;
+				double reporter_homogeneity = 0;
+				double max_moving_average = 0;
+				
+				while(x < reporter_totals.length)
+				{
+					reporter_moving_averages[x] = reporter_totals[x] / num_frames_in_window;
+					if(reporter_moving_averages[x] > max_moving_average)
+					{
+						max_moving_average = reporter_moving_averages[x];
+					}
+					if(reporter_moving_averages[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
+					{	
+						reporter_homogeneity = (new User(reporter_designations[x],"designation")).getHomogeneity();
+						reporter_moving_average_thresholds[x] = .67 * reporter_homogeneity;
+						reporter_single_thresholds[x] = reporter_homogeneity;
+					}
+					else
+					{
+						reporter_moving_average_thresholds[x] = 100;
+						reporter_single_thresholds[x] = 100;
+					}
 					x++;
 				}
-			}
-			
-			// then divide the sum designation_avgs by dividing by the number of frames in the window
-			int x = 0;
-			double reporter_homogeneity = 0;
-			double max_moving_average = 0;
-			
-			while(x < reporter_totals.length)
-			{
-				reporter_moving_averages[x] = reporter_totals[x] / num_frames_in_window;
-				if(reporter_moving_averages[x] > max_moving_average)
+				
+				
+				/***
+				 *     _____             ___   _   ___   __ ______  ___   _____ _____  ___  ___  ___    _____ _   _ ______ _____ _____ _   _ ___  
+				 *    |____ |           / _ \ | \ | \ \ / / | ___ \/ _ \ /  ___/  ___| |  \/  | / _ \  |_   _| | | || ___ \  ___/  ___| | | |__ \ 
+				 *        / /  ______  / /_\ \|  \| |\ V /  | |_/ / /_\ \\ `--.\ `--.  | .  . |/ /_\ \   | | | |_| || |_/ / |__ \ `--.| |_| |  ) |
+				 *        \ \ |______| |  _  || . ` | \ /   |  __/|  _  | `--. \`--. \ | |\/| ||  _  |   | | |  _  ||    /|  __| `--. \  _  | / / 
+				 *    .___/ /          | | | || |\  | | |   | |   | | | |/\__/ /\__/ / | |  | || | | |   | | | | | || |\ \| |___/\__/ / | | ||_|  
+				 *    \____/           \_| |_/\_| \_/ \_/   \_|   \_| |_/\____/\____/  \_|  |_/\_| |_/   \_/ \_| |_/\_| \_\____/\____/\_| |_/(_)  
+				 *                                                                                                                                
+				 *                                                                                                                                
+				 */
+				
+				boolean a_designation_passed_ma_thresh_and_was_highest = false;
+				boolean designation_passed_single_thresh = false;
+				String designation_that_passed_ma_thresh = "";
+				String image_name_of_frame_in_window_that_passed_single_thresh = "";
+				x = 0;
+				while(x < reporter_designations.length)
 				{
-					max_moving_average = reporter_moving_averages[x];
-				}
-				if(reporter_moving_averages[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
-				{	
-					reporter_homogeneity = (new User(reporter_designations[x],"designation")).getHomogeneity();
-					reporter_moving_average_thresholds[x] = .67 * reporter_homogeneity;
-					reporter_single_thresholds[x] = reporter_homogeneity;
+					designation_passed_single_thresh = false;
+					
+					if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
+					{
+						a_designation_passed_ma_thresh_and_was_highest = true;
+						designation_that_passed_ma_thresh = reporter_designations[x];
+						User reporter = new User(designation_that_passed_ma_thresh, "designation");
+						
+						/***
+						 *       ___           ___  ___  ___   ______  ___   _____ _____ ___________    _____ _____ _   _ _____  _      _____ ___  
+						 *      /   |          |  \/  | / _ \  | ___ \/ _ \ /  ___/  ___|  ___|  _  \  /  ___|_   _| \ | |  __ \| |    |  ___|__ \ 
+						 *     / /| |  ______  | .  . |/ /_\ \ | |_/ / /_\ \\ `--.\ `--.| |__ | | | |  \ `--.  | | |  \| | |  \/| |    | |__    ) |
+						 *    / /_| | |______| | |\/| ||  _  | |  __/|  _  | `--. \`--. \  __|| | | |   `--. \ | | | . ` | | __ | |    |  __|  / / 
+						 *    \___  |          | |  | || | | | | |   | | | |/\__/ /\__/ / |___| |/ /   /\__/ /_| |_| |\  | |_\ \| |____| |___ |_|  
+						 *        |_/          \_|  |_/\_| |_/ \_|   \_| |_/\____/\____/\____/|___(_)  \____/ \___/\_| \_/\____/\_____/\____/ (_)  
+						 *                                                                                                                         
+						 *                                                                                                                         
+						 */
+						JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
+						for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
+						{
+							System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
+							if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
+							{
+								designation_passed_single_thresh = true;
+								image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
+							}
+						}
+						
+						if(designation_passed_single_thresh)
+						{
+							alert_triggered = true; // <---------------
+							/***
+							 *     _____           ___  ___  ___            _             _                                     _     _____        _ _   _          ___  
+							 *    |  ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |_   _|      (_) | | |        |__ \ 
+							 *    |___ \   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |     | |_      ___| |_| |_ ___ _ __ ) |
+							 *        \ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |     | \ \ /\ / / | __| __/ _ \ '__/ / 
+							 *    /\__/ /          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_    | |\ V  V /| | |_| ||  __/ | |_|  
+							 *    \____/           \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_)   \_/ \_/\_/ |_|\__|\__\___|_| (_)  
+							 *                                                       __/ |        | |                                                                    
+							 *                                                      |___/         |_|                                                                    
+							 */
+							boolean image_downloaded = false;
+							if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
+							{	
+								twitter_triggered = true; // <---------------
+								// check to see that reporter has twitter credentials on file. If not, email the reporter and send email to admin.
+								if(reporter.getTwitterAccessToken() == null || reporter.getTwitterAccessToken().equals("") || reporter.getTwitterAccessTokenSecret() == null || reporter.getTwitterAccessTokenSecret().equals(""))
+								{
+									twitter_fired = false;
+									String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "twitter");
+									try {
+										// send to reporter and to admin
+										se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+										se.sendMail(reporter.getDesignation() + " was notified of missing Twitter credentials", "The following email was sent to a reporter due to missing twitter credentials:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
+									} catch (MessagingException me) { me.printStackTrace(); }
+								}
+								else // user appears to have twitter credentials
+								{
+									twitter_fired = true; // <---------------
+									File imagefile = null;
+									if(!image_downloaded) // image should never be downloaded at this point... just put this here for symmetry with the facebook block below
+									{
+										URL image_url = new URL(newframe.getURL());
+									    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
+									    String tmpdir = System.getProperty("java.io.tmpdir");
+									    System.out.println("TEMP DIR=" + tmpdir);
+									    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
+									    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+									    imagefile = new File(tmpdir + "/image.jpg");
+									    image_downloaded = true;
+									}
+									
+									Twitter twitter = new Twitter();
+									Platform p = new Platform();
+									long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
+									String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id, reporter);
+									JSONObject twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, imagefile);
+									
+									if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
+									{
+										twitter_successful = false; 
+										twitter_failure_message = twit_jo.getString("message");
+										if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
+										{
+											reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
+											String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "twitter");
+											try {
+												// send to reporter and to admin
+												se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+												se.sendMail(reporter.getDesignation() + " was notified of a disconnected Twitter account", "The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
+											} catch (MessagingException me) { me.printStackTrace(); }
+										}
+									}
+									else
+									{
+										twitter_successful = true; // the twitter post was successful, regardless of the two following db updates.
+										
+										// if either of these fail, alert the admin within the functions themselves
+										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
+										boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
+									}
+								}
+							} // end twitter block
+							
+							/***
+							 *      ____           ___  ___  ___            _             _                                     _    ______             _                 _   ___  
+							 *     / ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |  ___|           | |               | | |__ \ 
+							 *    / /___   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |   | |_ __ _  ___ ___| |__   ___   ___ | | __ ) |
+							 *    | ___ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |   |  _/ _` |/ __/ _ \ '_ \ / _ \ / _ \| |/ // / 
+							 *    | \_/ |          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_  | || (_| | (_|  __/ |_) | (_) | (_) |   <|_|  
+							 *    \_____/          \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_) \_| \__,_|\___\___|_.__/ \___/ \___/|_|\_(_)  
+							 *                                                       __/ |        | |                                                                              
+							 *                                                      |___/         |_|                                                                              
+							 */
+							if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
+							{
+								facebook_triggered = true; // <---------------
+								if(reporter.getFacebookPageAccessToken() == null || reporter.getFacebookPageAccessToken().equals(""))
+								{
+									facebook_fired = false;
+									String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "facebook");
+									try {
+										// send to reporter and to admin
+										se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+										se.sendMail(reporter.getDesignation() + " was notified of missing FB credentials", "The following email was sent to a reporter due to missing FB credentials:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
+									} catch (MessagingException me) { me.printStackTrace(); }
+								}
+								else // user appears to have facebook credentials
+								{
+									facebook_fired = true; // <---------------
+									File imagefile = null;
+									if(!image_downloaded) // image should never be downloaded at this point... just put this here for symmetry with the facebook block below
+									{
+										URL image_url = new URL(newframe.getURL());
+									    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
+									    String tmpdir = System.getProperty("java.io.tmpdir");
+									    System.out.println("TEMP DIR=" + tmpdir);
+									    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
+									    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+									    imagefile = new File(tmpdir + "/image.jpg");
+									    image_downloaded = true;
+									}
+								
+									Facebook facebook = new FacebookFactory().getInstance();
+									facebook.setOAuthAppId("176524552501035", "dbf442014759e75f2f93f2054ac319a0");
+									facebook.setOAuthPermissions("publish_stream,manage_page");
+									facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
+									
+									Platform p = new Platform();
+									long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
+									String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id, reporter);
+																	
+									String facebookresponse = "";
+									try {
+										facebookresponse = facebook.postPhoto(new Long(reporter.getFacebookPageID()).toString(), new Media(imagefile), message, "33684860765", false); // FIXME hardcode to wkyt station
+										facebook_successful = true; // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
+										
+										// if either of these fail, notify admin from within functions themselves
+										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
+										boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
+									} 
+									catch (FacebookException e) 
+									{
+										facebook_successful = false;
+										facebook_failure_message = e.getErrorMessage();
+										if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
+										{
+											reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
+											String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "facebook");
+											try {
+												// send to reporter and to admin
+												se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+												se.sendMail(reporter.getDesignation() + " was notified of invalid FB credentials", "The following email was sent to a reporter due to invalid FB credentials:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
+											} catch (MessagingException me) { me.printStackTrace(); }
+										}
+										else
+										{	
+											e.printStackTrace();
+											try {
+												se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", admin_user.getDesignation() + " " + 
+														new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
+											} catch (MessagingException me) {
+												me.printStackTrace();
+											}
+										}
+									}
+								}
+							} // end facebook block
+						}
+						else
+						{
+							// user did not pass single thresh
+						}
+					}
+					else
+					{
+						// user did not pass ma thresh
+					}
+				} // loop reporters
+				
+				return_jo.put("alert_triggered", alert_triggered);
+				if(alert_triggered)
+				{
+					return_jo.put("twitter_triggered", twitter_triggered);
+					return_jo.put("twitter_fired", twitter_fired);
+					return_jo.put("twitter_successful", twitter_successful);
+					if(!twitter_successful)
+						return_jo.put("twitter_failure_message", twitter_failure_message);
+					
+					return_jo.put("facebook_triggered", facebook_triggered);
+					return_jo.put("facebook_fired", facebook_fired);
+					return_jo.put("facebook_successful", facebook_successful);
+					if(!facebook_successful)
+						return_jo.put("facebook_failure_message", facebook_failure_message);
 				}
 				else
 				{
-					reporter_moving_average_thresholds[x] = 100;
-					reporter_single_thresholds[x] = 100;
+					if(!a_designation_passed_ma_thresh_and_was_highest)
+						alert_triggered_failure_message = "None of the designations passed the ma threshold";
+					else // no alert triggered yet a designation passed the ma thresh... that means that the designation didn't pass single thresh
+						alert_triggered_failure_message = "A designation passed ma thresh and was highest, but didn't pass single thresh for any of the frames in the window.";
+					return_jo.put("alert_triggered", alert_triggered_failure_message);
 				}
-				x++;
+				
 			}
-			
-			//boolean passed_ma_thresh = false;
-			//long timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = 0L;
-			boolean frame_in_window_passed_single_thresh = false;
-			String designation_that_passed_ma_thresh = "";
-			
-			String image_name_of_frame_in_window_that_passed_single_thresh = "";
-			x = 0;
-			while(x < reporter_designations.length)
+		}
+		catch(JSONException jsone)
+		{
+			jsone.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		
+		return return_jo;
+	}
+					
+		
+
+	public JSONObject getFacebookAccessTokenFromAuthorizationCode(String code)
+	{
+		JSONObject jsonresponse = new JSONObject();
+		String client_id = "176524552501035";
+		String client_secret = "dbf442014759e75f2f93f2054ac319a0";
+		String redirect_uri = "https://www.huzon.tv/registration.html";
+		HttpClient client = new DefaultHttpClient();
+		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?client_id=" + client_id + "&client_secret=" + client_secret + "&redirect_uri=" + redirect_uri + "&code=" + code);
+		HttpResponse response;
+		try
+		{
+			try 
 			{
-				// does it pass the ma threshold and is it the highest?
-				if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				jsonresponse.put("response_status", "success");
+				jsonresponse.put("response_from_facebook", text);
+				StringTokenizer st = new StringTokenizer(text,"&");
+				String currenttoken = "";
+				String access_token = "";
+				String expires = "";
+				while(st.hasMoreTokens())
 				{
-					//passed_ma_thresh = true;
-					designation_that_passed_ma_thresh = reporter_designations[x];
-					User reporter = new User(designation_that_passed_ma_thresh, "designation");
+					 currenttoken = st.nextToken();
+					 if(currenttoken.startsWith("access_token="))
+						 access_token = currenttoken.substring(currenttoken.indexOf("=") + 1);
+					 else if(currenttoken.startsWith("expires="))
+						 expires = currenttoken.substring(currenttoken.indexOf("=") + 1);
+					 else
+					 {
+						 // something else. The 4 values above are the only ones twitter should return, so this case would be weird.
+						 // skip
+					 }
+				}
+				jsonresponse.put("access_token", access_token);
+				jsonresponse.put("expires", expires);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+				jsonresponse.put("response_status", "error");
+				jsonresponse.put("message", "clientprotocolexception " + e.getMessage());
+			} catch (IOException e) {
+				e.printStackTrace();
+				jsonresponse.put("response_status", "error");
+				jsonresponse.put("message", "ioexception " + e.getMessage());
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
+	public String getMissingCredentialsEmailMessage(String addressee, Frame frame, String social_type)
+	{
+		String message = "";
+		
+		if(social_type.equals("twitter"))
+		{
+			message = 
+				addressee + 
+				",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+				"has become disconnected from huzon.tv. This can happen for several reasons:" +
+				"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
+				"\n- Your Twitter account was never linked to huzon.tv in the first place"+
+				"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+				"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame.getURL();
+		}
+		else if(social_type.equals("facebook"))
+		{
+			message =
+				addressee +
+					",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
+					"has become disconnected from huzon.tv. This can happen for several reasons:" +
+					"\n\n- huzon.tv access to your account has expired (60 days)" + 
+					"\n- You disabled the huzon.tv app in your FB privacy configuration" +
+					"\n- Your FB account was never linked to huzon.tv in the first place"+
+					"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
+					"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame.getURL();	
+		}
+		return message;
+	}
+	
+	
+	
+	public static void main(String[] args) {
+		//Endpoint e = new Endpoint();
+	}
+	
+}
+
+/*
+ * 			
+					
+					
+					
+					
+					
+					//			If reporter not in twitter waiting period 
+					//			(
+					//				if user has twitter credentials on file
+					//				{
+					//					try to create tweet
+					//					if tweet is not successful
+					//					{
+					//						send email to reporter and notify admin
+					//					}
+					//				}
+					//			}
+					// 			if reporter not in facebook waiting period
+					//			{
+					//				if user has facebook credentials on file
+					//				{
+					//					try to create facebook post
+					//					if facebook post not successful
+					//					{
+					//						send email to reporter and notify admin
+					//					}
+					//				}
+					//			}
+					
+					
+				
+					
+					
+					
+					
+					
+					
+					
+					
 					
 					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
 							&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
@@ -1506,20 +2058,7 @@ public class Endpoint extends HttpServlet {
 						return return_jo;
 					}
 
-					// at this point, a reporter passed ma_thresh and is without fb or twit waiting periods (so an alert is possible. Check single frame thresh)
-					JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
-					System.out.println("Looking for frame in window that passes single thresh");
-					for(int y = 0; y < frames_ja.length(); y++)
-					{
-						System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
-						if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
-						{
-							frame_in_window_passed_single_thresh = true;
-							//timestamp_in_ms_of_frame_in_window_that_passed_single_thresh = frames_ja.getJSONObject(y).getLong("timestamp_in_ms");
-							image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
-							break; // important to prevent getting later frames that may have also passed
-						}
-					}
+					
 					if(frame_in_window_passed_single_thresh)// frame in window passed single thresh
 					{	
 						System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
@@ -1588,51 +2127,93 @@ public class Endpoint extends HttpServlet {
 								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id, reporter);
 
-								JSONObject twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, f);
-								
-								if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
+								JSONObject twit_jo = null;
+								// if the user doesn't have any twitter credentials, send an email...
+								if(reporter.getTwitterAccessToken() == null || reporter.getTwitterAccessToken().equals("")
+										|| reporter.getTwitterAccessTokenSecret() == null || reporter.getTwitterAccessTokenSecret().equals(""))
 								{
-									if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
+									try {
+										se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
+												",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+														"has become disconnected from huzon.tv. This can happen for several reasons:" +
+														"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
+														"\n- Your Twitter account was never linked to huzon.tv in the first place"+
+														"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+														"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
+													, reporter.getEmail(), 
+													"info@huzon.tv");
+									} catch (MessagingException me) {
+										me.printStackTrace();
+									}
+									
+									try {
+										se.sendMail(reporter.getDesignation() + " was notified of an unlinked Twitter account", 
+												"The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + reporter.getDisplayName() + 
+												",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+												"has become disconnected from huzon.tv. This can happen for several reasons:" +
+												"\n\n- huzon.tv access to your account has expired (60 days)" + 
+												"\n- You disabled the huzon.tv app in your Twitter configuration\n- Your Twitter account was never linked to huzon.tv in the first place"+
+												"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+												"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
+											,admin_user.getEmail(), 
+											"info@huzon.tv");
+									} catch (MessagingException me) {
+										me.printStackTrace();
+									}
+									
+									twit_jo = new JSONObject();
+									twit_jo.put("response_status", "error");
+									twit_jo.put("message", "no twitter credentials");
+								}
+								else // otherwise, try the twitter post.
+								{	
+									twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, f);
+									
+									if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
 									{
-										reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
-										try {
-											se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
-													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-															"has become disconnected from huzon.tv. This can happen for several reasons:" +
-															"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
-															"\n- Your Twitter account was never linked to huzon.tv in the first place"+
-															"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-															"Thanks!\n\nhuzon.tv staff"
-														, reporter.getEmail(), 
-														"info@huzon.tv");
-										} catch (MessagingException me) {
-											me.printStackTrace();
+										if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
+										{
+											// send an email to the reporter 
+											reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
+											try {
+												se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
+														",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+																"has become disconnected from huzon.tv. This can happen for several reasons:" +
+																"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
+																"\n- Your Twitter account was never linked to huzon.tv in the first place"+
+																"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+																"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
+															, reporter.getEmail(), 
+															"info@huzon.tv");
+											} catch (MessagingException me) {
+												me.printStackTrace();
+											}
+											
+											// send an email to the admin letting them know a reporter was prompted.
+											try {
+												se.sendMail(reporter.getDesignation() + " was notified of an unlinked Twitter account", 
+														"The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + reporter.getDisplayName() + 
+														",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+														"has become disconnected from huzon.tv. This can happen for several reasons:" +
+														"\n\n- huzon.tv access to your account has expired (60 days)" + 
+														"\n- You disabled the huzon.tv app in your Twitter configuration\n- Your Twitter account was never linked to huzon.tv in the first place"+
+														"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+														"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
+													,admin_user.getEmail(), 
+													"info@huzon.tv");
+											} catch (MessagingException me) {
+												me.printStackTrace();
+											}
+											
 										}
-										
-										try {
-											se.sendMail(reporter.getDesignation() + " was notified of an unlinked Twitter account", 
-													"The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + reporter.getDisplayName() + 
-													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-													"has become disconnected from huzon.tv. This can happen for several reasons:" +
-													"\n\n- huzon.tv access to your account has expired (60 days)" + 
-													"\n- You disabled the huzon.tv app in your Twitter configuration\n- Your Twitter account was never linked to huzon.tv in the first place"+
-													"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-													"Thanks!\n\nhuzon.tv staff"
-												,admin_user.getEmail(), 
-												"info@huzon.tv");
-										} catch (MessagingException me) {
-											me.printStackTrace();
-										}
-										
+									}
+									else // if no error, update the alert text and social item id
+									{	
+										// update the table row with the message actual_text and social_id
+										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
+										boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
 									}
 								}
-								else
-								{	
-									// update the table row with the message actual_text and social_id
-									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-									boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
-								}
-								
 								System.out.println("Endpoint.processNewFrame(): Twitter result=" + twit_jo.toString());
 							}
 							
@@ -1660,6 +2241,7 @@ public class Endpoint extends HttpServlet {
 								{
 									if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
 									{
+										// send an email to the reporter 
 										reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
 										try {
 											se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
@@ -1669,14 +2251,14 @@ public class Endpoint extends HttpServlet {
 															"\n- You disabled the huzon.tv app in your FB privacy configuration" +
 															"\n- Your FB account was never linked to huzon.tv in the first place"+
 															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
-															"Thanks!\n\nhuzon.tv staff"
+															"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
 														,reporter.getEmail(),  
 														"info@huzon.tv");
 										} catch (MessagingException me) {
 											me.printStackTrace();
 										}
 										
-										
+										// send an email to the admin letting them know a reporter was prompted.
 										try {
 											se.sendMail(reporter.getDesignation() + " was notified of an unlinked FB account", 
 													"The following email was sent to a reporter due to an unlinked FB account:\n\n" + reporter.getDisplayName() + 
@@ -1686,7 +2268,7 @@ public class Endpoint extends HttpServlet {
 															"\n- You disabled the huzon.tv app in your FB privacy configuration" +
 															"\n- Your FB account was never linked to huzon.tv in the first place"+
 															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
-															"Thanks!\n\nhuzon.tv staff"
+															"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
 														,admin_user.getEmail(), 
 														"info@huzon.tv");
 										} catch (MessagingException me) {
@@ -1747,72 +2329,8 @@ public class Endpoint extends HttpServlet {
 		}	
 		return return_jo;
 	}
-
-	public JSONObject getFacebookAccessTokenFromAuthorizationCode(String code)
-	{
-		JSONObject jsonresponse = new JSONObject();
-		String client_id = "176524552501035";
-		String client_secret = "dbf442014759e75f2f93f2054ac319a0";
-		String redirect_uri = "https://www.huzon.tv/registration.html";
-		HttpClient client = new DefaultHttpClient();
-		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?client_id=" + client_id + "&client_secret=" + client_secret + "&redirect_uri=" + redirect_uri + "&code=" + code);
-		HttpResponse response;
-		try
-		{
-			try 
-			{
-				response = client.execute(request);
-				// Get the response
-				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-				String text = "";
-				String line = "";
-				while ((line = rd.readLine()) != null) {
-					text = text + line;
-				} 
-				jsonresponse.put("response_status", "success");
-				jsonresponse.put("response_from_facebook", text);
-				StringTokenizer st = new StringTokenizer(text,"&");
-				String currenttoken = "";
-				String access_token = "";
-				String expires = "";
-				while(st.hasMoreTokens())
-				{
-					 currenttoken = st.nextToken();
-					 if(currenttoken.startsWith("access_token="))
-						 access_token = currenttoken.substring(currenttoken.indexOf("=") + 1);
-					 else if(currenttoken.startsWith("expires="))
-						 expires = currenttoken.substring(currenttoken.indexOf("=") + 1);
-					 else
-					 {
-						 // something else. The 4 values above are the only ones twitter should return, so this case would be weird.
-						 // skip
-					 }
-				}
-				jsonresponse.put("access_token", access_token);
-				jsonresponse.put("expires", expires);
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-				jsonresponse.put("response_status", "error");
-				jsonresponse.put("message", "clientprotocolexception " + e.getMessage());
-			} catch (IOException e) {
-				e.printStackTrace();
-				jsonresponse.put("response_status", "error");
-				jsonresponse.put("message", "ioexception " + e.getMessage());
-			}
-		}	
-		catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return jsonresponse;
-	}
-	
-	
-	
-	public static void main(String[] args) {
-		//Endpoint e = new Endpoint();
-	}
-	
-}
+	*/
+ 
 
 
 

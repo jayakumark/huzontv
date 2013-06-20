@@ -149,31 +149,6 @@ public class Platform {
 	
 	
 
-	public boolean deleteFacebookPost(String designation, String item_id)
-	{
-		 boolean successful = false;
-		try {
-			HttpClient httpClient = new DefaultHttpClient();
-			User user = new User(designation, "designation");
-			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + user.getFacebookSubAccount().getString("facebook_page_access_token"));
-			HttpResponse response = httpClient.execute(hd);
-			int statusCode = response.getStatusLine().getStatusCode();
-	        successful = statusCode == 200 ? true : false;
-			//String responseBody = EntityUtils.toString(response.getEntity());
-			//System.out.println("Endpoint.deleteFacebookPost(): responsebody=" + responseBody);
-			//response_from_facebook = new JSONObject(responseBody);
-		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return successful;
-	}
 	
 
 	
