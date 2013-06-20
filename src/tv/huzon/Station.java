@@ -713,7 +713,7 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		else if(social_type.equals("twitter"))
 		{
-			returnval = reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
+			returnval = "@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
 		}
 		/*int selector = random.nextInt(4);
 		

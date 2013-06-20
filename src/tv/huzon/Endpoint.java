@@ -167,6 +167,7 @@ public class Endpoint extends HttpServlet {
 								SimpleEmailer se = new SimpleEmailer();
 								try {
 									se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+									
 								} catch (MessagingException e) {
 									e.printStackTrace();
 								}
@@ -1484,7 +1485,7 @@ public class Endpoint extends HttpServlet {
 	
 	JSONObject processNewFrame(Frame newframe, boolean simulation)
 	{
-		simulation = true; // FIXME temporarily prevent any real alerts from going out until I'm awake to watch them
+		//simulation = true; // FIXME temporarily prevent any real alerts from going out until I'm awake to watch them
 		
 		JSONObject return_jo = new JSONObject();
 		// return_jo form:
@@ -1713,10 +1714,7 @@ public class Endpoint extends HttpServlet {
 								{	
 									twitter_triggered = true; // <---------------
 									reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert regardless of credentials or successful posting
-									
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, simulation));
-								
-								} // end twitter block
+								} 
 								
 								/***
 								 *      ____           ___  ___  ___            _             _                                     _    ______             _                 _   ___  
@@ -1732,10 +1730,12 @@ public class Endpoint extends HttpServlet {
 								{
 									facebook_triggered = true; // <---------------
 									reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert regardless of credentials or successful posting
-									
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, simulation));
-								} // end facebook block
+								} 
 								
+								if(twitter_triggered)
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, simulation));
+								if(facebook_triggered)
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, simulation));
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;
@@ -1871,38 +1871,6 @@ public class Endpoint extends HttpServlet {
 		}
 		return jsonresponse;
 	}
-	
-	public String getMissingCredentialsEmailMessage(String addressee, Frame frame, String social_type)
-	{
-		String message = "";
-		
-		if(social_type.equals("twitter"))
-		{
-			message = 
-				addressee + 
-				",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-				"has become disconnected from huzon.tv. This can happen for several reasons:" +
-				"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
-				"\n- Your Twitter account was never linked to huzon.tv in the first place"+
-				"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-				"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame.getURL();
-		}
-		else if(social_type.equals("facebook"))
-		{
-			message =
-				addressee +
-					",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
-					"has become disconnected from huzon.tv. This can happen for several reasons:" +
-					"\n\n- huzon.tv access to your account has expired (60 days)" + 
-					"\n- You disabled the huzon.tv app in your FB privacy configuration" +
-					"\n- Your FB account was never linked to huzon.tv in the first place"+
-					"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
-					"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame.getURL();	
-		}
-		return message;
-	}
-	
-	
 	
 	public static void main(String[] args) {
 		//Endpoint e = new Endpoint();

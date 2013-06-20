@@ -111,7 +111,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 						return_jo.put("twitter_successful", false);
 						return_jo.put("twitter_failure_message", twit_jo.getString("message"));
 
-						if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
+						if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
 						{
 							reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
 							String emailmessage = getMissingCredentialsEmailMessage();
@@ -121,6 +121,24 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 								se.sendMail(reporter.getDesignation() + " was notified of a disconnected Twitter account", "The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 							} catch (MessagingException me) { me.printStackTrace(); }
 						}
+						else if(twit_jo.has("twitter_code"))
+						{
+							String emailmessage = getMissingCredentialsEmailMessage();
+							try {
+								// send to reporter and to admin
+								se.sendMail(reporter.getDesignation() + " unknown twitter error", "There was an unknown error trying to tweet. twit_jo=" + twit_jo + "\n\nHere's the email that DID NOT go out.\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
+							} catch (MessagingException me) { me.printStackTrace(); }
+						}
+						else
+						{
+							String emailmessage = getMissingCredentialsEmailMessage();
+							try {
+								// send to reporter and to admin
+								se.sendMail(reporter.getDesignation() + " some other twitter error", "There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + "\n\nHere's the email that DID NOT go out.\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
+							} catch (MessagingException me) { me.printStackTrace(); }
+						
+						}
+							
 					}
 					else
 					{
