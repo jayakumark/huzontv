@@ -17,6 +17,10 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
@@ -1656,41 +1660,45 @@ public class Endpoint extends HttpServlet {
 						designation_that_passed_ma_thresh = reporter_designations[x];
 						User reporter = new User(designation_that_passed_ma_thresh, "designation");
 						
-						System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
-						
-						/***
-						 *       ___           ___  ___  ___   ______  ___   _____ _____ ___________    _____ _____ _   _ _____  _      _____ ___  
-						 *      /   |          |  \/  | / _ \  | ___ \/ _ \ /  ___/  ___|  ___|  _  \  /  ___|_   _| \ | |  __ \| |    |  ___|__ \ 
-						 *     / /| |  ______  | .  . |/ /_\ \ | |_/ / /_\ \\ `--.\ `--.| |__ | | | |  \ `--.  | | |  \| | |  \/| |    | |__    ) |
-						 *    / /_| | |______| | |\/| ||  _  | |  __/|  _  | `--. \`--. \  __|| | | |   `--. \ | | | . ` | | __ | |    |  __|  / / 
-						 *    \___  |          | |  | || | | | | |   | | | |/\__/ /\__/ / |___| |/ /   /\__/ /_| |_| |\  | |_\ \| |____| |___ |_|  
-						 *        |_/          \_|  |_/\_| |_/ \_|   \_| |_/\____/\____/\____/|___(_)  \____/ \___/\_| \_/\____/\_____/\____/ (_)  
-						 *                                                                                                                         
-						 *                                                                                                                         
-						 */
-						JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
-						for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
-						{
-							System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
-							if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
-							{
-								designation_passed_single_thresh = true;
-								image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
-							}
+						// quick check to see if outside twitter or facebook windows. If neither, then that saves processing power
+						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
+								&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
+						{	
+							// twitter and facebook triggers stay false
+							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within both windows. Moving on.");
 						}
-						
-						if(designation_passed_single_thresh)
-						{
-							alert_triggered = true; // <---------------
+						else
+						{	
+							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
 							
-							// quick check to see if outside twitter or facebook windows. If neither, then that saves processing power
-							if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
-									&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
-							{	
-								// twitter and facebook triggers stay false
+							/***
+							 *       ___           ___  ___  ___   ______  ___   _____ _____ ___________    _____ _____ _   _ _____  _      _____ ___  
+							 *      /   |          |  \/  | / _ \  | ___ \/ _ \ /  ___/  ___|  ___|  _  \  /  ___|_   _| \ | |  __ \| |    |  ___|__ \ 
+							 *     / /| |  ______  | .  . |/ /_\ \ | |_/ / /_\ \\ `--.\ `--.| |__ | | | |  \ `--.  | | |  \| | |  \/| |    | |__    ) |
+							 *    / /_| | |______| | |\/| ||  _  | |  __/|  _  | `--. \`--. \  __|| | | |   `--. \ | | | . ` | | __ | |    |  __|  / / 
+							 *    \___  |          | |  | || | | | | |   | | | |/\__/ /\__/ / |___| |/ /   /\__/ /_| |_| |\  | |_\ \| |____| |___ |_|  
+							 *        |_/          \_|  |_/\_| |_/ \_|   \_| |_/\____/\____/\____/|___(_)  \____/ \___/\_| \_/\____/\_____/\____/ (_)  
+							 *                                                                                                                         
+							 *                                                                                                                         
+							 */
+							JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
+							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
+							{
+								System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
+								if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
+								{
+									designation_passed_single_thresh = true;
+									image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
+								}
 							}
-							else
-							{	
+							
+							if(designation_passed_single_thresh)
+							{
+								alert_triggered = true; // <---------------
+								ExecutorService executor = Executors.newFixedThreadPool(300);
+								Future<JSONObject> twittertask = null;
+								Future<JSONObject> facebooktask = null;
+								
 								/***
 								 *     _____           ___  ___  ___            _             _                                     _     _____        _ _   _          ___  
 								 *    |  ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |_   _|      (_) | | |        |__ \ 
@@ -1701,91 +1709,13 @@ public class Endpoint extends HttpServlet {
 								 *                                                       __/ |        | |                                                                    
 								 *                                                      |___/         |_|                                                                    
 								 */
-								boolean image_downloaded = false;
 								if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
 								{	
 									twitter_triggered = true; // <---------------
 									reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert regardless of credentials or successful posting
 									
-									if(simulation)
-									{
-										// send emails to admin on simulation since nothing goes to twitter, ok to turn this off if you want
-										try {
-											se.sendMail("Tweet triggered for " + reporter.getDesignation(), "url=" + newframe.getURL(), admin_user.getEmail(), "info@huzon.tv");
-										} catch (MessagingException e) {
-											e.printStackTrace();
-										}
-									}
-									
-									// check to see that reporter has twitter credentials on file. If not, email the reporter and send email to admin.
-									if(reporter.getTwitterAccessToken() == null || reporter.getTwitterAccessToken().equals("") || reporter.getTwitterAccessTokenSecret() == null || reporter.getTwitterAccessTokenSecret().equals(""))
-									{
-										twitter_successful = false; 
-										twitter_failure_message = "user had no credentials";
-										reporter.resetTwitterCredentialsInDB(); // at least one credential was missing, wipe out both tat and tats in db
-										if(!simulation)
-										{	
-											String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "twitter");
-											try {
-												// send to reporter and to admin
-												se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-												se.sendMail(reporter.getDesignation() + " was notified of missing Twitter credentials", "The following email was sent to a reporter due to missing twitter credentials:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
-											} catch (MessagingException me) { me.printStackTrace(); }
-										}
-									}
-									else // user appears to have twitter credentials
-									{
-										if(!simulation) // go ahead with the tweet
-										{	
-											File imagefile = null;
-											if(!image_downloaded) // image should never be downloaded at this point... just put this here for symmetry with the facebook block below
-											{
-												URL image_url = new URL(newframe.getURL());
-											    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
-											    String tmpdir = System.getProperty("java.io.tmpdir");
-											    System.out.println("TEMP DIR=" + tmpdir);
-											    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
-											    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-											    imagefile = new File(tmpdir + "/image.jpg");
-											    image_downloaded = true;
-											}
-											
-											Twitter twitter = new Twitter();
-											Platform p = new Platform();
-											long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
-											String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id, reporter);
-											JSONObject twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, imagefile);
-											
-											if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
-											{
-												twitter_successful = false; // delete alert in DB? // these will be easily identifiable by no text and no social id. 
-												twitter_failure_message = twit_jo.getString("message");
-												if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
-												{
-													reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
-													String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "twitter");
-													try {
-														// send to reporter and to admin
-														se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-														se.sendMail(reporter.getDesignation() + " was notified of a disconnected Twitter account", "The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
-													} catch (MessagingException me) { me.printStackTrace(); }
-												}
-											}
-											else
-											{
-												twitter_successful = true; // the twitter post was successful, regardless of the two following db updates.
-												
-												// if either of these fail, alert the admin within the functions themselves
-												boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-												boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
-											}
-										}
-										else
-										{
-											twitter_successful = false;
-											twitter_failure_message = "simulation";
-										}
-									}
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, simulation));
+								
 								} // end twitter block
 								
 								/***
@@ -1803,103 +1733,32 @@ public class Endpoint extends HttpServlet {
 									facebook_triggered = true; // <---------------
 									reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert regardless of credentials or successful posting
 									
-									if(simulation)
-									{
-										// send emails to admin on simulation since nothing goes to facebook, ok to turn this off if you want
-										try {
-											se.sendMail("FB triggered for " + reporter.getDesignation(), "url=" + newframe.getURL(), admin_user.getEmail(), "info@huzon.tv");
-										} catch (MessagingException e) {
-											e.printStackTrace();
-										}
-									}
-									
-									if(reporter.getFacebookPageAccessToken() == null || reporter.getFacebookPageAccessToken().equals(""))
-									{
-										facebook_successful = false; 
-										facebook_failure_message = "user had no credentials";
-										if(!simulation)
-										{	
-											String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "facebook");
-											try {
-												// send to reporter and to admin
-												se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-												se.sendMail(reporter.getDesignation() + " was notified of missing FB credentials", "The following email was sent to a reporter due to missing FB credentials:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
-											} catch (MessagingException me) { me.printStackTrace(); }
-										}
-									}
-									else // user appears to have facebook credentials
-									{
-										if(!simulation) // go ahead with the post
-										{	
-											File imagefile = null;
-											if(!image_downloaded) // image should never be downloaded at this point... just put this here for symmetry with the facebook block below
-											{
-												URL image_url = new URL(newframe.getURL());
-											    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
-											    String tmpdir = System.getProperty("java.io.tmpdir");
-											    System.out.println("TEMP DIR=" + tmpdir);
-											    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
-											    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-											    imagefile = new File(tmpdir + "/image.jpg");
-											    image_downloaded = true;
-											}
-										
-											Facebook facebook = new FacebookFactory().getInstance();
-											facebook.setOAuthAppId("176524552501035", "dbf442014759e75f2f93f2054ac319a0");
-											facebook.setOAuthPermissions("publish_stream,manage_page");
-											facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
-											
-											Platform p = new Platform();
-											long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
-											String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id, reporter);
-																			
-											String facebookresponse = "";
-											try {
-												facebookresponse = facebook.postPhoto(new Long(reporter.getFacebookPageID()).toString(), new Media(imagefile), message, "33684860765", false); // FIXME hardcode to wkyt station
-												facebook_successful = true; // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
-												
-												// if either of these fail, notify admin from within functions themselves
-												boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-												boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
-											} 
-											catch (FacebookException e) 
-											{
-												facebook_successful = false; // delete alert in DB? // these will be easily identifiable by no text and no social id. 
-												facebook_failure_message = e.getErrorMessage();
-												if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
-												{
-													reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
-													String emailmessage = getMissingCredentialsEmailMessage(reporter.getDisplayName(), newframe, "facebook");
-													try {
-														// send to reporter and to admin
-														se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-														se.sendMail(reporter.getDesignation() + " was notified of invalid FB credentials", "The following email was sent to a reporter due to invalid FB credentials:\n\n" + emailmessage, admin_user.getEmail(), "info@huzon.tv");
-													} catch (MessagingException me) { me.printStackTrace(); }
-												}
-												else
-												{	
-													e.printStackTrace();
-													try {
-														se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", admin_user.getDesignation() + " " + 
-																new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
-													} catch (MessagingException me) {
-														me.printStackTrace();
-													}
-												}
-											}
-										}
-										else
-										{
-											facebook_successful = false;
-											facebook_failure_message = "simulation";
-										}
-									}
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, simulation));
 								} // end facebook block
+								
+								
+								// CHECK THE RESULTS OF THE CALLABLE THREADS
+								JSONObject twittertask_jo = null;
+								JSONObject facebooktask_jo = null;
+								if(twittertask != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+								{
+									twittertask_jo = twittertask.get();
+									twitter_successful = twittertask_jo.getBoolean("twitter_successful"); 
+									if(!twitter_successful)																// only need failure message if twitter not successful
+										twitter_failure_message = twittertask_jo.getString("twitter_failure_message");
+								}
+								if(facebooktask != null)
+								{
+									facebooktask_jo = facebooktask.get();
+									facebook_successful = facebooktask_jo.getBoolean("facebook_successful");
+									if(!facebook_successful)
+										facebook_failure_message = facebooktask_jo.getString("facebook_failure_message");
+								}
 							}
-						}
-						else
-						{
-							// user did not pass single thresh
+							else
+							{
+								// user did not pass single thresh
+							}
 						}
 					}
 					else
@@ -1934,7 +1793,7 @@ public class Endpoint extends HttpServlet {
 						alert_triggered_failure_message = "None of the designations passed the ma threshold";
 					else // no alert triggered yet a designation passed the ma thresh... that means that the designation didn't pass single thresh
 						alert_triggered_failure_message = "A designation passed ma thresh and was highest, but didn't pass single thresh for any of the frames in the window.";
-					return_jo.put("alert_triggered", alert_triggered_failure_message);
+					return_jo.put("alert_triggered_failure_message", alert_triggered_failure_message);
 				}
 				
 			}
@@ -1942,7 +1801,10 @@ public class Endpoint extends HttpServlet {
 		catch(JSONException jsone)
 		{
 			jsone.printStackTrace();
-		} catch (IOException e) {
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	

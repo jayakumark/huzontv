@@ -1,5 +1,5 @@
-//var endpoint = "https://localhost:8443/huzontv/endpoint";
-var endpoint = "https://www.huzon.tv/endpoint";
+var endpoint = "https://localhost:8443/huzontv/endpoint";
+//var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -150,8 +150,8 @@ var reporters_ja;
 
 document.addEventListener('DOMContentLoaded', function () {
 		
-	//docCookies.setItem("twitter_access_token", "");
-	//docCookies.setItem("twitter_handle", "");
+	//docCookies.setItem("twitter_access_token", "11m");
+	//docCookies.setItem("twitter_handle", "huzontv");
 	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
@@ -1239,7 +1239,10 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
 				//rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
 				//rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
 				data.frame_jo = "suppressed for readability";
-				rds = rds + "<br>frame processing response:" + JSON.stringify(data);
+				var stringified_data = JSON.stringify(data);
+				var regex = new RegExp(',', 'g');
+				stringified_data = stringified_data.replace(regex, ',<br>');
+				rds = rds + "<br>frame processing response:" + stringified_data;
 				rds = rds + "</div>";
         		$("#results_div").append(rds);
         		//alert('f2d=' + JSON.stringify(frame_to_display));
