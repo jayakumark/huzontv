@@ -81,9 +81,10 @@ public class User implements java.lang.Comparable<User> {
 			stmt = con.createStatement();
 			String query_to_exec = "";
 			if(constructor_type.equals("twitter_handle"))
-				query_to_exec = "SELECT * FROM people WHERE twitter_handle=' " + inc_des_or_twit + "'";
+				query_to_exec = "SELECT * FROM people WHERE twitter_handle='" + inc_des_or_twit + "'";
 			else if (constructor_type.equals("designation"))
 				query_to_exec = "SELECT * FROM people WHERE designation='" + inc_des_or_twit + "'";
+			System.out.println("User(): query_to_exec=" + query_to_exec);
 			rs = stmt.executeQuery(query_to_exec);
 			if(rs.next())
 			{
@@ -487,6 +488,15 @@ public class User implements java.lang.Comparable<User> {
 		if(reset_top_level && reset_sub_account)
 			return true;
 		return false;
+	}
+	
+	boolean resetTwitterCredentialsInDB()
+	{
+		boolean reset = setTwitterAccessTokenAndSecret("","");
+		if(reset)
+			return true;
+		else 
+			return false;
 	}
 	
 	boolean setFacebookAccessTokenExpiresAndUID(String access_token, long expires_timestamp, long fb_uid)

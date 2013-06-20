@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        success: function (data, status) {
 		        	if (data.response_status == "error")
 		        	{
-		        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + " </span>");
+		        		$("#message_div").html("<span style=\"font-size:16;color:red\">gTATFAC Error: " + data.message + " </span>");
 		        	}
 		        	else
 		        	{
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        success: function (data, status) {
 				        	if (data.response_status == "error")
 				        	{
-				        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + "</span>");
+				        		$("#message_div").html("<span style=\"font-size:16;color:red\">sTA Error: " + data.message + "</span>");
 				        	}
 				        	else
 				        	{
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        success: function (data, status) {
 			        	if (data.response_status == "error")
 			        	{
-			        		$("#message_div").html("<span style=\"font-size:14;color:red\">Error: " + data.message + " </span>");
+			        		$("#message_div").html("<span style=\"font-size:14;color:red\">gFATFAC Error: " + data.message + " </span>");
 			        	}
 			        	else
 			        	{
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        success: function (data, status) {
 	        	if (data.response_status == "error")
 	        	{
-	        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: " + data.message + "</span>");
+	        		$("#message_div").html("<span style=\"font-size:16;color:red\">gS Error: " + data.message + "</span>");
 	        		if(data.error_code && data.error_code == "07734") // the twitter cookie credentials were invalid. Delete them and reload page (start over).
 	        		{
 	        			docCookies.removeItem("twitter_access_token");

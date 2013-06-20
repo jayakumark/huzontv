@@ -150,6 +150,8 @@ var reporters_ja;
 
 document.addEventListener('DOMContentLoaded', function () {
 		
+	
+	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	if(location.protocol !== "https:")

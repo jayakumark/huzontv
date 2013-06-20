@@ -39,7 +39,6 @@ import facebook4j.Facebook;
 import facebook4j.FacebookException;
 import facebook4j.FacebookFactory;
 import facebook4j.Media;
-import facebook4j.PostUpdate;
 import facebook4j.auth.AccessToken;
 
 
@@ -347,6 +346,7 @@ public class Endpoint extends HttpServlet {
 						preliminary_jsonresponse = twitter.getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
 						if(preliminary_jsonresponse.getString("response_status").equals("success"))
 						{
+							System.out.println("Endpoint.getTATFromAUTHCode(): screen_name=" + preliminary_jsonresponse.getString("screen_name"));
 							User user = new User(preliminary_jsonresponse.getString("screen_name"), "twitter_handle");
 							if(!user.isValid())
 							{
@@ -386,17 +386,27 @@ public class Endpoint extends HttpServlet {
 					else
 					{
 						User user = new User(twitter_handle, "twitter_handle");
-						if(user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
 						{
 							jsonresponse.put("response_status", "success");
 							System.out.println("Endpoint.getUser(): getting user for twitter_handle=" + twitter_handle + "... " + user.getJSONObject());
 							jsonresponse.put("user_jo", user.getJSONObject());
-						}
-						else
-						{
-							jsonresponse.put("message", "User twitter credentials were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
 						}
 					}
 				}
@@ -423,9 +433,20 @@ public class Endpoint extends HttpServlet {
 					else
 					{
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve user.");
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
@@ -465,9 +486,20 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't proceed with Facebook linking.");
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
@@ -559,9 +591,20 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't proceed with Facebook linking.");
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
@@ -624,9 +667,20 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't proceed with Facebook linking.");
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
@@ -718,7 +772,18 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
@@ -772,7 +837,18 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
@@ -837,7 +913,18 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
@@ -909,7 +996,18 @@ public class Endpoint extends HttpServlet {
 					{	
 						// check twitter_handle and twitter_access_token for validity
 						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
@@ -1004,15 +1102,26 @@ public class Endpoint extends HttpServlet {
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
-						User user2 = new User(twitter_handle, "twitter_handle");
-						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
 						{
-							if(user2.isGlobalAdmin())
+							if(user.isGlobalAdmin())
 							{
 								Station station = new Station(station_param);
 								if(!station.isValid())
@@ -1098,15 +1207,26 @@ public class Endpoint extends HttpServlet {
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
-						User user2 = new User(twitter_handle, "twitter_handle");
-						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
 						{
-							if(user2.isGlobalAdmin())
+							if(user.isGlobalAdmin())
 							{
 								Station station = new Station(station_param);
 								if(!station.isValid())
@@ -1163,15 +1283,26 @@ public class Endpoint extends HttpServlet {
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
-						User user2 = new User(twitter_handle, "twitter_handle");
-						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
 						{
-							if(user2.isGlobalAdmin())
+							if(user.isGlobalAdmin())
 							{
 								Station station = new Station(station_param);
 								if(!station.isValid())
@@ -1217,15 +1348,26 @@ public class Endpoint extends HttpServlet {
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
-						User user2 = new User(twitter_handle, "twitter_handle");
-						if(!user2.getTwitterAccessToken().equals(twitter_access_token))
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
 						}
 						else // twitter creds were OK
 						{
-							if(user2.isGlobalAdmin())
+							if(user.isGlobalAdmin())
 							{
 								Station station = new Station(station_param);
 								if(!station.isValid())
@@ -1384,16 +1526,6 @@ public class Endpoint extends HttpServlet {
 						boolean fb = false;
 						boolean tw = false;
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
-						{	
-							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
-							return_jo.put("alert_triggered", "yes");
-							return_jo.put("alert_fired", "yes");
-							return_jo.put("social_type", "facebook");
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert whether posting successful or not
-							fb = true;
-						}
-						
 						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
 						{	
 							System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
@@ -1405,6 +1537,16 @@ public class Endpoint extends HttpServlet {
 								return_jo.put("social_type", "twitter");
 							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert whether posting successful or not
 							tw = true;
+						}
+						
+						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
+						{	
+							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
+							return_jo.put("alert_triggered", "yes");
+							return_jo.put("alert_fired", "yes");
+							return_jo.put("social_type", "facebook");
+							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert whether posting successful or not
+							fb = true;
 						}
 						
 						// temporary hardcode email on new alert
@@ -1421,7 +1563,7 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 						
-						if(tw || fb)
+						if(tw || fb && !simulation)
 						{	
 							// this might be problematic if two alerts from two stations happen at EXACTLY the same time. image.jpg could be overwritten and wrong. FIXME
 							// download file first
@@ -1432,22 +1574,64 @@ public class Endpoint extends HttpServlet {
 						    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
 						    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 						    File f = new File(tmpdir + "/image.jpg");
-						    //
+						    
+						    // initialize emailer
+						    SimpleEmailer se = new SimpleEmailer();
+						    
 							Platform p = new Platform();
 							if(tw)
 							{
 								System.out.println("Endpoint.processNewFrame(): Firing tweet for " + reporter.getDisplayName());
-								User test_user = new User("huzon_master", "designation");
+								User admin_user = new User("huzon_master", "designation");
 								
 								Twitter twitter = new Twitter();
 								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id);
-								//JSONObject twit_jo = twitter.updateStatus(test_user.getTwitterAccessToken(), test_user.getTwitterAccessTokenSecret(), reporter.getDisplayName() + " is live on the air." + newframe.getURL());
-								JSONObject twit_jo = twitter.updateStatusWithMedia(test_user.getTwitterAccessToken(), test_user.getTwitterAccessTokenSecret(), message, f);
+
+								JSONObject twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, f);
 								
-								// update the table row with the message actual_text and social_id
-								boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-								boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
+								if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
+								{
+									if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
+									{
+										reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
+										try {
+											se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
+													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+															"has become disconnected from huzon.tv. This can happen for several reasons:" +
+															"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
+															"\n- Your Twitter account was never linked to huzon.tv in the first place"+
+															"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+															"Thanks!\n\nhuzon.tv staff"
+														, reporter.getEmail(), 
+														"info@huzon.tv");
+										} catch (MessagingException me) {
+											me.printStackTrace();
+										}
+										
+										try {
+											se.sendMail(reporter.getDesignation() + " was notified of an unlinked Twitter account", 
+													"The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + reporter.getDisplayName() + 
+													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
+													"has become disconnected from huzon.tv. This can happen for several reasons:" +
+													"\n\n- huzon.tv access to your account has expired (60 days)" + 
+													"\n- You disabled the huzon.tv app in your Twitter configuration\n- Your Twitter account was never linked to huzon.tv in the first place"+
+													"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
+													"Thanks!\n\nhuzon.tv staff"
+												,admin_user.getEmail(), 
+												"info@huzon.tv");
+										} catch (MessagingException me) {
+											me.printStackTrace();
+										}
+										
+									}
+								}
+								else
+								{	
+									// update the table row with the message actual_text and social_id
+									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
+									boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
+								}
 								
 								System.out.println("Endpoint.processNewFrame(): Twitter result=" + twit_jo.toString());
 							}
@@ -1455,61 +1639,73 @@ public class Endpoint extends HttpServlet {
 							if(fb)
 							{
 								System.out.println("Endpoint.processNewFrame(): Firing facebook post for " + reporter.getDisplayName());
-								User test_user = new User("huzon_master", "designation");
+								User admin_user = new User("huzon_master", "designation");
 								
 								
 								Facebook facebook = new FacebookFactory().getInstance();
 								facebook.setOAuthAppId("176524552501035", "dbf442014759e75f2f93f2054ac319a0");
 								facebook.setOAuthPermissions("publish_stream,manage_page");
-								facebook.setOAuthAccessToken(new AccessToken(test_user.getFacebookPageAccessToken(), null));
+								facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
 								
 								long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
 								String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id);
 																
-								/*PostUpdate post = new PostUpdate(message)
-			                    	.picture(new URL(newframe.getURL()))
-			                    	.name("")
-			                    	.caption("")
-			                    	.description("");*/
 								String facebookresponse = "";
 								try {
-									//facebookresponse = facebook.postFeed(post);
-									facebookresponse = facebook.postPhoto(new Long(test_user.getFacebookPageID()).toString(), new Media(f), message, "33684860765", false); // FIXME hardcode to wkyt station
-									
-								} catch (FacebookException e) {
-									// TODO Auto-generated catch block
-									// {statusCode=400, responseAsString='{"error":{"message":"Error validating access token: User 1315750 has not authorized application 176524552501035.","type":"OAuthException","code":190,"error_subcode":458}}
-									if((e.getErrorCode() == 190) || (e.getErrorCode() == 100))
+									facebookresponse = facebook.postPhoto(new Long(reporter.getFacebookPageID()).toString(), new Media(f), message, "33684860765", false); // FIXME hardcode to wkyt station
+									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
+									boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
+								} 
+								catch (FacebookException e) 
+								{
+									if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
 									{
-										test_user.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
-										SimpleEmailer se = new SimpleEmailer();
+										reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
 										try {
-											se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", test_user.getDisplayName() + 
+											se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
 													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
-															"has become disconnected from huzon.tv. This can happen for several reasons:\n\n- huzon.tv access to your account has expired (60 days)" + 
-															"\n- You disabled the huzon.tv app in your FB privacy configuration\n- Your FB account was never linked to huzon.tv in the first place"+
+															"has become disconnected from huzon.tv. This can happen for several reasons:" +
+															"\n\n- huzon.tv access to your account has expired (60 days)" + 
+															"\n- You disabled the huzon.tv app in your FB privacy configuration" +
+															"\n- Your FB account was never linked to huzon.tv in the first place"+
 															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
 															"Thanks!\n\nhuzon.tv staff"
-														,"cyrus7580@gmail.com", // FIXME --> this needs to be the email address of the person. 
+														,reporter.getEmail(),  
 														"info@huzon.tv");
 										} catch (MessagingException me) {
 											me.printStackTrace();
 										}
+										
+										
+										try {
+											se.sendMail(reporter.getDesignation() + " was notified of an unlinked FB account", 
+													"The following email was sent to a reporter due to an unlinked FB account:\n\n" + reporter.getDisplayName() + 
+													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
+															"has become disconnected from huzon.tv. This can happen for several reasons:" +
+															"\n\n- huzon.tv access to your account has expired (60 days)" + 
+															"\n- You disabled the huzon.tv app in your FB privacy configuration" +
+															"\n- Your FB account was never linked to huzon.tv in the first place"+
+															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
+															"Thanks!\n\nhuzon.tv staff"
+														,admin_user.getEmail(), 
+														"info@huzon.tv");
+										} catch (MessagingException me) {
+											me.printStackTrace();
+										}
+										
 									}
 									else
 									{	
 										e.printStackTrace();
-										SimpleEmailer se = new SimpleEmailer();
 										try {
-											se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", test_user.getDesignation() + " " + new Long(test_user.getFacebookPageID()).toString() + " " + 
-														message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
+											se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", admin_user.getDesignation() + " " + 
+													new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
 										} catch (MessagingException me) {
 											me.printStackTrace();
 										}
 									}
 								}
-								boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-								boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
+								
 								
 								System.out.println("Endpoint.processNewFrame(): Facebook result=" + facebookresponse);
 							}
@@ -1523,6 +1719,7 @@ public class Endpoint extends HttpServlet {
 							return_jo.put("alert_fired", "no");
 							return_jo.put("reason", "Passed MA threshold, but was within waiting period of both facebook and twitter. Couldn't fire alert.");
 						}
+						
 						return_jo.put("designation", reporter_designations[x]);
 						return_jo.put("image_name_of_frame_in_window_that_passed_single_thresh", image_name_of_frame_in_window_that_passed_single_thresh);
 						return return_jo;

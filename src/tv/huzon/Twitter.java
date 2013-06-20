@@ -817,7 +817,7 @@ public class Twitter {
 		    		"&oauth_timestamp=" + oauth_timestamp + "&oauth_token=" + encode(oauth_token) + "&oauth_version=1.0";//&status=" + encode(text);	
 		System.out.println("Twitter.updateStatusWithMedia(): parameter_string=" + parameter_string);
 		
-		String twitter_endpoint = "http://api.twitter.com/1.1/statuses/update_with_media.json";
+		String twitter_endpoint = "https://api.twitter.com/1.1/statuses/update_with_media.json";
 		String twitter_endpoint_host = "api.twitter.com";
 		String twitter_endpoint_path = "/1.1/statuses/update_with_media.json";
 		String signature_base_string = get_or_post + "&"+ encode(twitter_endpoint) + "&" + encode(parameter_string);
@@ -852,7 +852,7 @@ public class Twitter {
 
 		 HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 		 HttpContext context = new BasicHttpContext(null);
-		 HttpHost host = new HttpHost(twitter_endpoint_host,80);
+		 HttpHost host = new HttpHost(twitter_endpoint_host,443);
 		 DefaultHttpClientConnection conn = new DefaultHttpClientConnection();
 
 		 context.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
@@ -862,17 +862,17 @@ public class Twitter {
 		 {
 			 try 
 			 {
-				/* SSLContext sslcontext = SSLContext.getInstance("TLS");
+				 SSLContext sslcontext = SSLContext.getInstance("TLS");
 				 sslcontext.init(null, null, null);
 				 SSLSocketFactory ssf = sslcontext.getSocketFactory();
 				 Socket socket = ssf.createSocket();
 				 socket.connect(
 				   new InetSocketAddress(host.getHostName(), host.getPort()), 0);
-				 conn.bind(socket, params);*/
-				 
-				 System.out.println("Twitter.updateStatusWithMedia(): params all set, creating socket.");
-				 Socket socket = new Socket(host.getHostName(), host.getPort());
 				 conn.bind(socket, params);
+				 
+				// System.out.println("Twitter.updateStatusWithMedia(): params all set, creating socket.");
+				// Socket socket = new Socket(host.getHostName(), host.getPort());
+				// conn.bind(socket, params);
 				 
 				 BasicHttpEntityEnclosingRequest request2 = new BasicHttpEntityEnclosingRequest("POST", twitter_endpoint_path);
 				 // need to add status parameter to this POST
@@ -898,6 +898,14 @@ public class Twitter {
 				 System.out.println("Twitter.updateStatusWithMedia(): done. response=" + responseBody);
 				 // error checking here. Otherwise, status should be updated.
 				 jsonresponse = new JSONObject(responseBody);
+				 if(jsonresponse.has("errors"))
+				 {
+					 JSONObject temp_jo = new JSONObject();
+					 temp_jo.put("response_status","error");
+					 temp_jo.put("message", jsonresponse.getJSONArray("errors").getJSONObject(0).getString("message"));
+					 temp_jo.put("twitter_code", jsonresponse.getJSONArray("errors").getJSONObject(0).getInt("code"));
+					 jsonresponse = temp_jo;
+				 }
 				 conn.close();
 			 }   
 			 catch(HttpException he) 
@@ -906,18 +914,18 @@ public class Twitter {
 				 jsonresponse.put("response_status", "error");
 				 jsonresponse.put("message", "updateStatusWithMedia HttpException message=" + he.getMessage());
 			 } 
-			/* catch(NoSuchAlgorithmException nsae) 
+			 catch(NoSuchAlgorithmException nsae) 
 			 {	
 				 System.out.println(nsae.getMessage());
 				  jsonresponse.put("response_status", "error");
-				 jsonresponse.put("message", "updateStatusWithMedia HttpException message=" + he.getMessage());
+				 jsonresponse.put("message", "updateStatusWithMedia NoSuchAlgorithmException message=" + nsae.getMessage());
 			 } 					
 			 catch(KeyManagementException kme) 
 			 {	
 				 System.out.println(kme.getMessage());
 				  jsonresponse.put("response_status", "error");
-				 jsonresponse.put("message", "updateStatusWithMedia HttpException message=" + he.getMessage());
-			 } 	*/
+				 jsonresponse.put("message", "updateStatusWithMedia KeyManagementException message=" + kme.getMessage());
+			 } 	
 			 finally 
 			 {
 				 conn.close();
