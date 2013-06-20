@@ -85,11 +85,9 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 				if(!simulation)
 				{	
 					String emailmessage = getMissingCredentialsEmailMessage();
-					try {
-						// send to reporter and to admin
-						se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-						se.sendMail(reporter.getDesignation() + " was notified of missing FB credentials", "The following email was sent to a reporter due to missing FB credentials:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException me) { me.printStackTrace(); }
+					// send to reporter and to admin
+					se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+					se.sendMail(reporter.getDesignation() + " was notified of missing FB credentials", "The following email was sent to a reporter due to missing FB credentials:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 				}
 			}
 			else // user appears to have facebook credentials
@@ -117,7 +115,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					try {
 						facebookresponse = facebook.postPhoto(new Long(reporter.getFacebookPageID()).toString(), new Media(imagefile), message, "33684860765", false); // FIXME hardcode to wkyt station
 						return_jo.put("facebook_successful", true); // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
-						
+						se.sendMail("FB successful for " + reporter.getDesignation(), "url=" + frame2upload.getURL(), "cyrus7580@gmail.com", "info@huzon.tv");
 						// if either of these fail, notify admin from within functions themselves
 						boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 						boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
@@ -131,21 +129,15 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 						{
 							reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
 							String emailmessage = getMissingCredentialsEmailMessage();
-							try {
-								// send to reporter and to admin
-								se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-								se.sendMail(reporter.getDesignation() + " was notified of invalid FB credentials", "The following email was sent to a reporter due to invalid FB credentials:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
-							} catch (MessagingException me) { me.printStackTrace(); }
+							// send to reporter and to admin
+							se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+							se.sendMail(reporter.getDesignation() + " was notified of invalid FB credentials", "The following email was sent to a reporter due to invalid FB credentials:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 						}
 						else
 						{	
 							e.printStackTrace();
-							try {
-								se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", reporter.getDesignation() + " " + 
-										new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
-							} catch (MessagingException me) {
-								me.printStackTrace();
-							}
+							se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", reporter.getDesignation() + " " + 
+									new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
 						}
 					}
 				}

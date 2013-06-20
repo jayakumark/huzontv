@@ -81,11 +81,9 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 				if(!simulation)
 				{	
 					String emailmessage = getMissingCredentialsEmailMessage();
-					try {
-						// send to reporter and to admin
-						se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-						se.sendMail(reporter.getDesignation() + " was notified of missing Twitter credentials", "The following email was sent to a reporter due to missing twitter credentials:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException me) { me.printStackTrace(); }
+					// send to reporter and to admin
+					se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+					se.sendMail(reporter.getDesignation() + " was notified of missing Twitter credentials", "The following email was sent to a reporter due to missing twitter credentials:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 				}
 			}
 			else // user appears to have twitter credentials
@@ -115,35 +113,28 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 						{
 							reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
 							String emailmessage = getMissingCredentialsEmailMessage();
-							try {
-								// send to reporter and to admin
-								se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-								se.sendMail(reporter.getDesignation() + " was notified of a disconnected Twitter account", "The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
-							} catch (MessagingException me) { me.printStackTrace(); }
+							// send to reporter and to admin
+							se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+							se.sendMail(reporter.getDesignation() + " was notified of a disconnected Twitter account", "The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 						}
 						else if(twit_jo.has("twitter_code"))
 						{
 							String emailmessage = getMissingCredentialsEmailMessage();
-							try {
-								// send to reporter and to admin
-								se.sendMail(reporter.getDesignation() + " unknown twitter error", "There was an unknown error trying to tweet. twit_jo=" + twit_jo + "\n\nHere's the email that DID NOT go out.\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
-							} catch (MessagingException me) { me.printStackTrace(); }
+							// send mail to admin
+							se.sendMail(reporter.getDesignation() + " unknown twitter error", "There was an unknown error trying to tweet. twit_jo=" + twit_jo + "\n\nHere's the email that DID NOT go out.\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 						}
 						else
 						{
 							String emailmessage = getMissingCredentialsEmailMessage();
-							try {
-								// send to reporter and to admin
-								se.sendMail(reporter.getDesignation() + " some other twitter error", "There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + "\n\nHere's the email that DID NOT go out.\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
-							} catch (MessagingException me) { me.printStackTrace(); }
-						
+							// send mail to admin
+							se.sendMail(reporter.getDesignation() + " some other twitter error", "There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + "\n\nHere's the email that DID NOT go out.\n\n" + emailmessage, "cyrus7580@gmail.com", "info@huzon.tv");
 						}
 							
 					}
 					else
 					{
 						return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
-						
+						se.sendMail("Tweet successful for " + reporter.getDesignation(), "url=" + frame2upload.getURL(), "cyrus7580@gmail.com", "info@huzon.tv");
 						// if either of these fail, alert the admin within the functions themselves
 						boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 						boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
