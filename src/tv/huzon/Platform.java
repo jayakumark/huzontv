@@ -62,8 +62,6 @@ public class Platform {
 			}
 			catch(SQLException sqle) { sqle.printStackTrace(); }
 		}   
-		
-		
 	}
 
 	public JSONArray getStationsAsJSONArray()

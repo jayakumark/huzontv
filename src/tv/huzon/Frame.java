@@ -198,6 +198,7 @@ public class Frame implements Comparable<Frame> {
 		Statement stmt = null;
 		ResultSet rs2 = null;
 		double ma_over_window = 0;
+		boolean returnval = false;
 		try
 		{
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
@@ -217,10 +218,7 @@ public class Frame implements Comparable<Frame> {
 				// NOT ENOUGH FRAMES (i.e. less than 1 per second) 
 				reporter_moving_avgs = null;
 				System.out.println("Frame.populateMovingAverages(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
-				rs2.close();
-				stmt.close();
-				con.close();
-				return false;
+				returnval = false;
 			}
 			else
 			{
@@ -252,14 +250,15 @@ public class Frame implements Comparable<Frame> {
 						max_ma_designation = reporter_designations[x];
 					}
 				}
-				rs2.close();
-				stmt.close();
-				con.close();
-				return true; // reporter_moving_avgs[], max_ma, second_max_ma, max_ma_designation, second_max_ma_designation should be set now.
+				returnval = true; // reporter_moving_avgs[], max_ma, second_max_ma, max_ma_designation, second_max_ma_designation should be set now.
 			}
+			rs2.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
+			returnval = false;
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
@@ -284,7 +283,7 @@ public class Frame implements Comparable<Frame> {
 				}
 			}
 		}   
-		return false; // something went wrong along the way
+		return returnval; // something went wrong along the way
 	}
 	
 	

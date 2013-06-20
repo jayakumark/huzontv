@@ -198,16 +198,16 @@ public class Endpoint extends HttpServlet {
 							// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
 							//		(if alert_triggered==true)
 							//      	twitter_triggered: true or false,
-							//			twitter_fired: true or false,
-							//			twitter_successful: true or false,					// means alert posted and returned an id (or failed)
-							//			(if !twitter_successful, then)
-							//				twitter_failure_message: some message about why twitter failed,	
+							//			(if twitter_triggered then)
+							//				twitter_successful: true or false,					// means alert posted and returned an id (or failed)
+							//				(if !twitter_successful, then)
+							//					twitter_failure_message: some message about why twitter failed,	
 							//
 							//      	facebook_triggered: true or false,
-							// 			facebook_fired: true or false,
-							//			facebook_successful: true or false,					// means alert posted and returned an id (or failed)
-							//			(if !facebook_successful, then)
-							//				facebook_failure_message: some message about why facebook failed,	
+							//			(if facebook_triggered then)				
+							//				facebook_successful: true or false,					// means alert posted and returned an id (or failed)
+							//				(if !facebook_successful, then)
+							//					facebook_failure_message: some message about why facebook failed,	
 							//		(else if alert_triggered== false)
 							//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
 							// }
@@ -224,62 +224,6 @@ public class Endpoint extends HttpServlet {
 								else
 									jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
 							}
-							
-							/*jsonresponse.put("response_status", "success");
-							jsonresponse.put("alert_triggered", jo2.get("alert_triggered"));
-							jsonresponse.put("alert_fired", jo2.get("alert_fired"));
-							if(simulation) // then return additional info to the simulator. If not, don't.
-							{	
-								if(jsonpostbody.has("designation"))
-								{
-									System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " was specified by the simulator. Returning specialized information in each frame_jo.");
-									jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
-								}
-								else
-									jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
-								
-								// uncomment these three lines to send huge amounts of frame score data to the simulator (for creating context collages)
-								//Station station_object = new Station(jo.getString("station"));
-								//JSONArray frames_ja = station_object.getFramesAsJSONArray(jo.getLong("timestamp_in_ms") - 6000, jo.getLong("timestamp_in_ms") + 3000, true);
-								//jsonresponse.put("frames_ja", frames_ja);
-								
-								if(jo2.get("alert_triggered").equals("yes") && jo2.getString("alert_fired").equals("yes"))
-								{
-									jsonresponse.put("image_name_of_frame_in_window_that_passed_single_thresh", jo2.getString("image_name_of_frame_in_window_that_passed_single_thresh"));
-									jsonresponse.put("designation", jo2.getString("designation"));
-									jsonresponse.put("social_type", jo2.getString("social_type"));
-								}
-								if(jo2.has("reason"))
-								{
-									jsonresponse.put("reason", jo2.get("reason")); 
-								}
-							}*/
-							
-							/*
-							if(jo2.get("alert_triggered").equals("yes") && jo2.getString("alert_fired").equals("yes"))
-							{
-								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
-								jsonresponse.put("image_name_of_frame_in_window_that_passed_single_thresh", jo2.getString("image_name_of_frame_in_window_that_passed_single_thresh"));
-								jsonresponse.put("designation", jo2.getString("designation"));
-								jsonresponse.put("social_type", jo2.getString("social_type"));
-								jsonresponse.put("url", newframe.getURL());
-								jsonresponse.put("image_name", newframe.getImageName());
-								SimpleEmailer se = new SimpleEmailer();
-								try {
-									se.sendMail("Alert triggered for " + jo2.get("designation"), "url=" + newframe.getURL() + " social_type=" + jo2.getString("social_type"), "cyrus7580@gmail.com", "info@huzon.tv");
-								} catch (MessagingException e) {
-									e.printStackTrace();
-								}
-								Station station_object = new Station(jo.getString("station"));
-								JSONArray frames_ja = station_object.getFramesAsJSONArray(jo.getLong("timestamp_in_ms") - 6000, jo.getLong("timestamp_in_ms") + 3000, true);
-								jsonresponse.put("frames_ja", frames_ja);
-							}
-							if(jo2.get("alert_fired").equals("no"))
-							{
-								jsonresponse.put("frame_jo", newframe.getAsJSONObject(true));
-								jsonresponse.put("reason", jo2.get("reason"));
-							}*/
-							
 						}
 						else
 						{
@@ -1566,6 +1510,7 @@ public class Endpoint extends HttpServlet {
 		// 2. calculate the moving averages for each reporter from the frames
 		// 3. If a designation passes the moving avg threshold AND that moving average is the highest among all others
 		// 	  {
+		//			--- quick check to make sure designation is outside either fb or twitter, no sense in testing anything else if not -- 
 		//    4. If the designation that passed ma thresh also passes single thresh for one of the frames
 		//		 {
 		//		 5.	If reporter not in twitter waiting period 
@@ -1800,7 +1745,7 @@ public class Endpoint extends HttpServlet {
 											
 											if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
 											{
-												twitter_successful = false; 
+												twitter_successful = false; // delete alert in DB? // these will be easily identifiable by no text and no social id. 
 												twitter_failure_message = twit_jo.getString("message");
 												if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
 												{
@@ -1895,7 +1840,7 @@ public class Endpoint extends HttpServlet {
 											} 
 											catch (FacebookException e) 
 											{
-												facebook_successful = false;
+												facebook_successful = false; // delete alert in DB? // these will be easily identifiable by no text and no social id. 
 												facebook_failure_message = e.getErrorMessage();
 												if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
 												{
