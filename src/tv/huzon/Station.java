@@ -765,7 +765,7 @@ public class Station implements java.lang.Comparable<Station> {
 	private String[] objects = {"Lexington", "Bluegrass", "Central Kentucky", "everyone", "folks", "viewers"};
 	
 	
-	String getMessage(String social_type, long timestamp_in_ms, long redirect_id)
+	String getMessage(String social_type, long timestamp_in_ms, long redirect_id, User reporter)
 	{
 		String returnval = "";
 		Calendar cal = Calendar.getInstance();
@@ -815,14 +815,31 @@ public class Station implements java.lang.Comparable<Station> {
 			am_or_pm_string = " PM";
 		String ts_string = hour + ":" + minutestring + am_or_pm_string;
 		
-		int selector = random.nextInt(4);
 		
 		if(social_type.equals("facebook"))
 		{
-			if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
-				returnval = "I am on the air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;  
+			returnval = reporter.getDisplayName() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
+		}
+		else if(social_type.equals("twitter"))
+		{
+			returnval = reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
+		}
+		/*int selector = random.nextInt(4);
+		
+		if(social_type.equals("facebook"))
+		{
+			if(selector == 0) 
+				returnval = getCallLetters().toUpperCase() + " is on. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;  
+			else if (selector == 1) 
+				returnval = "The time is " + ts_string + " and we're on RIGHT NOW. Fire up the TV or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
+			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;
+			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
+				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
+			else if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
+				returnval = "We're streaming live. Tune in! " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;  
 			else if (selector == 1) // no greeting, "we", "live", "catch" timestamp first
-				returnval = "The time is " + ts_string + " and we are live on the air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
+				returnval = "The news is on RIGHT NOW. Catch us here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
 			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
 				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;
 			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
@@ -834,7 +851,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #wkyt";  
 			else if(selector == 2 || selector == 3)
 				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #wkyt";  
-		}
+		}*/
 		return returnval;
 	}
 	

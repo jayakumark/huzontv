@@ -1586,7 +1586,7 @@ public class Endpoint extends HttpServlet {
 								
 								Twitter twitter = new Twitter();
 								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
-								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id);
+								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id, reporter);
 
 								JSONObject twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, f);
 								
@@ -1648,7 +1648,7 @@ public class Endpoint extends HttpServlet {
 								facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
 								
 								long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
-								String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id);
+								String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id, reporter);
 																
 								String facebookresponse = "";
 								try {
