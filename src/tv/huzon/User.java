@@ -83,7 +83,7 @@ public class User implements java.lang.Comparable<User> {
 				query_to_exec = "SELECT * FROM people WHERE twitter_handle='" + inc_des_or_twit + "'";
 			else if (constructor_type.equals("designation"))
 				query_to_exec = "SELECT * FROM people WHERE designation='" + inc_des_or_twit + "'";
-			System.out.println("User(): query_to_exec=" + query_to_exec);
+			//System.out.println("User(): query_to_exec=" + query_to_exec);
 			rs = stmt.executeQuery(query_to_exec);
 			if(rs.next())
 			{

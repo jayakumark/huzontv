@@ -118,7 +118,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 						FileOutputStream fos0 = new FileOutputStream(tmpdir + "/image_for_twitter0.jpg"); // FIXME this might have conflicts with multiple stations
 						fos0.getChannel().transferFrom(rbc0, 0, Long.MAX_VALUE);
 						image_files[0] = new File(tmpdir + "/image_for_twitter0.jpg");
-						
+						fos0.close();
 						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[1] + " and saving to " + tmpdir + "/image_for_twitter1.jpg");
 						ReadableByteChannel rbc1 = Channels.newChannel(image_urls[1].openStream());
 						FileOutputStream fos1 = new FileOutputStream(tmpdir + "/image_for_twitter1.jpg"); // FIXME this might have conflicts with multiple stations
@@ -136,6 +136,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 						FileOutputStream fos3 = new FileOutputStream(tmpdir + "/image_for_twitter3.jpg"); // FIXME this might have conflicts with multiple stations
 						fos3.getChannel().transferFrom(rbc3, 0, Long.MAX_VALUE);
 						image_files[3] = new File(tmpdir + "/image_for_twitter3.jpg");
+						fos0.close();fos1.close();fos2.close();fos3.close();
 						
 						try 
 						{
@@ -221,7 +222,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 						}
 					}
 					
-					//OLD METHOD
+					//OLD SINGLE-FRAME METHOD
 				/*	URL image_url = new URL(frame2upload.getURLString());
 					 String tmpdir = System.getProperty("java.io.tmpdir");
 				    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());

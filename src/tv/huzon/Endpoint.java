@@ -1401,6 +1401,16 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("message", "A social_type value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
+					else if(designation == null)
+					{
+						jsonresponse.put("message", "A designation value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(id == null)
+					{
+						jsonresponse.put("message", "A id value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
@@ -1469,11 +1479,6 @@ public class Endpoint extends HttpServlet {
 						}
 					}	
 				} 
-				else
-				{
-					jsonresponse.put("message", "Unknown method " + method); // we have already checked for null above
-					jsonresponse.put("response_status", "error");
-				}
 			}
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
