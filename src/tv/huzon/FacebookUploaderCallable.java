@@ -61,7 +61,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					"\n- You disabled the huzon.tv app in your FB privacy configuration" +
 					"\n- Your FB account was never linked to huzon.tv in the first place"+
 					"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
-					"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame2upload.getURL();	
+					"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame2upload.getURLString();	
 			return message;
 	}	
 	
@@ -74,7 +74,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 			if(simulation)
 			{
 				// send emails to admin on simulation since nothing goes to facebook, ok to turn this off if you want
-				se.sendMail("FB triggered for " + reporter.getDesignation(), "url=" + frame2upload.getURL(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("FB triggered for " + reporter.getDesignation(), "url=" + frame2upload.getURLString(), "cyrus7580@gmail.com", "info@huzon.tv");
 			}
 			
 			if(reporter.getFacebookPageAccessToken() == null || reporter.getFacebookPageAccessToken().equals(""))
@@ -94,7 +94,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 			{
 				if(!simulation) // go ahead with the post
 				{	
-					URL image_url = new URL(frame2upload.getURL());
+					URL image_url = new URL(frame2upload.getURLString());
 				    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
 				    String tmpdir = System.getProperty("java.io.tmpdir");
 				    System.out.println("TEMP DIR=" + tmpdir);
@@ -108,14 +108,14 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
 					
 					Platform p = new Platform();
-					long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), frame2upload.getURL());
+					long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), frame2upload.getURLString());
 					String message = station_object.getMessage("facebook", frame2upload.getTimestampInMillis(), redirect_id, reporter);
 													
 					String facebookresponse = "";
 					try {
 						facebookresponse = facebook.postPhoto(new Long(reporter.getFacebookPageID()).toString(), new Media(imagefile), message, "33684860765", false); // FIXME hardcode to wkyt station
 						return_jo.put("facebook_successful", true); // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
-						se.sendMail("FB successful for " + reporter.getDesignation(), "url=" + frame2upload.getURL(), "cyrus7580@gmail.com", "info@huzon.tv");
+						se.sendMail("FB successful for " + reporter.getDesignation(), "url=" + frame2upload.getURLString(), "cyrus7580@gmail.com", "info@huzon.tv");
 						// if either of these fail, notify admin from within functions themselves
 						boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 						boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);

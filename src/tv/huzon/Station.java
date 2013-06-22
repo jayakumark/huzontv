@@ -308,6 +308,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return timestamps_ja; 
 	}
 	
+	// designation can be null. If designation supplied, then get all frames above the single threshold
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double) // INCLUSIVE
 	{
 		TreeSet<Frame> returnset = new TreeSet<Frame>();

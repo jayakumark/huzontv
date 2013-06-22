@@ -150,8 +150,9 @@ var reporters_ja;
 
 document.addEventListener('DOMContentLoaded', function () {
 		
-	//docCookies.setItem("twitter_access_token", "11m");
-	//docCookies.setItem("twitter_handle", "huzontv");
+	//docCookies.setItem("twitter_access_token", "11m", 3000000);
+	//docCookies.setItem("twitter_handle", "huzontv", 3000000);
+	//docCookies.setItem("pass", "", 3000000);
 	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
@@ -192,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        		{
 		        			$("#" + data.stations_ja[x].call_letters  + "_link").click({value: data.stations_ja[x].call_letters},
 		        					function (event) {
-		        						docCookies.setItem("administering_station", event.data.value);
+		        						docCookies.setItem("administering_station", event.data.value, 3000000);
 		        						window.location.reload();
 		        					});
 		        		}
@@ -1097,7 +1098,7 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
 	var rds = "";
 	var frame_to_display = null;
 	var jsonpostbody;
-	
+	var pass = docCookies.getItem("pass");
 	if(typeof designation === undefined || designation === null)
 	{	
 		jsonpostbody = { 
@@ -1112,7 +1113,8 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
 				timestamp_in_ms: timestamp_in_ms,
 				station: station,
 	            simulation: "true",
-	            designation: designation
+	            designation: designation,
+	            password: pass
 			};
 	}
 	

@@ -1,11 +1,15 @@
 package tv.huzon;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Iterator;
+import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
@@ -147,9 +151,20 @@ public class Frame implements Comparable<Frame> {
 		return s3_location;
 	}
 	
-	String getURL()
+	String getURLString()
 	{
 		return url;
+	}
+	
+	URL getURL()
+	{
+		URL returnurl = null;
+		try {
+			returnurl = new URL(url);
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		return returnurl;
 	}
 	
 	String getStation()
@@ -395,6 +410,69 @@ public class Frame implements Comparable<Frame> {
 			x++;
 		}
 		return 0;
+	}
+	
+	// 
+	URL[] get2x2CompositeURLs()
+	{
+		Station station_object = new Station(station);
+		TreeSet<Frame> frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
+		if(frames_ts.size() < 4) // this should absolutely NEVER happen as this function shouldn't be called for any reason if there are this few frames in the window.
+		{						 // at ~9.5 seconds, there should be ~18 frames available
+			System.out.println("Frame.get2x2CompositeURLs(): not enough frames in window. Returning null.");
+			return null;
+		}
+		Frame[] frames_array = null;
+		URL[] return_urls = new URL[4];
+		
+		int numchecks = 0;
+		// loop until the last frame is within 2.5 - 3.5 seconds from the current frame's timestamp (failing after 7 tries) 
+		while((frames_array == null || !(frames_array[frames_array.length - 1].getTimestampInMillis() >= (getTimestampInMillis() + 2500) &&
+				frames_array[frames_array.length - 1].getTimestampInMillis() <= (getTimestampInMillis() + 3500))) && numchecks < 7) // do up to 7 loops at 500ms sec each (i.e. > 3.5 seconds) 
+		{
+			if(numchecks > 0) // on the first go, immediately look for the frames. After that, sleep for 1s
+			{
+				try { Thread.sleep(500);} catch (InterruptedException e) { e.printStackTrace(); }
+			}
+			
+			// get the frame objects in the window
+			frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
+			frames_array = new Frame[frames_ts.size()];
+			System.out.println("Frame.get2x2CompositeURLs(): array length " + frames_array.length);
+			// create the frames_array from the frames object treeset
+			Iterator<Frame> frames_it = frames_ts.iterator();
+			Frame currentframe = null;
+			int x = 0;
+			while(frames_it.hasNext())
+			{
+				currentframe = frames_it.next();
+				frames_array[x] = currentframe;
+				x++;
+			}
+			
+			System.out.println("Frame.get2x2CompositeURLs(): future frame ts=" + (frames_array[frames_array.length - 1].getTimestampInMillis()));
+			System.out.println("Frame.get2x2CompositeURLs(): is it >= " + (getTimestampInMillis() + 2500) + " and <= "+ (getTimestampInMillis() + 3500) + "?");
+			numchecks++;
+		}
+		
+		if(numchecks == 7)
+		{
+			System.out.println("Frame.get2x2CompositeURLs(): loop limit reached without satisfying the future frame condition. Returning null.");
+			return null;
+		}
+		else // loop broke without reaching limit meaning frames_array is correctly populated 
+		{
+			
+			return_urls[0] = frames_array[0].getURL();							// get first image
+			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[0] + " from index 0");
+			return_urls[1] = frames_array[frames_array.length / 3].getURL();      // get second image approx 1/3 through the array
+			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[1] + " from index " + frames_array.length/3);
+			return_urls[2] = frames_array[frames_array.length * 2 / 3].getURL();  // get third image approx 2/3 through the array
+			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[2] + " from index " + frames_array.length*2/3);
+			return_urls[3] = frames_array[frames_array.length - 1].getURL();   // get last image
+			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[3] + " from index " + (frames_array.length-1));
+		}
+		return return_urls;
 	}
 	
 	/* return object as:
