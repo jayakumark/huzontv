@@ -34,6 +34,11 @@ public class Platform {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
+		stations = null; 
+	}
+
+	public boolean populateStations()
+	{
 		stations = new TreeSet<Station>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -52,8 +57,18 @@ public class Platform {
 			rs.close();
 			stmt.close();
 			con.close();
+			return true;
 		}
-		catch(SQLException sqle) { sqle.printStackTrace(); }
+		catch(SQLException sqle) 
+		{ 
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Platform.populateStations", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+			sqle.printStackTrace(); 
+		}
 		finally
 		{
 			try
@@ -62,10 +77,21 @@ public class Platform {
 			}
 			catch(SQLException sqle) { sqle.printStackTrace(); }
 		}   
+		return false;
 	}
-
+	
 	public JSONArray getStationsAsJSONArray()
 	{
+		if(stations == null)
+		{
+			boolean stationpopsuccessful = populateStations();
+			if(!stationpopsuccessful)
+			{
+				System.out.println("Platform.getStationsAsJSONArray(): There was an problem populating the stations value");
+				return null;
+			}
+		}
+		
 		JSONArray return_ja = new JSONArray();
 		if(stations.isEmpty())
 			return return_ja;
@@ -82,7 +108,6 @@ public class Platform {
 			}
 			return return_ja;
 		}
-		
 	}
 	
 
@@ -144,11 +169,6 @@ public class Platform {
 		}  	
 		return returnval;
 	}
-	
-	
-
-	
-
 	
 	boolean updateAlertText(long alert_id_long, String actual_text)
 	{

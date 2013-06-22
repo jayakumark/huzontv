@@ -103,137 +103,145 @@ public class Endpoint extends HttpServlet {
 					{
 						JSONObject jsonpostbody = new JSONObject(jsonpostbody_str);
 						boolean simulation = false;
-						if(jsonpostbody.has("simulation") && (jsonpostbody.getString("simulation").equals("yes") || jsonpostbody.getString("simulation").equals("true")))
-						{ 
-							System.out.println("Endpoint.commitFrameDataAndAlert(): This is a simulation. Looking up existing frame....");
-							simulation = true;
-							// no need to do anything here. The frame (if it exists in the db) gets constructed and processed below.
-						}
-						else // treat as real commit
+						if(!jsonpostbody.has("password") || !jsonpostbody.getString("password").equals("Xri47Q00EIY70S4t5l02637371g2V"))
 						{	
-							Connection con = null;
-							try
-							{
-								con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
-								double currentavgscore = 0.0;
-								double reporter_total = 0.0;
-								Station station = new Station(jsonpostbody.getString("station"));
-								JSONArray all_scores_ja = new JSONArray();
-								JSONArray ja = jsonpostbody.getJSONArray("reporter_scores");
-								String fieldsstring = " (";
-								String valuesstring = " (";
-								fieldsstring = fieldsstring + "`" + "image_name" + "`, ";
-								valuesstring = valuesstring + "'" + jsonpostbody.getString("image_name") + "', ";
-								fieldsstring = fieldsstring + "`" + "s3_location" + "`, ";
-								valuesstring = valuesstring + "'s3://huzon-frames-" + station.getCallLetters() + "/" + jsonpostbody.getString("image_name") + "', ";
-								fieldsstring = fieldsstring + "`" + "url" + "`, ";
-								valuesstring = valuesstring + "'http://" + station.getS3BucketPublicHostname() + "/" + jsonpostbody.getString("image_name") + "', ";
-								fieldsstring = fieldsstring + "`" + "timestamp_in_ms" + "`, ";
-								valuesstring = valuesstring + "'" + jsonpostbody.getLong("timestamp_in_ms") + "', ";
-								fieldsstring = fieldsstring + "`" + "frame_rate" + "`, ";
-								valuesstring = valuesstring + "'" + jsonpostbody.getInt("frame_rate") + "', ";
-								for(int x = 0; x < ja.length(); x++)
-								{
-									reporter_total = 0.0;
-									for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
-									{
-										reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
-										all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
-										//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
-									}
-									currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
-									
-									// have decided these raw scores are unnecessary. Leaving it out makes for a smaller, more efficient database.
-									//fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_scores" + "`, ";
-									//valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").toString() + "', ";
-									fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_avg" + "`, ";
-									valuesstring = valuesstring + "'" + currentavgscore + "', ";
-									fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_num" + "`, ";
-									valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").length() + "', ";
-								}
-								fieldsstring = fieldsstring.substring(0,fieldsstring.length() - 2) + ")";
-								valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";
-								//System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
-								con.createStatement().execute("INSERT IGNORE INTO `frames_" + jsonpostbody.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
-								con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + jsonpostbody.getString("station") + "'");
-								con.close();
+							jsonresponse.put("message", "password was missing or incorrect");
+							jsonresponse.put("response_status", "error");
+						}
+						else // postbody exists and password is correct
+						{	
+							if(jsonpostbody.has("simulation") && (jsonpostbody.getString("simulation").equals("yes") || jsonpostbody.getString("simulation").equals("true")))
+							{ 
+								System.out.println("Endpoint.commitFrameDataAndAlert(): This is a simulation. Looking up existing frame....");
+								simulation = true;
+								// no need to do anything here. The frame (if it exists in the db) gets constructed and processed below.
 							}
-							catch(SQLException sqle)
-							{
-								jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
-								jsonresponse.put("response_status", "error");
-								sqle.printStackTrace();
-								
-								SimpleEmailer se = new SimpleEmailer();
-								try {
-									se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-									
-								} catch (MessagingException e) {
-									e.printStackTrace();
-								}
-								
-							} 
-							finally
-							{
+							else // treat as real commit
+							{	
+								Connection con = null;
 								try
 								{
-									if (con  != null)
-										con.close();
+									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+									double currentavgscore = 0.0;
+									double reporter_total = 0.0;
+									Station station = new Station(jsonpostbody.getString("station"));
+									JSONArray all_scores_ja = new JSONArray();
+									JSONArray ja = jsonpostbody.getJSONArray("reporter_scores");
+									String fieldsstring = " (";
+									String valuesstring = " (";
+									fieldsstring = fieldsstring + "`" + "image_name" + "`, ";
+									valuesstring = valuesstring + "'" + jsonpostbody.getString("image_name") + "', ";
+									fieldsstring = fieldsstring + "`" + "s3_location" + "`, ";
+									valuesstring = valuesstring + "'s3://huzon-frames-" + station.getCallLetters() + "/" + jsonpostbody.getString("image_name") + "', ";
+									fieldsstring = fieldsstring + "`" + "url" + "`, ";
+									valuesstring = valuesstring + "'http://" + station.getS3BucketPublicHostname() + "/" + jsonpostbody.getString("image_name") + "', ";
+									fieldsstring = fieldsstring + "`" + "timestamp_in_ms" + "`, ";
+									valuesstring = valuesstring + "'" + jsonpostbody.getLong("timestamp_in_ms") + "', ";
+									fieldsstring = fieldsstring + "`" + "frame_rate" + "`, ";
+									valuesstring = valuesstring + "'" + jsonpostbody.getInt("frame_rate") + "', ";
+									for(int x = 0; x < ja.length(); x++)
+									{
+										reporter_total = 0.0;
+										for(int i = 0; i < ja.getJSONObject(x).getJSONArray("scores").length(); i++)
+										{
+											reporter_total = reporter_total + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+											all_scores_ja.put(ja.getJSONObject(x).getJSONArray("scores").getDouble(i));
+											//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
+										}
+										currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
+										
+										// have decided these raw scores are unnecessary. Leaving it out makes for a smaller, more efficient database.
+										//fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_scores" + "`, ";
+										//valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").toString() + "', ";
+										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_avg" + "`, ";
+										valuesstring = valuesstring + "'" + currentavgscore + "', ";
+										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_num" + "`, ";
+										valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").length() + "', ";
+									}
+									fieldsstring = fieldsstring.substring(0,fieldsstring.length() - 2) + ")";
+									valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";
+									//System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
+									con.createStatement().execute("INSERT IGNORE INTO `frames_" + jsonpostbody.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
+									con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + jsonpostbody.getString("station") + "'");
+									con.close();
 								}
 								catch(SQLException sqle)
 								{
-									jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
+									jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
+									jsonresponse.put("response_status", "error");
+									sqle.printStackTrace();
 									
 									SimpleEmailer se = new SimpleEmailer();
 									try {
-										se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when closing rs, stmt and con. message=" + sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+										
 									} catch (MessagingException e) {
 										e.printStackTrace();
 									}
-								}
-							}  
-						}
-						
-						Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
-						if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
-						{	
-							JSONObject jo2 = processNewFrame(newframe, simulation);
-							
-							// {
-							// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
-							//		(if alert_triggered==true)
-							//      	twitter_triggered: true or false,
-							//			(if twitter_triggered then)
-							//				twitter_successful: true or false,					// means alert posted and returned an id (or failed)
-							//				(if !twitter_successful, then)
-							//					twitter_failure_message: some message about why twitter failed,	
-							//
-							//      	facebook_triggered: true or false,
-							//			(if facebook_triggered then)				
-							//				facebook_successful: true or false,					// means alert posted and returned an id (or failed)
-							//				(if !facebook_successful, then)
-							//					facebook_failure_message: some message about why facebook failed,	
-							//		(else if alert_triggered== false)
-							//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
-							// }
-							
-							jsonresponse = jo2;
-							jsonresponse.put("response_status", "success"); // just means the insertion was received and a response is coming back. Means nothing in terms of alerts
-							if(simulation) // then return additional info to the simulator. If not, don't.
-							{	
-								if(jsonpostbody.has("designation"))
+									
+								} 
+								finally
 								{
-									System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " was specified by the simulator. Returning specialized information in each frame_jo.");
-									jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
-								}
-								else
-									jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
+									try
+									{
+										if (con  != null)
+											con.close();
+									}
+									catch(SQLException sqle)
+									{
+										jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
+										
+										SimpleEmailer se = new SimpleEmailer();
+										try {
+											se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when closing rs, stmt and con. message=" + sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+										} catch (MessagingException e) {
+											e.printStackTrace();
+										}
+									}
+								}  
 							}
-						}
-						else
-						{
-							jsonresponse.put("message", "There was a problem inserting the data and/or building a Frame object from it.");
-							jsonresponse.put("response_status", "error");
+							
+							Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
+							if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
+							{	
+								JSONObject jo2 = processNewFrame(newframe, simulation);
+								
+								// {
+								// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
+								//		(if alert_triggered==true)
+								//      	twitter_triggered: true or false,
+								//			(if twitter_triggered then)
+								//				twitter_successful: true or false,					// means alert posted and returned an id (or failed)
+								//				(if !twitter_successful, then)
+								//					twitter_failure_message: some message about why twitter failed,	
+								//
+								//      	facebook_triggered: true or false,
+								//			(if facebook_triggered then)				
+								//				facebook_successful: true or false,					// means alert posted and returned an id (or failed)
+								//				(if !facebook_successful, then)
+								//					facebook_failure_message: some message about why facebook failed,	
+								//		(else if alert_triggered== false)
+								//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
+								// }
+								
+								jsonresponse = jo2;
+								jsonresponse.put("response_status", "success"); // just means the insertion was received and a response is coming back. Means nothing in terms of alerts
+								if(simulation) // then return additional info to the simulator. If not, don't.
+								{	
+									if(jsonpostbody.has("designation"))
+									{
+										System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " was specified by the simulator. Returning specialized information in each frame_jo.");
+										jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
+									}
+									else
+										jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
+								}
+							}
+							else
+							{
+								jsonresponse.put("message", "There was a problem inserting the data and/or building a Frame object from it.");
+								jsonresponse.put("response_status", "error");
+							}
 						}
 					}
 				}
@@ -1546,7 +1554,7 @@ public class Endpoint extends HttpServlet {
 		//	   }
 		
 		
-		
+		long frame_ts = newframe.getTimestampInMillis();
 		User admin_user = new User("huzon_master", "designation");
 		SimpleEmailer se = new SimpleEmailer();
 		System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
@@ -1555,7 +1563,7 @@ public class Endpoint extends HttpServlet {
 			
 			// get all frames over the moving average window backward from this timestamp
 			Station station_object = new Station(newframe.getStation());
-			TreeSet<Frame> window_frames = station_object.getFrames(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), null, 0);
+			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-5000, frame_ts, null, 0);
 			int num_frames_in_window = window_frames.size();
 			System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
 			
@@ -1661,13 +1669,14 @@ public class Endpoint extends HttpServlet {
 						designation_that_passed_ma_thresh = reporter_designations[x];
 						User reporter = new User(designation_that_passed_ma_thresh, "designation");
 						
-						// quick check to see if outside twitter or facebook windows. If neither, then that saves processing power
-						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
-								&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
+						// prelim check: If reporter within (FB window or FB inactive) && (within TW window or TW inactive), then skip everything. Saves CPU avoiding single check
+						if((reporter.isWithinFacebookWindow(frame_ts, simulation) || !reporter.isFacebookActive()) && 
+								reporter.isWithinTwitterWindow(frame_ts,simulation) || !reporter.isTwitterActive())
 						{	
 							// twitter and facebook triggers stay false
-							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within both windows. Moving on.");
+							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within window or inactive on both FB & TW.");
 						}
+						
 						else
 						{	
 							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
@@ -1682,7 +1691,7 @@ public class Endpoint extends HttpServlet {
 							 *                                                                                                                         
 							 *                                                                                                                         
 							 */
-							JSONArray frames_ja = station_object.getFramesAsJSONArray(newframe.getTimestampInMillis()-5000, newframe.getTimestampInMillis(), true);
+							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-5000, frame_ts, true);
 							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
 							{
 								System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
@@ -1710,10 +1719,10 @@ public class Endpoint extends HttpServlet {
 								 *                                                       __/ |        | |                                                                    
 								 *                                                      |___/         |_|                                                                    
 								 */
-								if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
+								if(reporter.isTwitterActive() && !reporter.isWithinTwitterWindow(frame_ts,simulation))
 								{	
 									twitter_triggered = true; // <---------------
-									reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert regardless of credentials or successful posting
+									reporter.setLastAlert(frame_ts, "twitter", simulation); // set last alert regardless of credentials or successful posting
 								} 
 								
 								/***
@@ -1726,10 +1735,10 @@ public class Endpoint extends HttpServlet {
 								 *                                                       __/ |        | |                                                                              
 								 *                                                      |___/         |_|                                                                              
 								 */
-								if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
+								if(reporter.isFacebookActive() && !reporter.isWithinFacebookWindow(frame_ts, simulation))
 								{
 									facebook_triggered = true; // <---------------
-									reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert regardless of credentials or successful posting
+									reporter.setLastAlert(frame_ts, "facebook", simulation); // set last alert regardless of credentials or successful posting
 								} 
 								
 								if(twitter_triggered)
@@ -1919,8 +1928,8 @@ public class Endpoint extends HttpServlet {
 					
 					
 					
-					if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
-							&& ((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
+					if((frame_ts - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
+							&& ((frame_ts - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
 					{	
 						return_jo.put("alert_triggered", "no");
 						return_jo.put("social_type", "neither");
@@ -1937,26 +1946,26 @@ public class Endpoint extends HttpServlet {
 						boolean fb = false;
 						boolean tw = false;
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
+						if((frame_ts - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
 						{	
-							System.out.println("Twitter fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastTwitterAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastTwitterAlert(simulation)) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
+							System.out.println("Twitter fired! ts=" + frame_ts + " last=" + reporter.getLastTwitterAlert(simulation) + " diff=" + (frame_ts - reporter.getLastTwitterAlert(simulation)) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
 							return_jo.put("alert_triggered", "yes");
 							return_jo.put("alert_fired", "yes");
 							if(fb)
 								return_jo.put("social_type", "both");
 							else
 								return_jo.put("social_type", "twitter");
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "twitter", simulation); // set last alert whether posting successful or not
+							reporter.setLastAlert(frame_ts, "twitter", simulation); // set last alert whether posting successful or not
 							tw = true;
 						}
 						
-						if((newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
+						if((frame_ts - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
 						{	
-							System.out.println("Facebook fired! ts=" + newframe.getTimestampInMillis() + " last=" + reporter.getLastFacebookAlert(simulation) + " diff=" + (newframe.getTimestampInMillis() - reporter.getLastFacebookAlert(simulation)) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
+							System.out.println("Facebook fired! ts=" + frame_ts + " last=" + reporter.getLastFacebookAlert(simulation) + " diff=" + (frame_ts - reporter.getLastFacebookAlert(simulation)) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
 							return_jo.put("alert_triggered", "yes");
 							return_jo.put("alert_fired", "yes");
 							return_jo.put("social_type", "facebook");
-							reporter.setLastAlert(newframe.getTimestampInMillis(), "facebook", simulation); // set last alert whether posting successful or not
+							reporter.setLastAlert(frame_ts, "facebook", simulation); // set last alert whether posting successful or not
 							fb = true;
 						}
 						
@@ -1997,7 +2006,7 @@ public class Endpoint extends HttpServlet {
 								
 								Twitter twitter = new Twitter();
 								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
-								String message = station_object.getMessage("twitter", newframe.getTimestampInMillis(), redirect_id, reporter);
+								String message = station_object.getMessage("twitter", frame_ts, redirect_id, reporter);
 
 								JSONObject twit_jo = null;
 								// if the user doesn't have any twitter credentials, send an email...
@@ -2101,7 +2110,7 @@ public class Endpoint extends HttpServlet {
 								facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
 								
 								long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
-								String message = station_object.getMessage("facebook", newframe.getTimestampInMillis(), redirect_id, reporter);
+								String message = station_object.getMessage("facebook", frame_ts, redirect_id, reporter);
 																
 								String facebookresponse = "";
 								try {

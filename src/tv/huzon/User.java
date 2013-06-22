@@ -34,12 +34,10 @@ public class User implements java.lang.Comparable<User> {
 	private String display_name;
 	private String email;
 	private double homogeneity;
-	//private double homogeneity_natural;
-	//private double homogeneity_artificial;
+	private boolean twitter_active;
+	private boolean facebook_active;
 	private int twitter_alert_waiting_period;
 	private int facebook_alert_waiting_period;
-	private int twitter_delete_after;
-	private int facebook_delete_after;
 	private long twitter_last_alert;
 	private long facebook_last_alert;
 	private long twitter_last_alert_test;
@@ -93,12 +91,10 @@ public class User implements java.lang.Comparable<User> {
 				display_name = rs.getString("display_name");
 				email = rs.getString("email");
 				homogeneity = rs.getDouble("homogeneity");
-			//	homogeneity_natural = rs.getDouble("homogeneity_natural");
-				//homogeneity_artificial = rs.getDouble("homogeneity_artificial");
 				twitter_alert_waiting_period = rs.getInt("twitter_alert_waiting_period");
 				facebook_alert_waiting_period = rs.getInt("facebook_alert_waiting_period");
-				twitter_delete_after = rs.getInt("twitter_delete_after");
-				facebook_delete_after = rs.getInt("facebook_delete_after");
+				twitter_active = rs.getBoolean("twitter_active");
+				facebook_active = rs.getBoolean("facebook_active");
 				twitter_last_alert = rs.getLong("twitter_last_alert");
 				facebook_last_alert = rs.getLong("facebook_last_alert");
 				twitter_last_alert_test = rs.getLong("twitter_last_alert_test");
@@ -121,26 +117,6 @@ public class User implements java.lang.Comparable<User> {
 				sports = rs.getBoolean("sports");
 				reporter = rs.getBoolean("reporter");
 				global_admin = rs.getBoolean("global_admin");
-				/*rs2 = null;
-				stmt2 = con.createStatement();
-				rs2 = stmt2.executeQuery("SELECT * FROM stations WHERE reporters like '% " + designation + " %'");
-				stations_appearing = new TreeSet<String>();
-				while(rs2.next())
-				{
-					stations_appearing.add(rs2.getString("call_letters"));
-				}
-				
-				
-				rs3 = null;
-				stmt3 = con.createStatement();
-				rs3 = stmt3.executeQuery("SELECT * FROM stations WHERE administrators like '% " + designation + " %'");
-				stations_as_admin = new TreeSet<String>();
-				while(rs3.next())
-				{
-					stations_as_admin.add(rs3.getString("call_letters"));
-				}*/
-				
-				
 				valid = true;
 			}
 			else
@@ -158,7 +134,7 @@ public class User implements java.lang.Comparable<User> {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in User constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("SQLException in User constructor", "valid set to false  for inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type + ". message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -182,6 +158,22 @@ public class User implements java.lang.Comparable<User> {
 			}
 		}  	
 		//System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
+	}
+	
+	public boolean isWithinFacebookWindow(long frame_millis, boolean simulation)
+	{
+		if(frame_millis - getLastFacebookAlert(simulation) < getFacebookWaitingPeriodInMillis())
+			return true;
+		else
+			return false;
+	}
+	
+	public boolean isWithinTwitterWindow(long frame_millis, boolean simulation)
+	{
+		if(frame_millis - getLastTwitterAlert(simulation) < getTwitterWaitingPeriodInMillis())
+			return true;
+		else
+			return false;
 	}
 	
 	public long getFacebookPageID()
@@ -239,6 +231,16 @@ public class User implements java.lang.Comparable<User> {
 		return twitter_handle;
 	}
 	
+	public boolean isTwitterActive()
+	{
+		return twitter_active;
+	}
+
+	public boolean isFacebookActive()
+	{
+		return facebook_active;
+	}
+	
 	public long getLastTwitterAlert(boolean simulation)
 	{
 		if(simulation)
@@ -264,16 +266,6 @@ public class User implements java.lang.Comparable<User> {
 			return 2;
 		return homogeneity;
 	}
-	
-	/*public double getHomogeneityArtificial()
-	{
-		return homogeneity_artificial;
-	}
-	
-	public double getHomogeneityNatural()
-	{
-		return homogeneity_natural;
-	}*/
 	
 	public long getFacebookUID()
 	{
@@ -376,15 +368,11 @@ public class User implements java.lang.Comparable<User> {
 		try {
 			response_jo.put("designation", getDesignation());
 			response_jo.put("display_name", getDisplayName());
-			//response_jo.put("stations_as_reporter", new JSONArray(stations_appearing));
-			//response_jo.put("stations_as_administrator", new JSONArray(stations_as_admin));
 			response_jo.put("anchor", isAnchor());
 			response_jo.put("weather", isWeather());
 			response_jo.put("sports", isSports());
 			response_jo.put("reporter", isReporter());
 			response_jo.put("homogeneity", homogeneity);
-		//	response_jo.put("homogeneity_natural", homogeneity_natural);
-		//	response_jo.put("homogeneity_artificial", homogeneity_artificial);
 			response_jo.put("weekend_expected_begin", weekend_expected_begin_string);
 			response_jo.put("weekend_expected_end", weekend_expected_end_string);
 			response_jo.put("weekday_expected_begin", weekday_expected_begin_string);
@@ -406,10 +394,10 @@ public class User implements java.lang.Comparable<User> {
 			if(!facebook_page_access_token.isEmpty())
 				response_jo.put("facebook_page_access_token", facebook_page_access_token);
 			response_jo.put("facebook_alert_waiting_period", facebook_alert_waiting_period);
-			response_jo.put("facebook_delete_after", facebook_delete_after);
+			response_jo.put("facebook_active", facebook_active);
 			response_jo.put("facebook_last_alert", facebook_last_alert);
 			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
-			response_jo.put("twitter_delete_after", twitter_delete_after);
+			response_jo.put("twitter_active", twitter_active);
 			response_jo.put("twitter_last_alert", twitter_last_alert);
 			
 		} catch (JSONException e) {
@@ -706,7 +694,7 @@ public class User implements java.lang.Comparable<User> {
 			sqle.printStackTrace();
 			SimpleEmailer se = new SimpleEmailer();
 			try {
-				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+				se.sendMail("SQLException in Endpoint resetFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -722,7 +710,7 @@ public class User implements java.lang.Comparable<User> {
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
 				SimpleEmailer se = new SimpleEmailer();
 				try {
-					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
+					se.sendMail("SQLException in Endpoint resetFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
