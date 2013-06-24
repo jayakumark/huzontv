@@ -1582,6 +1582,8 @@ public class Endpoint extends HttpServlet {
 			 *                                                                                                         
 			 *                                                                                                         
 			 */
+			boolean a_designation_passed_ma_thresh_and_was_highest = false;
+			
 			if(num_frames_in_window < 5)  // all response boolean values remain false and return
 			{
 				alert_triggered_failure_message = "not enough frames in window";
@@ -1658,7 +1660,7 @@ public class Endpoint extends HttpServlet {
 				 *                                                                                                                                
 				 */
 				
-				boolean a_designation_passed_ma_thresh_and_was_highest = false;
+				
 				boolean designation_passed_single_thresh = false;
 				String designation_that_passed_ma_thresh = "";
 				String image_name_of_frame_in_window_that_passed_single_thresh = "";
@@ -1781,36 +1783,35 @@ public class Endpoint extends HttpServlet {
 					}
 					x++;
 				} // loop reporters
-				
-				return_jo.put("alert_triggered", alert_triggered);
-				if(alert_triggered)
-				{
-					return_jo.put("twitter_triggered", twitter_triggered);
-					if(twitter_triggered)
-					{
-						return_jo.put("twitter_successful", twitter_successful);
-						if(!twitter_successful)
-							return_jo.put("twitter_failure_message", twitter_failure_message);
-					}
-					
-					return_jo.put("facebook_triggered", facebook_triggered);
-					if(facebook_triggered)
-					{	
-						return_jo.put("facebook_successful", facebook_successful);
-						if(!facebook_successful)
-							return_jo.put("facebook_failure_message", facebook_failure_message);
-					}
-				}
-				else
-				{
-					if(!a_designation_passed_ma_thresh_and_was_highest)
-						alert_triggered_failure_message = "None of the designations passed the ma threshold";
-					else // no alert triggered yet a designation passed the ma thresh... that means that the designation didn't pass single thresh
-						alert_triggered_failure_message = "A designation passed ma thresh and was highest, but didn't pass single thresh for any of the frames in the window.";
-					return_jo.put("alert_triggered_failure_message", alert_triggered_failure_message);
-				}
-				
 			}
+			return_jo.put("alert_triggered", alert_triggered);
+			if(alert_triggered)
+			{
+				return_jo.put("twitter_triggered", twitter_triggered);
+				if(twitter_triggered)
+				{
+					return_jo.put("twitter_successful", twitter_successful);
+					if(!twitter_successful)
+						return_jo.put("twitter_failure_message", twitter_failure_message);
+				}
+				
+				return_jo.put("facebook_triggered", facebook_triggered);
+				if(facebook_triggered)
+				{	
+					return_jo.put("facebook_successful", facebook_successful);
+					if(!facebook_successful)
+						return_jo.put("facebook_failure_message", facebook_failure_message);
+				}
+			}
+			else
+			{
+				if(!a_designation_passed_ma_thresh_and_was_highest)
+					alert_triggered_failure_message = "None of the designations passed the ma threshold";
+				else // no alert triggered yet a designation passed the ma thresh... that means that the designation didn't pass single thresh
+					alert_triggered_failure_message = "A designation passed ma thresh and was highest, but didn't pass single thresh for any of the frames in the window.";
+				return_jo.put("alert_triggered_failure_message", alert_triggered_failure_message);
+			}
+			
 		}
 		catch(JSONException jsone)
 		{
