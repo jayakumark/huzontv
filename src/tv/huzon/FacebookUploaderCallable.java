@@ -88,7 +88,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					String emailmessage = getMissingCredentialsEmailMessage();
 					// send to reporter and to admin
 					se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-					(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of missing FB credentials. The following email was sent to a reporter due to missing FB credentials:\n\n" + emailmessage);
+					(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of missing FB credentials.");
 				}
 			}
 			else // user appears to have facebook credentials
@@ -197,7 +197,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 									String emailmessage = getMissingCredentialsEmailMessage();
 									// send to reporter and to admin
 									se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-									(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of invalid FB credentials. Actual FB response=" + facebookresponse + "\n\n\nThe following email was sent to a reporter due to invalid FB credentials:\n\n" + emailmessage);
+									(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of invalid FB credentials. Actual FB response=" + facebookresponse);
 								}
 								else
 								{	
