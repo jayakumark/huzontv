@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        	if (data.response_status == "error")
 			        	{
 			        		$("#message_div").html("<span style=\"font-size:14;color:red\">gFATFAC Error: " + data.message + " </span>");
+			        		docCookies.removeItem("state");
 			        	}
 			        	else
 			        	{

@@ -56,12 +56,7 @@ public class Alert {
 			else
 			{
 				id = -1L; // indicates failed lookup
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Alert.constructor", "Failed lookup for id=" + inc_id, "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Alert.constructor: Failed lookup for id=" + inc_id);
 			}
 			rs.close();
 			stmt.close();
@@ -70,12 +65,7 @@ public class Alert {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Alert.constructor", "Error getting table row. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Alert.constructor: Error getting table row. message=" +sqle.getMessage());
 		}
 		finally
 		{

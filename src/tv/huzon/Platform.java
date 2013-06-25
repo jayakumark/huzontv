@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -37,6 +38,60 @@ public class Platform {
 		stations = null; 
 	}
 
+	public void addMessageToLog(String message)
+	{
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			Calendar cal = Calendar.getInstance();
+			long timestamp_in_ms = cal.getTimeInMillis(); // we know that the most recent image has a timestamp of right now. It can't "survive" there for more than a few seconds
+			// make the filename human-readable
+			String year = new Integer(cal.get(Calendar.YEAR)).toString();
+			String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+			if(month.length() == 1) { month = "0" + month; }
+			String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+			if(day.length() == 1) { day = "0" + day;} 
+			String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+			if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+			String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+			if(minute.length() == 1) { minute = "0" + minute;} 
+			String second = new Integer(cal.get(Calendar.SECOND)).toString();
+			if(second.length() == 1) { second = "0" + second;} 
+			String ms = new Long(timestamp_in_ms%1000).toString();
+			if(ms.length() == 1) { ms = "00" + ms;} 
+			if(ms.length() == 2) { ms = "0" + ms;} 
+			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute;			
+			
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
+	                    + " VALUES('" + hr_timestamp + "','" + message + "')");
+			stmt.executeUpdate("INSERT INTO messages (`timestamp_hr`,`message`) "
+                    	+ " VALUES('" + hr_timestamp + "','" + message + "')");
+		    stmt.close();
+		    con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Platform.addMessageToLog: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in Platform.addMessageToLog: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return;
+	}
+	
 	public boolean populateStations()
 	{
 		stations = new TreeSet<Station>();
@@ -61,12 +116,7 @@ public class Platform {
 		}
 		catch(SQLException sqle) 
 		{ 
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Platform.populateStations", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Platform.populateStations: message=" +sqle.getMessage());
 			sqle.printStackTrace(); 
 		}
 		finally
@@ -143,12 +193,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Platform.createAlertInDB", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Platform.createAlertInDB: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -159,12 +204,7 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Platform.createAlertInDB", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Platform.createAlertInDB: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -194,12 +234,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Platform.updateAlertText", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Platform.updateAlertText: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -209,13 +244,8 @@ public class Platform {
 			}
 			catch(SQLException sqle)
 			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Platform.updateAlertText", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				System.out.println("Problem closing resultset, statement and/or connection to the database.");
+				(new Platform()).addMessageToLog("SQLException in Platform.updateAlertText: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -245,12 +275,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Platform.updateSocialItemID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Platform.updateSocialItemID: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -261,12 +286,7 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Platform.updateSocialItemID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Platform.updateSocialItemID: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -292,12 +312,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Platform.putRedirectHitInDB", "Error putting redirect hit in db. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Platform.putRedirectHitInDB: Error putting redirect hit in db. message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -338,7 +353,8 @@ public class Platform {
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-
+		Platform p = new Platform();
+		p.addMessageToLog("test message3");
 	}
 
 }

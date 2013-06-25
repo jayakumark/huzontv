@@ -275,12 +275,7 @@ public class Frame implements Comparable<Frame> {
 		{
 			returnval = false;
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Endpoint testFrameForMovingAverage: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -290,12 +285,7 @@ public class Frame implements Comparable<Frame> {
 			}
 			catch(SQLException sqle)
 			{ 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint testFrameForMovingAverage", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Endpoint testFrameForMovingAverage Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}   
 		return returnval; // something went wrong along the way

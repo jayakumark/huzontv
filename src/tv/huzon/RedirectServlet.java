@@ -67,12 +67,7 @@ public class RedirectServlet extends HttpServlet {
 				boolean successful = p.putRedirectHitInDB(station_object.getCallLetters(), Long.parseLong(id), referrer, ip_address, alert_object.getDesignation());
 				if(!successful)
 				{
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("Failed to put redirect hit into DB", "alert_timestamp=" + alert_object.getTimestamp() + " alert_id=" + alert_object.getID(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
+					(new Platform()).addMessageToLog("Failed to put redirect hit into DB alert_timestamp=" + alert_object.getTimestamp() + " alert_id=" + alert_object.getID());
 				}
 				response.sendRedirect(station_object.getLiveStreamURL());
 			}

@@ -91,12 +91,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Station constructor", "valid set to false. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Station constructor: valid set to false message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -107,12 +102,7 @@ public class Station implements java.lang.Comparable<Station> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Station constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Station constructor: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		
@@ -293,6 +283,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Station.getFrameTimestamps: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -346,6 +337,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Station.getFrames: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -502,12 +494,7 @@ public class Station implements java.lang.Comparable<Station> {
 			catch(SQLException sqle)
 			{
 				sqle.printStackTrace();
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Station.getAlertFrames", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Station.getAlertFrames: message=" +sqle.getMessage());
 			}
 			finally
 			{
@@ -517,12 +504,7 @@ public class Station implements java.lang.Comparable<Station> {
 				}
 				catch(SQLException sqle)
 				{ 
-					SimpleEmailer se = new SimpleEmailer();
-					try {
-						se.sendMail("SQLException in Station.getAlertFrames", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-					} catch (MessagingException e) {
-						e.printStackTrace();
-					}
+					(new Platform()).addMessageToLog("SQLException in Station.getAlertFrames: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 				}
 			}   
 		}
@@ -566,12 +548,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Station.resetAllLastAlerts()", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Station.resetAllLastAlerts(): message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -581,12 +558,7 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 			catch(SQLException sqle)
 			{ 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Station.resetAllLastAlerts()", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Station.resetAllLastAlerts(): Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}   		
 		return true;
@@ -624,12 +596,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Station.resetAllLastAlerts()", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Station.resetAllLastAlerts(): message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -639,12 +606,7 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 			catch(SQLException sqle)
 			{ 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Station.resetAllLastAlerts()", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Station.resetAllLastAlerts(): Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}   		
 		return true;

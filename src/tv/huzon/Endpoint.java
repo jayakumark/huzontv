@@ -170,15 +170,7 @@ public class Endpoint extends HttpServlet {
 									jsonresponse.put("message", "There was a problem attempting to insert the scores into the database. sqle.getMessage()=" + sqle.getMessage());
 									jsonresponse.put("response_status", "error");
 									sqle.printStackTrace();
-									
-									SimpleEmailer se = new SimpleEmailer();
-									try {
-										se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when inserting frame scores. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-										
-									} catch (MessagingException e) {
-										e.printStackTrace();
-									}
-									
+									(new Platform()).addMessageToLog("SQLException in Endpoint commitFrameDataAndAlert: Error occurred when inserting frame scores. message=" +sqle.getMessage());
 								} 
 								finally
 								{
@@ -190,13 +182,7 @@ public class Endpoint extends HttpServlet {
 									catch(SQLException sqle)
 									{
 										jsonresponse.put("warning", "There was a problem closing the resultset, statement and/or connection to the database.");
-										
-										SimpleEmailer se = new SimpleEmailer();
-										try {
-											se.sendMail("SQLException in Endpoint commitFrameDataAndAlert", "Error occurred when closing rs, stmt and con. message=" + sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-										} catch (MessagingException e) {
-											e.printStackTrace();
-										}
+										(new Platform()).addMessageToLog("SQLException in Endpoint commitFrameDataAndAlert: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 									}
 								}  
 							}
@@ -508,7 +494,9 @@ public class Endpoint extends HttpServlet {
 								
 								if(preliminary_jsonresponse.getString("response_status").equals("success"))
 								{
+									System.out.println("Endpoint.getFacebookAccessTokenFromAuthorizationCode(): " + preliminary_jsonresponse.getString("access_token"));
 									JSONObject fb_profile_jo = user.getProfileFromFacebook(preliminary_jsonresponse.getString("access_token"));
+									System.out.println("Endpoint.getFacebookAccessTokenFromAuthorizationCode(): " + fb_profile_jo);
 									long fb_uid = 0L;
 									try
 									{
@@ -528,6 +516,7 @@ public class Endpoint extends HttpServlet {
 											cal.add(Calendar.SECOND, expires_in_seconds);
 											long expires_timestamp = cal.getTimeInMillis() / 1000;
 											boolean successful = user.setFacebookAccessTokenExpiresAndUID(preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
+																						
 											if(successful)
 											{	
 												jsonresponse.put("response_status", "success");
@@ -538,6 +527,11 @@ public class Endpoint extends HttpServlet {
 												jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
 												jsonresponse.put("response_status", "error");
 											}
+										}
+										else if(fb_profile_jo != null && fb_profile_jo.has("error"))
+										{
+											jsonresponse.put("message", "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"));
+											jsonresponse.put("response_status", "error");
 										}
 										else
 										{
@@ -1561,7 +1555,6 @@ public class Endpoint extends HttpServlet {
 		
 		long frame_ts = newframe.getTimestampInMillis();
 		User admin_user = new User("huzon_master", "designation");
-		SimpleEmailer se = new SimpleEmailer();
 		System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
 		try
 		{
@@ -1836,7 +1829,11 @@ public class Endpoint extends HttpServlet {
 		String client_secret = "dbf442014759e75f2f93f2054ac319a0";
 		String redirect_uri = "https://www.huzon.tv/registration.html";
 		HttpClient client = new DefaultHttpClient();
-		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?client_id=" + client_id + "&client_secret=" + client_secret + "&redirect_uri=" + redirect_uri + "&code=" + code);
+		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?" +
+				"client_id=" + client_id + 
+				"&client_secret=" + client_secret + 
+				"&redirect_uri=" + redirect_uri + 
+				"&code=" + code);
 		HttpResponse response;
 		try
 		{
@@ -1869,6 +1866,8 @@ public class Endpoint extends HttpServlet {
 						 // skip
 					 }
 				}
+				//String longlived_access_token = getLongLivedFacebookAccessToken(access_token);
+				//se.sendMail("Attempted to get long-lived FB access token", "previous token=" + access_token + "\nLL token=" + longlived_access_token + "\n\nSubaccount tokens gotten with this LL access token should be non-expiring.\n\nresponse from fb original access token request (not LL)=" + text, "cyrus7580@gmail.com", "info@huzon.tv");
 				jsonresponse.put("access_token", access_token);
 				jsonresponse.put("expires", expires);
 			} catch (ClientProtocolException e) {
@@ -1879,7 +1878,11 @@ public class Endpoint extends HttpServlet {
 				e.printStackTrace();
 				jsonresponse.put("response_status", "error");
 				jsonresponse.put("message", "ioexception " + e.getMessage());
-			}
+			} 
+			/*catch (MessagingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
 		}	
 		catch (JSONException e) {
 			e.printStackTrace();
@@ -1887,337 +1890,52 @@ public class Endpoint extends HttpServlet {
 		return jsonresponse;
 	}
 	
+	public String getLongLivedFacebookAccessToken(String existing_access_token)
+	{
+		String returnstring = null;
+		String client_id = "176524552501035";
+		String client_secret = "dbf442014759e75f2f93f2054ac319a0";
+		HttpClient client = new DefaultHttpClient();
+		HttpGet request = new HttpGet("https://graph.facebook.com/oauth/access_token?" +
+				"client_id=" + client_id + 
+				"&client_secret=" + client_secret + 
+				"&grant_type=fb_exchange_token" + 
+				"&fb_exchange_token=" + existing_access_token);
+		HttpResponse response;
+		try
+		{
+			response = client.execute(request);
+			// Get the response
+			BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+			String text = "";
+			String line = "";
+			while ((line = rd.readLine()) != null) {
+				text = text + line;
+			} 
+			returnstring = text;
+			System.out.println("returnstring=" + returnstring);
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} 
+		return returnstring;
+	}
+	
+	/*https://graph.facebook.com/oauth/access_token?             
+	    client_id=APP_ID&
+	    client_secret=APP_SECRET&
+	    grant_type=fb_exchange_token&
+	    fb_exchange_token=EXISTING_ACCESS_TOKEN */
+	
 	public static void main(String[] args) {
-		//Endpoint e = new Endpoint();
+		Endpoint e = new Endpoint();
+		User cyrus = new User("huzon_master", "designation");
+		String llat = e.getLongLivedFacebookAccessToken(cyrus.getFacebookAccessToken());
 	}
 	
 }
 
-/*
- * 			
-					
-					
-					
-					
-					
-					//			If reporter not in twitter waiting period 
-					//			(
-					//				if user has twitter credentials on file
-					//				{
-					//					try to create tweet
-					//					if tweet is not successful
-					//					{
-					//						send email to reporter and notify admin
-					//					}
-					//				}
-					//			}
-					// 			if reporter not in facebook waiting period
-					//			{
-					//				if user has facebook credentials on file
-					//				{
-					//					try to create facebook post
-					//					if facebook post not successful
-					//					{
-					//						send email to reporter and notify admin
-					//					}
-					//				}
-					//			}
-					
-					
-				
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					if((frame_ts - reporter.getLastFacebookAlert(simulation)) < reporter.getFacebookWaitingPeriodInMillis()
-							&& ((frame_ts - reporter.getLastTwitterAlert(simulation)) < reporter.getTwitterWaitingPeriodInMillis()))
-					{	
-						return_jo.put("alert_triggered", "no");
-						return_jo.put("social_type", "neither");
-						return_jo.put("alert_fired", "no");
-						return_jo.put("reason", "Passed MA threshold, unknown if passed single frame thresh because user within waiting period of both facebook and twitter and couldn't fire alert, regardless.");
-						return_jo.put("designation", reporter_designations[x]);
-						return return_jo;
-					}
-
-					
-					if(frame_in_window_passed_single_thresh)// frame in window passed single thresh
-					{	
-						System.out.println(reporter_designations[x] + " passed the moving average threshold for this frame. " + reporter_moving_averages[x] + " > " + reporter_moving_average_thresholds[x]);
-						boolean fb = false;
-						boolean tw = false;
-						
-						if((frame_ts - reporter.getLastTwitterAlert(simulation)) >= reporter.getTwitterWaitingPeriodInMillis())
-						{	
-							System.out.println("Twitter fired! ts=" + frame_ts + " last=" + reporter.getLastTwitterAlert(simulation) + " diff=" + (frame_ts - reporter.getLastTwitterAlert(simulation)) + " wait=" + reporter.getTwitterWaitingPeriodInMillis());
-							return_jo.put("alert_triggered", "yes");
-							return_jo.put("alert_fired", "yes");
-							if(fb)
-								return_jo.put("social_type", "both");
-							else
-								return_jo.put("social_type", "twitter");
-							reporter.setLastAlert(frame_ts, "twitter", simulation); // set last alert whether posting successful or not
-							tw = true;
-						}
-						
-						if((frame_ts - reporter.getLastFacebookAlert(simulation)) >= reporter.getFacebookWaitingPeriodInMillis())
-						{	
-							System.out.println("Facebook fired! ts=" + frame_ts + " last=" + reporter.getLastFacebookAlert(simulation) + " diff=" + (frame_ts - reporter.getLastFacebookAlert(simulation)) + " wait=" + reporter.getFacebookWaitingPeriodInMillis());
-							return_jo.put("alert_triggered", "yes");
-							return_jo.put("alert_fired", "yes");
-							return_jo.put("social_type", "facebook");
-							reporter.setLastAlert(frame_ts, "facebook", simulation); // set last alert whether posting successful or not
-							fb = true;
-						}
-						
-						// temporary hardcode email on new alert
-						if(fb || tw)
-						{
-							if(!simulation) // don't send email on simulation... because the user is watching the alerts in the simulator. No point.
-							{	
-								SimpleEmailer se = new SimpleEmailer();
-								try {
-									se.sendMail("Alert triggered for " + reporter_designations[x], "url=" + newframe.getURL() + " tw=" + tw + " fb=" + fb, "cyrus7580@gmail.com", "info@huzon.tv");
-								} catch (MessagingException e) {
-									e.printStackTrace();
-								}
-							}
-						}
-						
-						if(tw || fb && !simulation)
-						{	
-							// this might be problematic if two alerts from two stations happen at EXACTLY the same time. image.jpg could be overwritten and wrong. FIXME
-							// download file first
-							URL image_url = new URL(newframe.getURL());
-						    ReadableByteChannel rbc = Channels.newChannel(image_url.openStream());
-						    String tmpdir = System.getProperty("java.io.tmpdir");
-						    System.out.println("TEMP DIR=" + tmpdir);
-						    FileOutputStream fos = new FileOutputStream(tmpdir + "/image.jpg");
-						    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-						    File f = new File(tmpdir + "/image.jpg");
-						    
-						    // initialize emailer
-						    SimpleEmailer se = new SimpleEmailer();
-						    
-							Platform p = new Platform();
-							if(tw)
-							{
-								System.out.println("Endpoint.processNewFrame(): Firing tweet for " + reporter.getDisplayName());
-								User admin_user = new User("huzon_master", "designation");
-								
-								Twitter twitter = new Twitter();
-								long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), newframe.getURL());
-								String message = station_object.getMessage("twitter", frame_ts, redirect_id, reporter);
-
-								JSONObject twit_jo = null;
-								// if the user doesn't have any twitter credentials, send an email...
-								if(reporter.getTwitterAccessToken() == null || reporter.getTwitterAccessToken().equals("")
-										|| reporter.getTwitterAccessTokenSecret() == null || reporter.getTwitterAccessTokenSecret().equals(""))
-								{
-									try {
-										se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
-												",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-														"has become disconnected from huzon.tv. This can happen for several reasons:" +
-														"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
-														"\n- Your Twitter account was never linked to huzon.tv in the first place"+
-														"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-														"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
-													, reporter.getEmail(), 
-													"info@huzon.tv");
-									} catch (MessagingException me) {
-										me.printStackTrace();
-									}
-									
-									try {
-										se.sendMail(reporter.getDesignation() + " was notified of an unlinked Twitter account", 
-												"The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + reporter.getDisplayName() + 
-												",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-												"has become disconnected from huzon.tv. This can happen for several reasons:" +
-												"\n\n- huzon.tv access to your account has expired (60 days)" + 
-												"\n- You disabled the huzon.tv app in your Twitter configuration\n- Your Twitter account was never linked to huzon.tv in the first place"+
-												"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-												"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
-											,admin_user.getEmail(), 
-											"info@huzon.tv");
-									} catch (MessagingException me) {
-										me.printStackTrace();
-									}
-									
-									twit_jo = new JSONObject();
-									twit_jo.put("response_status", "error");
-									twit_jo.put("message", "no twitter credentials");
-								}
-								else // otherwise, try the twitter post.
-								{	
-									twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, f);
-									
-									if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
-									{
-										if(twit_jo.has("twitter_code") && twit_jo.getInt("twitter_code") == 32) // and it was due to bad credentials
-										{
-											// send an email to the reporter 
-											reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
-											try {
-												se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
-														",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-																"has become disconnected from huzon.tv. This can happen for several reasons:" +
-																"\n\n- You disabled the huzon.tv app in your Twitter configuration" +
-																"\n- Your Twitter account was never linked to huzon.tv in the first place"+
-																"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-																"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
-															, reporter.getEmail(), 
-															"info@huzon.tv");
-											} catch (MessagingException me) {
-												me.printStackTrace();
-											}
-											
-											// send an email to the admin letting them know a reporter was prompted.
-											try {
-												se.sendMail(reporter.getDesignation() + " was notified of an unlinked Twitter account", 
-														"The following email was sent to a reporter due to an unlinked Twitter account:\n\n" + reporter.getDisplayName() + 
-														",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your Twitter account " + 
-														"has become disconnected from huzon.tv. This can happen for several reasons:" +
-														"\n\n- huzon.tv access to your account has expired (60 days)" + 
-														"\n- You disabled the huzon.tv app in your Twitter configuration\n- Your Twitter account was never linked to huzon.tv in the first place"+
-														"\n\nPlease go to https://www.huzon.tv/registration.html to link your Twitter account to huzon.tv and enable automated alerts. " +
-														"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
-													,admin_user.getEmail(), 
-													"info@huzon.tv");
-											} catch (MessagingException me) {
-												me.printStackTrace();
-											}
-											
-										}
-									}
-									else // if no error, update the alert text and social item id
-									{	
-										// update the table row with the message actual_text and social_id
-										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-										boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
-									}
-								}
-								System.out.println("Endpoint.processNewFrame(): Twitter result=" + twit_jo.toString());
-							}
-							
-							if(fb)
-							{
-								System.out.println("Endpoint.processNewFrame(): Firing facebook post for " + reporter.getDisplayName());
-								User admin_user = new User("huzon_master", "designation");
-								
-								
-								Facebook facebook = new FacebookFactory().getInstance();
-								facebook.setOAuthAppId("176524552501035", "dbf442014759e75f2f93f2054ac319a0");
-								facebook.setOAuthPermissions("publish_stream,manage_page");
-								facebook.setOAuthAccessToken(new AccessToken(reporter.getFacebookPageAccessToken(), null));
-								
-								long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), newframe.getURL());
-								String message = station_object.getMessage("facebook", frame_ts, redirect_id, reporter);
-																
-								String facebookresponse = "";
-								try {
-									facebookresponse = facebook.postPhoto(new Long(reporter.getFacebookPageID()).toString(), new Media(f), message, "33684860765", false); // FIXME hardcode to wkyt station
-									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-									boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
-								} 
-								catch (FacebookException e) 
-								{
-									if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
-									{
-										// send an email to the reporter 
-										reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
-										try {
-											se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", reporter.getDisplayName() + 
-													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
-															"has become disconnected from huzon.tv. This can happen for several reasons:" +
-															"\n\n- huzon.tv access to your account has expired (60 days)" + 
-															"\n- You disabled the huzon.tv app in your FB privacy configuration" +
-															"\n- Your FB account was never linked to huzon.tv in the first place"+
-															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
-															"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
-														,reporter.getEmail(),  
-														"info@huzon.tv");
-										} catch (MessagingException me) {
-											me.printStackTrace();
-										}
-										
-										// send an email to the admin letting them know a reporter was prompted.
-										try {
-											se.sendMail(reporter.getDesignation() + " was notified of an unlinked FB account", 
-													"The following email was sent to a reporter due to an unlinked FB account:\n\n" + reporter.getDisplayName() + 
-													",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
-															"has become disconnected from huzon.tv. This can happen for several reasons:" +
-															"\n\n- huzon.tv access to your account has expired (60 days)" + 
-															"\n- You disabled the huzon.tv app in your FB privacy configuration" +
-															"\n- Your FB account was never linked to huzon.tv in the first place"+
-															"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
-															"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + newframe.getURL()
-														,admin_user.getEmail(), 
-														"info@huzon.tv");
-										} catch (MessagingException me) {
-											me.printStackTrace();
-										}
-										
-									}
-									else
-									{	
-										e.printStackTrace();
-										try {
-											se.sendMail("Failed facebook photo post. Unknown error. (This is not a user-has-not-linked issue.)", admin_user.getDesignation() + " " + 
-													new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage(),"cyrus7580@gmail.com", "info@huzon.tv");
-										} catch (MessagingException me) {
-											me.printStackTrace();
-										}
-									}
-								}
-								
-								
-								System.out.println("Endpoint.processNewFrame(): Facebook result=" + facebookresponse);
-							}
-						}
-						
-						
-						if(!fb && !tw)
-						{
-							return_jo.put("alert_triggered", "yes");
-							return_jo.put("social_type", "neither");
-							return_jo.put("alert_fired", "no");
-							return_jo.put("reason", "Passed MA threshold, but was within waiting period of both facebook and twitter. Couldn't fire alert.");
-						}
-						
-						return_jo.put("designation", reporter_designations[x]);
-						return_jo.put("image_name_of_frame_in_window_that_passed_single_thresh", image_name_of_frame_in_window_that_passed_single_thresh);
-						return return_jo;
-					}
-					else
-					{
-						return_jo.put("alert_triggered", "no");
-						return_jo.put("alert_fired", "no");
-						return_jo.put("reason", designation_that_passed_ma_thresh + " passed MA threshold, but none of the frames in the window passed single thresh");
-						return return_jo;
-					}
-				} 
-				x++;
-			}
-			return_jo.put("alert_triggered", "no");
-			return_jo.put("alert_fired", "no");
-			return_jo.put("reason", "none passed MA threshold");
-		}
-		catch(JSONException jsone)
-		{
-			jsone.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
-		return return_jo;
-	}
-	*/
- 
 
 
 

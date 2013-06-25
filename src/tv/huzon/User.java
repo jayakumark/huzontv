@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Calendar;
 
 import javax.mail.MessagingException;
 
@@ -132,12 +133,7 @@ public class User implements java.lang.Comparable<User> {
 		{
 			System.out.println("SQLException in User constructor: " + sqle.getMessage());
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in User constructor", "valid set to false  for inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type + ". message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in User constructor: valid set to false  for inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type + ". message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -149,12 +145,7 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in User constructor", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in User constructor: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		//System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
@@ -295,6 +286,26 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
+			Calendar cal = Calendar.getInstance();
+			long timestamp_in_ms = cal.getTimeInMillis(); // we know that the most recent image has a timestamp of right now. It can't "survive" there for more than a few seconds
+			// make the filename human-readable
+			String year = new Integer(cal.get(Calendar.YEAR)).toString();
+			String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+			if(month.length() == 1) { month = "0" + month; }
+			String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+			if(day.length() == 1) { day = "0" + day;} 
+			String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+			if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+			String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+			if(minute.length() == 1) { minute = "0" + minute;} 
+			String second = new Integer(cal.get(Calendar.SECOND)).toString();
+			if(second.length() == 1) { second = "0" + second;} 
+			String ms = new Long(timestamp_in_ms%1000).toString();
+			if(ms.length() == 1) { ms = "00" + ms;} 
+			if(ms.length() == 2) { ms = "0" + ms;} 
+			String hr_timestamp = year  + month + day + "_" + hour24 + minute + second + "_" + ms;			
+			
+			
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
@@ -303,16 +314,28 @@ public class User implements java.lang.Comparable<User> {
 				if(social_type.equals("facebook"))
 				{
 					if(simulation)
+					{
 						rs.updateLong("facebook_last_alert_test", alert_ts);
+						rs.updateString("facebook_last_alert_test_hr", hr_timestamp);
+					}
 					else
+					{
 						rs.updateLong("facebook_last_alert", alert_ts);
+						rs.updateString("facebook_last_alert_hr", hr_timestamp);
+					}
 				}
 				else												// we can just say "else" because we checked value of social_type above
 				{
 					if(simulation)
+					{
 						rs.updateLong("twitter_last_alert_test", alert_ts);
+						rs.updateString("twitter_last_alert_test_hr", hr_timestamp);
+					}
 					else
+					{
 						rs.updateLong("twitter_last_alert", alert_ts);
+						rs.updateString("twitter_last_alert_hr", hr_timestamp);
+					}
 				}
 				rs.updateRow();
 			}
@@ -325,12 +348,7 @@ public class User implements java.lang.Comparable<User> {
 		{
 			sqle.printStackTrace();
 			returnval = false;
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in User.setLastAlert", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in User.setLastAlert: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -341,12 +359,7 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in User.setLastAlert", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in User.setLastAlert: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -443,12 +456,7 @@ public class User implements java.lang.Comparable<User> {
 		{
 			sqle.printStackTrace();
 			returnval = false;
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Endpoint setTwitterAccessTokenAndSecret: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -459,12 +467,7 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setTwitterAccessTokenAndSecret", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Endpoint setTwitterAccessTokenAndSecret: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -503,6 +506,21 @@ public class User implements java.lang.Comparable<User> {
 			{
 				rs.updateString("facebook_access_token", access_token);
 				rs.updateLong("facebook_access_token_expires", expires_timestamp);
+				Calendar cal = Calendar.getInstance();
+				cal.setTimeInMillis(expires_timestamp*1000);
+				String year = new Integer(cal.get(Calendar.YEAR)).toString();
+				String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+				if(month.length() == 1) { month = "0" + month; }
+				String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+				if(day.length() == 1) { day = "0" + day;} 
+				String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+				if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+				String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+				if(minute.length() == 1) { minute = "0" + minute;} 
+				String second = new Integer(cal.get(Calendar.SECOND)).toString();
+				if(second.length() == 1) { second = "0" + second;} 
+				String timestring = year  + month + day + "_" + hour24 + minute + second;
+				rs.updateString("facebook_access_token_expires_hr", timestring);
 				rs.updateLong("facebook_uid", fb_uid);
 				rs.updateRow();
 				returnval = true;
@@ -514,12 +532,7 @@ public class User implements java.lang.Comparable<User> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -530,12 +543,7 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -692,12 +700,7 @@ public class User implements java.lang.Comparable<User> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint resetFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Endpoint resetFacebookSubAccountIdNameAndAccessToken: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -708,12 +711,7 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint resetFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Endpoint resetFacebookSubAccountIdNameAndAccessToken: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -764,12 +762,7 @@ public class User implements java.lang.Comparable<User> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			SimpleEmailer se = new SimpleEmailer();
-			try {
-				se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}
+			(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -780,12 +773,7 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				SimpleEmailer se = new SimpleEmailer();
-				try {
-					se.sendMail("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken", "Error occurred when closing rs, stmt and con. message=" +sqle.getMessage(), "cyrus7580@gmail.com", "info@huzon.tv");
-				} catch (MessagingException e) {
-					e.printStackTrace();
-				}
+				(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookSubAccountIdNameAndAccessToken: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
