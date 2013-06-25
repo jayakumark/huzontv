@@ -102,6 +102,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 						System.out.println("FacebookUploaderCallable.call(): image_urls was null coming back from Frame.get2x2CompositeURLs()");
 						return_jo.put("facebook_successful", false);
 						return_jo.put("facebook_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
+						(new Platform()).addMessageToLog("FB triggered for " + reporter.getDesignation() + " who appeared to have credentials, but Frame.get2x2CompositeURLs() was null.");
 					}
 					else
 					{
@@ -215,6 +216,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 				{
 					return_jo.put("facebook_successful", false);
 					return_jo.put("facebook_failure_message", "simulation");
+					(new Platform()).addMessageToLog("FB suppressed for " + reporter.getDesignation() + ". This is a simulation.");
 				}
 			}
 		}

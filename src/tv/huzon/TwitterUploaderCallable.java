@@ -102,6 +102,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 						System.out.println("TwitterUploaderCallable.call(): image_urls was null coming back from Frame.get2x2CompositeURLs()");
 						return_jo.put("twitter_successful", false);
 						return_jo.put("twitter_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
+						(new Platform()).addMessageToLog("Twitter triggered for " + reporter.getDesignation() + " who appeared to have credentials, but Frame.get2x2CompositeURLs() was null.");
 					}
 					else
 					{
@@ -214,7 +215,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 								boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
 							}
 						} catch (IOException e) {
-							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter." + e.getMessage());
+							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter for " + reporter.getDesignation() + ". " + e.getMessage());
 						}
 					}
 				}
@@ -222,6 +223,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 				{
 					return_jo.put("twitter_successful", false);
 					return_jo.put("twitter_failure_message", "simulation");
+					(new Platform()).addMessageToLog("Tweet suppressed for " + reporter.getDesignation() + ". This is a simulation.");
 				}
 			}
 		}
