@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import javax.mail.MessagingException;
 
@@ -287,6 +288,7 @@ public class User implements java.lang.Comparable<User> {
 		try
 		{
 			Calendar cal = Calendar.getInstance();
+			cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 			long timestamp_in_ms = cal.getTimeInMillis(); // we know that the most recent image has a timestamp of right now. It can't "survive" there for more than a few seconds
 			// make the filename human-readable
 			String year = new Integer(cal.get(Calendar.YEAR)).toString();

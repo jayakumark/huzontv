@@ -1742,9 +1742,9 @@ public class Endpoint extends HttpServlet {
 								} 
 								
 								if(twitter_triggered)
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, simulation));
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
 								if(facebook_triggered)
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, simulation));
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;

@@ -25,29 +25,17 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 	Frame frame2upload;
 	User reporter;
 	Station station_object;
-	//boolean twitter_successful;
-	//String twitter_failure_message;
-	boolean simulation;
+	String mode; // "live" = post to reporter's account, if possible
+	 // "test" = post to test account, if possible
+	 // "silent" = don't post anything
 	
-	public TwitterUploaderCallable(Frame inc_frame2upload, User inc_reporter, Station inc_station_object, boolean inc_simulation)
+	public TwitterUploaderCallable(Frame inc_frame2upload, User inc_reporter, Station inc_station_object, String inc_mode)
 	{
 		frame2upload = inc_frame2upload;
 		station_object = inc_station_object;
 		reporter = inc_reporter;
-		//twitter_successful = false;
-		//twitter_failure_message = "Init failure";
-		simulation = inc_simulation;
+		mode = inc_mode;
 	}
-	
-	/*public boolean getTwitterSuccessful()
-	{
-		return twitter_successful;
-	}
-	
-	public String getTwitterFailureMessage()
-	{
-		return twitter_failure_message;
-	}*/
 	
 	public String getMissingCredentialsEmailMessage()
 	{
@@ -64,49 +52,50 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 			return message;
 	}	
 	
-	@Override
 	public JSONObject call() {
 		SimpleEmailer se = new SimpleEmailer();
 		JSONObject return_jo = new JSONObject();
 		try
 		{
-			(new Platform()).addMessageToLog("Tweet triggered for " + reporter.getDesignation() + "\n\nurl=" + frame2upload.getURLString() + "\n\nsimulation=" + simulation);
+			(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + "\n\nurl=" + frame2upload.getURLString() + "\n\nmode=" + mode);
 			
-			// check to see that reporter has twitter credentials on file. If not, email the reporter and send email to admin.
-			if(reporter.getTwitterAccessToken() == null || reporter.getTwitterAccessToken().equals("") || reporter.getTwitterAccessTokenSecret() == null || reporter.getTwitterAccessTokenSecret().equals(""))
+			if(mode.equals("silent"))
 			{
 				return_jo.put("twitter_successful", false);
-				return_jo.put("twitter_failure_message", "user_had_no_credentials");
-				
-				reporter.resetTwitterCredentialsInDB(); // at least one credential was missing, wipe out both tat and tats in db
-				if(!simulation)
-				{	
-					String emailmessage = getMissingCredentialsEmailMessage();
-					// send to reporter and to admin
-					se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-					(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of missing Twitter credentials");
-				}
-				else
-				{
-					(new Platform()).addMessageToLog(reporter.getDesignation() + " WOULD HAVE BEEN notified of missing TW creds, but this is a simulation");
-				}
+				return_jo.put("twitter_failure_message", "silent");
+				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
 			}
-			else // user appears to have twitter credentials
+			else if(mode.equals("test") || mode.equals("live"))
 			{
-				if(!simulation) // go ahead with the tweet
-				{	
-					System.out.println("TwitterUploaderCallable.call(): entering real post to reporter account");
+				User postinguser = null;
+				if(mode.equals("test"))
+					postinguser = new User("huzontv", "designation");
+				else
+					postinguser = reporter;
+				
+				if(postinguser.getTwitterAccessToken() == null || postinguser.getTwitterAccessToken().equals("") || postinguser.getTwitterAccessTokenSecret() == null || postinguser.getTwitterAccessTokenSecret().equals(""))
+				{
+					return_jo.put("twitter_successful", false);
+					return_jo.put("twitter_failure_message", "user " + postinguser.getDesignation() + " has no twitter credentials");
+					(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " but failed due to lack of tw credentials. user=" + postinguser.getDesignation() + ". mode=" + mode);
+					if(mode.equals("live"))
+					{
+						String emailmessage = getMissingCredentialsEmailMessage();
+						se.sendMail("Action required: huzon.tv TW alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+						(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of missing TW credentials.");
+					}
+				}
+				else // postinguser appears to have twitter credentials
+				{
 					URL[] image_urls = frame2upload.get2x2CompositeURLs();
 					if(image_urls == null)
 					{
-						System.out.println("TwitterUploaderCallable.call(): image_urls was null coming back from Frame.get2x2CompositeURLs()");
 						return_jo.put("twitter_successful", false);
 						return_jo.put("twitter_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
-						(new Platform()).addMessageToLog("Twitter triggered for " + reporter.getDesignation() + " who appeared to have credentials, but Frame.get2x2CompositeURLs() was null.");
+						(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " with cred. but 2x2 failed. user=" + postinguser.getDesignation() + ". mode=" + mode);
 					}
 					else
 					{
-						System.out.println("TwitterUploaderCallable.call(): image urls populated. Creating composite.");
 						File[] image_files = new File[4];
 						String tmpdir = System.getProperty("java.io.tmpdir");
 						
@@ -161,8 +150,6 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							   new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
 							after = scaleOp.filter(combined, after);
 							
-							//Graphics g = after.getGraphics();
-
 							// Save as new image
 							System.out.println("TwitterUploaderCallable.call(): writing composite image.");
 							ImageIO.write(after, "PNG", new File(tmpdir, "image_for_twitter.png"));
@@ -175,55 +162,51 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							String message = station_object.getMessage("twitter", frame2upload.getTimestampInMillis(), redirect_id, reporter);
 							
 							System.out.println("TwitterUploaderCallable.call(): posting image to admin twitter account.");
-							JSONObject twit_jo = twitter.updateStatusWithMedia(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), message, imagefile);
+							
+							JSONObject twit_jo = null;
+							twit_jo = twitter.updateStatusWithMedia(postinguser.getTwitterAccessToken(), postinguser.getTwitterAccessTokenSecret(), message, imagefile);
 							
 							if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
 							{
-								System.out.println("TwitterUploaderCallable.call(): Error from twitter");
 								return_jo.put("twitter_successful", false);
 								return_jo.put("twitter_failure_message", twit_jo.getString("message"));
 
 								if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
 								{
-									reporter.resetTwitterCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
-									String emailmessage = getMissingCredentialsEmailMessage();
-									// send to reporter and to admin
-									se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-									(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of a disconnected Twitter account");
+									if(mode.equals("live"))
+									{
+										reporter.resetTwitterCredentialsInDB(); // the user's credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
+										String emailmessage = getMissingCredentialsEmailMessage();
+										se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+										(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of a disconnected Twitter account");
+									}
+									else
+									{
+										(new Platform()).addMessageToLog("test account TW creds invalid trying to fire for " + reporter.getDesignation() + ". user=" + postinguser.getDesignation() + ". mode=" + mode);
+									}
 								}
 								else if(twit_jo.has("twitter_code"))
 								{
-									String emailmessage = getMissingCredentialsEmailMessage();
-									// send mail to admin
-									(new Platform()).addMessageToLog(reporter.getDesignation() + " unknown twitter error. There was an unknown error trying to tweet. twit_jo=" + twit_jo);
+									(new Platform()).addMessageToLog(reporter.getDesignation() + " unknown twitter error. There was an unknown error trying to tweet. twit_jo=" + twit_jo + "user=" + postinguser.getDesignation() + ". mode=" + mode);
 								}
 								else
 								{
-									String emailmessage = getMissingCredentialsEmailMessage();
-									// send mail to admin
-									(new Platform()).addMessageToLog(reporter.getDesignation() + " some other twitter error. There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo);
+									(new Platform()).addMessageToLog(reporter.getDesignation() + " some other twitter error. There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + " user=" + postinguser.getDesignation() + ". mode=" + mode);
 								}
 									
 							}
 							else
 							{
-								System.out.println("TwitterUploaderCallable.call(): No error. Tweet should have been successful");
 								return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
-								(new Platform()).addMessageToLog("Tweet successful for " + reporter.getDesignation());
+								(new Platform()).addMessageToLog("TW successful for " + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
 								// if either of these fail, alert the admin within the functions themselves
 								boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 								boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
 							}
 						} catch (IOException e) {
-							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter for " + reporter.getDesignation() + ". " + e.getMessage());
+							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter for " + reporter.getDesignation() + ". " + e.getMessage() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
 						}
 					}
-				}
-				else
-				{
-					return_jo.put("twitter_successful", false);
-					return_jo.put("twitter_failure_message", "simulation");
-					(new Platform()).addMessageToLog("Tweet suppressed for " + reporter.getDesignation() + ". This is a simulation.");
 				}
 			}
 		}

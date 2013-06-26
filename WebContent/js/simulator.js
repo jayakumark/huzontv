@@ -1,5 +1,5 @@
-//var endpoint = "https://localhost:8443/huzontv/endpoint";
-var endpoint = "https://www.huzon.tv/endpoint";
+var endpoint = "https://localhost:8443/huzontv/endpoint";
+//var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -150,7 +150,7 @@ var reporters_ja;
 
 document.addEventListener('DOMContentLoaded', function () {
 		
-	//docCookies.setItem("twitter_access_token", "11m", 3000000);
+	//docCookies.setItem("twitter_access_token", "11Rm", 3000000);
 	//docCookies.setItem("twitter_handle", "huzontv", 3000000);
 	//docCookies.setItem("pass", "", 3000000);
 	

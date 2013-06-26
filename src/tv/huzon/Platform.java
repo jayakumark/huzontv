@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 import javax.mail.MessagingException;
@@ -45,6 +46,7 @@ public class Platform {
 		try
 		{
 			Calendar cal = Calendar.getInstance();
+			cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 			long timestamp_in_ms = cal.getTimeInMillis(); // we know that the most recent image has a timestamp of right now. It can't "survive" there for more than a few seconds
 			// make the filename human-readable
 			String year = new Integer(cal.get(Calendar.YEAR)).toString();
@@ -75,7 +77,13 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.addMessageToLog: message=" +sqle.getMessage());
+			SimpleEmailer se = new SimpleEmailer();
+			try {
+				se.sendMail("SQLException in Platform.addMessageToLog(): message=" + sqle.getMessage(), "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+			} catch (MessagingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		finally
 		{
@@ -86,7 +94,6 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Platform.addMessageToLog: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return;
@@ -94,6 +101,7 @@ public class Platform {
 	
 	public boolean populateStations()
 	{
+		boolean returnval = false;
 		stations = new TreeSet<Station>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -112,7 +120,7 @@ public class Platform {
 			rs.close();
 			stmt.close();
 			con.close();
-			return true;
+			returnval = true;
 		}
 		catch(SQLException sqle) 
 		{ 
@@ -127,7 +135,7 @@ public class Platform {
 			}
 			catch(SQLException sqle) { sqle.printStackTrace(); }
 		}   
-		return false;
+		return returnval;
 	}
 	
 	public JSONArray getStationsAsJSONArray()

@@ -410,12 +410,15 @@ public class Frame implements Comparable<Frame> {
 		if(frames_ts.size() < 4) // this should absolutely NEVER happen as this function shouldn't be called for any reason if there are this few frames in the window.
 		{						 // at ~9.5 seconds, there should be ~18 frames available
 			System.out.println("Frame.get2x2CompositeURLs(): not enough frames in window. Returning null.");
+			(new Platform()).addMessageToLog("get2x2: Not enough frames in window. Returning null");
 			return null;
 		}
 		Frame[] frames_array = null;
 		URL[] return_urls = new URL[4];
 		
 		int numchecks = 0;
+		
+		String debug = "";
 		// loop until the last frame is within 2.5 - 3.5 seconds from the current frame's timestamp (failing after 7 tries) 
 		while((frames_array == null || !(frames_array[frames_array.length - 1].getTimestampInMillis() >= (getTimestampInMillis() + 2500) &&
 				frames_array[frames_array.length - 1].getTimestampInMillis() <= (getTimestampInMillis() + 3500))) && numchecks < 7) // do up to 7 loops at 500ms sec each (i.e. > 3.5 seconds) 
@@ -429,6 +432,7 @@ public class Frame implements Comparable<Frame> {
 			frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
 			frames_array = new Frame[frames_ts.size()];
 			System.out.println("Frame.get2x2CompositeURLs(): array length " + frames_array.length);
+			
 			// create the frames_array from the frames object treeset
 			Iterator<Frame> frames_it = frames_ts.iterator();
 			Frame currentframe = null;
@@ -448,6 +452,11 @@ public class Frame implements Comparable<Frame> {
 		if(numchecks == 7)
 		{
 			System.out.println("Frame.get2x2CompositeURLs(): loop limit reached without satisfying the future frame condition. Returning null.");
+			if(frames_array != null)
+			{
+				debug = "numframes=" + frames_array.length + " and last=" + frames_array[frames_array.length - 1].getTimestampInMillis() + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500);
+			}
+			(new Platform()).addMessageToLog("get2x2: Reached end of loop without satisfying future frame condition. Returning null. " + debug);
 			return null;
 		}
 		else // loop broke without reaching limit meaning frames_array is correctly populated 

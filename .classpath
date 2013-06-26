@@ -13,11 +13,11 @@
 			<attribute name="owner.project.facets" value="#system#;jst.web"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/facebook4j-core-1.1.9.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-openjdk-amd64">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/facebook4j-core-1.1.9.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

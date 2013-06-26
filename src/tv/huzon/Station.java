@@ -539,6 +539,8 @@ public class Station implements java.lang.Comparable<Station> {
 				{
 					rs.updateLong("facebook_last_alert", 0);
 					rs.updateLong("twitter_last_alert", 0);
+					rs.updateString("facebook_last_alert_hr", "");
+					rs.updateString("twitter_last_alert_hr", "");
 					rs.updateRow();
 				}
 				rs.close();
@@ -587,6 +589,8 @@ public class Station implements java.lang.Comparable<Station> {
 				{
 					rs.updateLong("facebook_last_alert_test", 0);
 					rs.updateLong("twitter_last_alert_test", 0);
+					rs.updateString("facebook_last_alert_test_hr", "");
+					rs.updateString("twitter_last_alert_test_hr", "");
 					rs.updateRow();
 				}
 				rs.close();
