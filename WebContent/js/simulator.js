@@ -1,5 +1,5 @@
-var endpoint = "https://localhost:8443/huzontv/endpoint";
-//var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "https://localhost:8443/huzontv/endpoint";
+var endpoint = "https://www.huzon.tv/endpoint";
 
 var docCookies = {
 		  getItem: function (sKey) {
@@ -1012,7 +1012,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		$("#results_div").html("error message=" + data.message);
 				        	else
 				        	{
-				        		if(data.timestamps_ja.length > 250)
+				        		if(data.timestamps_ja.length > 600) // ~ 5 minutes
 				        		{
 				        			alert("too many frames. Try a smaller window.");
 				        		}	

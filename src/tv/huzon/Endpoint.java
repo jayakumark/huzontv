@@ -11,7 +11,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -119,9 +121,30 @@ public class Endpoint extends HttpServlet {
 							else // treat as real commit
 							{	
 								Connection con = null;
+								Statement stmt = null;
+								ResultSet rs = null;
 								try
 								{
 									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+									stmt = con.createStatement();
+									rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
+									if(rs.next()) // the only reason there wouldn't be a row is the VERY FIRST FRAME EVER for this station's table (or if the table gets emptied for some reason
+									{
+										if(rs.getLong("timestamp_in_ms") >= jsonpostbody.getLong("timestamp_in_ms")) // if the frame from the DB is NEWER than this one, then discard this incoming (old) frame entirely
+										{
+											(new Platform()).addMessageToLog("discarded out of order frame for station=" + jsonpostbody.getString("station") + " with timestamp=" + jsonpostbody.getString("image_name"));
+											rs.close();
+											stmt.close();
+											con.close();
+											jsonresponse.put("message", "There is at least one newer frame in the database. This one was old and discarded.");
+											jsonresponse.put("response_status", "error");
+											tempcal = Calendar.getInstance();
+											long timestamp_at_exit = tempcal.getTimeInMillis();
+											long elapsed = timestamp_at_exit - timestamp_at_entry;
+											jsonresponse.put("elapsed", elapsed);
+											return;
+										}
+									}
 									double currentavgscore = 0.0;
 									double reporter_total = 0.0;
 									Station station = new Station(jsonpostbody.getString("station"));

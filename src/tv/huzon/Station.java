@@ -629,7 +629,7 @@ public class Station implements java.lang.Comparable<Station> {
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 		cal.setTimeInMillis(timestamp_in_ms);
-		ArrayList<String> greeting_choices = new ArrayList<String>();
+	/*	ArrayList<String> greeting_choices = new ArrayList<String>();
 		if(cal.get(Calendar.HOUR_OF_DAY) < 12)
 		{	
 			for(int x = 0; x < morning_greetings.length; x++)
@@ -658,7 +658,7 @@ public class Station implements java.lang.Comparable<Station> {
 		
 		Random random = new Random();
 		int greetings_index = random.nextInt(greeting_choices.size());
-		int objects_index = random.nextInt(object_choices.size());
+		int objects_index = random.nextInt(object_choices.size());*/
 		int hour = cal.get(Calendar.HOUR);
 		if(hour == 0)
 			hour = 12;
@@ -680,7 +680,9 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		else if(social_type.equals("twitter"))
 		{
-			returnval = "@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
+			// using display name for now while in test mode. Using @twitterhandle draws too much attention
+			returnval = reporter.getDisplayName() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
+			//returnval = "@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
 		}
 		/*int selector = random.nextInt(4);
 		

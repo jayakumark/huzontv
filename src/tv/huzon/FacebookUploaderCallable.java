@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
@@ -75,7 +76,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 			{
 				User postinguser = null;
 				if(mode.equals("test"))
-					postinguser = new User("huzontv", "designation");
+					postinguser = new User("huzon_master", "designation");
 				else
 					postinguser = reporter;
 				
@@ -104,31 +105,39 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					{
 						File[] image_files = new File[4];
 						String tmpdir = System.getProperty("java.io.tmpdir");
+						String[] image_filenames = new String[4];
+						image_filenames[0] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
+						image_filenames[1] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
+						image_filenames[2] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
+						image_filenames[3] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
 						
-						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[0] + " and saving to " + tmpdir + "/image_for_facebook0.jpg");
+						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[0] + " and saving to " + image_filenames[0]);
 						ReadableByteChannel rbc0 = Channels.newChannel(image_urls[0].openStream());
-						FileOutputStream fos0 = new FileOutputStream(tmpdir + "/image_for_facebook0.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos0 = new FileOutputStream(image_filenames[0]); // FIXME this might have conflicts with multiple stations
 						fos0.getChannel().transferFrom(rbc0, 0, Long.MAX_VALUE);
-						image_files[0] = new File(tmpdir + "/image_for_facebook0.jpg");
+						image_files[0] = new File(image_filenames[0]);
+						fos0.close();
 						
-						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[1] + " and saving to " + tmpdir + "/image_for_facebook1.jpg");
+						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[1] + " and saving to " + image_filenames[1]);
 						ReadableByteChannel rbc1 = Channels.newChannel(image_urls[1].openStream());
-						FileOutputStream fos1 = new FileOutputStream(tmpdir + "/image_for_facebook1.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos1 = new FileOutputStream(image_filenames[1]); // FIXME this might have conflicts with multiple stations
 						fos1.getChannel().transferFrom(rbc1, 0, Long.MAX_VALUE);
-						image_files[1] = new File(tmpdir + "/image_for_facebook1.jpg");
+						image_files[1] = new File(image_filenames[1]);
+						fos1.close();
 						
-						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[2] + " and saving to " + tmpdir + "/image_for_facebook2.jpg");
+						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[2] + " and saving to " + image_filenames[2]);
 						ReadableByteChannel rbc2 = Channels.newChannel(image_urls[2].openStream());
-						FileOutputStream fos2 = new FileOutputStream(tmpdir + "/image_for_facebook2.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos2 = new FileOutputStream(image_filenames[2]); // FIXME this might have conflicts with multiple stations
 						fos2.getChannel().transferFrom(rbc2, 0, Long.MAX_VALUE);
-						image_files[2] = new File(tmpdir + "/image_for_facebook2.jpg");
+						image_files[2] = new File(image_filenames[2]);
+						fos2.close();
 						
-						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[3] + " and saving to " + tmpdir + "/image_for_facebook3.jpg");						
+						System.out.println("FacebookUploaderCallable.call(): downloading " + image_urls[3] + " and saving to " + image_filenames[3]);				
 						ReadableByteChannel rbc3 = Channels.newChannel(image_urls[3].openStream());
-						FileOutputStream fos3 = new FileOutputStream(tmpdir + "/image_for_facebook3.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos3 = new FileOutputStream(image_filenames[3]); // FIXME this might have conflicts with multiple stations
 						fos3.getChannel().transferFrom(rbc3, 0, Long.MAX_VALUE);
-						image_files[3] = new File(tmpdir + "/image_for_facebook3.jpg");
-						fos0.close();fos1.close();fos2.close();fos3.close();
+						image_files[3] = new File(image_filenames[3]);
+						fos3.close();
 						
 						try 
 						{
@@ -159,9 +168,15 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 							//Graphics g = after.getGraphics();
 
 							// Save as new image
+							String composite_filename = tmpdir + "/" + UUID.randomUUID() + ".png";
 							System.out.println("FacebookUploaderCallable.call(): writing composite image.");
-							ImageIO.write(after, "PNG", new File(tmpdir, "image_for_facebook.png"));
-							File imagefile = new File(tmpdir + "/image_for_facebook.png");
+							ImageIO.write(after, "PNG", new File(composite_filename));
+							File composite_file = new File(composite_filename);
+							
+							image_files[0].delete();
+							image_files[1].delete();
+							image_files[2].delete();
+							image_files[3].delete();
 							
 							Platform p = new Platform();
 							long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), frame2upload.getURLString());
@@ -174,7 +189,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 							
 							String facebookresponse = "";
 							try {
-								facebookresponse = facebook.postPhoto(new Long(postinguser.getFacebookPageID()).toString(), new Media(imagefile), message, "33684860765", false); // FIXME hardcode to wkyt station
+								facebookresponse = facebook.postPhoto(new Long(postinguser.getFacebookPageID()).toString(), new Media(composite_file), message, "33684860765", false); // FIXME hardcode to wkyt station
 
 								return_jo.put("facebook_successful", true); // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
 								(new Platform()).addMessageToLog("FB successful for " + reporter.getDesignation() + ". Actual FB response=" + facebookresponse + "\nurl=" + frame2upload.getURLString() + "\nuser=" + postinguser.getDesignation() + ". mode=" + mode);
@@ -207,6 +222,9 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 											new Long(reporter.getFacebookPageID()).toString() + " " + message + " " + e.getMessage() + "\nuser=" + postinguser.getDesignation() + ". mode=" + mode);
 								}
 							}
+							
+							composite_file.delete();
+							
 						} catch (IOException e) {
 							(new Platform()).addMessageToLog("IOException trying to create composite image and post to facebook." + "\nuser=" + postinguser.getDesignation() + ". mode=" + mode);
 						}

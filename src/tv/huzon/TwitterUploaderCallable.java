@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
@@ -69,7 +70,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 			{
 				User postinguser = null;
 				if(mode.equals("test"))
-					postinguser = new User("huzontv", "designation");
+					postinguser = new User("huzon_master", "designation");
 				else
 					postinguser = reporter;
 				
@@ -98,31 +99,39 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 					{
 						File[] image_files = new File[4];
 						String tmpdir = System.getProperty("java.io.tmpdir");
+						String[] image_filenames = new String[4];
+						image_filenames[0] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
+						image_filenames[1] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
+						image_filenames[2] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
+						image_filenames[3] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
 						
-						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[0] + " and saving to " + tmpdir + "/image_for_twitter0.jpg");
+						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[0] + " and saving to " + image_filenames[0]);
 						ReadableByteChannel rbc0 = Channels.newChannel(image_urls[0].openStream());
-						FileOutputStream fos0 = new FileOutputStream(tmpdir + "/image_for_twitter0.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos0 = new FileOutputStream(image_filenames[0]); // FIXME this might have conflicts with multiple stations
 						fos0.getChannel().transferFrom(rbc0, 0, Long.MAX_VALUE);
-						image_files[0] = new File(tmpdir + "/image_for_twitter0.jpg");
+						image_files[0] = new File(image_filenames[0]);
 						fos0.close();
-						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[1] + " and saving to " + tmpdir + "/image_for_twitter1.jpg");
+						
+						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[1] + " and saving to " + image_filenames[1]);
 						ReadableByteChannel rbc1 = Channels.newChannel(image_urls[1].openStream());
-						FileOutputStream fos1 = new FileOutputStream(tmpdir + "/image_for_twitter1.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos1 = new FileOutputStream(image_filenames[1]); // FIXME this might have conflicts with multiple stations
 						fos1.getChannel().transferFrom(rbc1, 0, Long.MAX_VALUE);
-						image_files[1] = new File(tmpdir + "/image_for_twitter1.jpg");
+						image_files[1] = new File(image_filenames[1]);
+						fos1.close();
 						
-						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[2] + " and saving to " + tmpdir + "/image_for_twitter2.jpg");
+						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[2] + " and saving to " + image_filenames[2]);
 						ReadableByteChannel rbc2 = Channels.newChannel(image_urls[2].openStream());
-						FileOutputStream fos2 = new FileOutputStream(tmpdir + "/image_for_twitter2.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos2 = new FileOutputStream(image_filenames[2]); // FIXME this might have conflicts with multiple stations
 						fos2.getChannel().transferFrom(rbc2, 0, Long.MAX_VALUE);
-						image_files[2] = new File(tmpdir + "/image_for_twitter2.jpg");
+						image_files[2] = new File(image_filenames[2]);
+						fos2.close();
 						
-						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[3] + " and saving to " + tmpdir + "/image_for_twitter3.jpg");						
+						System.out.println("TwitterUploaderCallable.call(): downloading " + image_urls[3] + " and saving to " + image_filenames[3]);				
 						ReadableByteChannel rbc3 = Channels.newChannel(image_urls[3].openStream());
-						FileOutputStream fos3 = new FileOutputStream(tmpdir + "/image_for_twitter3.jpg"); // FIXME this might have conflicts with multiple stations
+						FileOutputStream fos3 = new FileOutputStream(image_filenames[3]); // FIXME this might have conflicts with multiple stations
 						fos3.getChannel().transferFrom(rbc3, 0, Long.MAX_VALUE);
-						image_files[3] = new File(tmpdir + "/image_for_twitter3.jpg");
-						fos0.close();fos1.close();fos2.close();fos3.close();
+						image_files[3] = new File(image_filenames[3]);
+						fos3.close();
 						
 						try 
 						{
@@ -151,9 +160,15 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							after = scaleOp.filter(combined, after);
 							
 							// Save as new image
+							String composite_filename = tmpdir + "/" + UUID.randomUUID() + ".png";
 							System.out.println("TwitterUploaderCallable.call(): writing composite image.");
-							ImageIO.write(after, "PNG", new File(tmpdir, "image_for_twitter.png"));
-							File imagefile = new File(tmpdir + "/image_for_twitter.png");
+							ImageIO.write(after, "PNG", new File(composite_filename));
+							File composite_file = new File(composite_filename);
+							
+							image_files[0].delete();
+							image_files[1].delete();
+							image_files[2].delete();
+							image_files[3].delete();
 							
 							Twitter twitter = new Twitter();
 							Platform p = new Platform();
@@ -164,7 +179,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							System.out.println("TwitterUploaderCallable.call(): posting image to admin twitter account.");
 							
 							JSONObject twit_jo = null;
-							twit_jo = twitter.updateStatusWithMedia(postinguser.getTwitterAccessToken(), postinguser.getTwitterAccessTokenSecret(), message, imagefile);
+							twit_jo = twitter.updateStatusWithMedia(postinguser.getTwitterAccessToken(), postinguser.getTwitterAccessTokenSecret(), message, composite_file);
 							
 							if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
 							{
@@ -203,6 +218,9 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 								boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 								boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
 							}
+							
+							composite_file.delete();
+							
 						} catch (IOException e) {
 							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter for " + reporter.getDesignation() + ". " + e.getMessage() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
 						}
