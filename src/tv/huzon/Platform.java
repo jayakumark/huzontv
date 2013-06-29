@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.TimeZone;
@@ -298,6 +299,58 @@ public class Platform {
 			}
 		}  	
 		return returnval;
+	}
+	
+	JSONArray getMostRecentAlerts(int num_to_get)
+	{
+		JSONArray alerts_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM alerts ORDER BY creation_timestamp DESC");
+			int x = 0;
+			JSONObject jo;
+			while(rs.next() && x < num_to_get)
+			{
+				jo = new JSONObject();
+				jo.put("image_url", rs.getString("image_url"));
+				jo.put("designation", rs.getString("designation"));
+				java.util.Date date = rs.getTimestamp("creation_timestamp");
+				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
+				jo.put("social_type", rs.getString("social_type"));
+				jo.put("station", rs.getString("station"));
+				jo.put("id", rs.getLong("id"));
+				alerts_ja.put(jo);
+				x++;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return alerts_ja;
 	}
 
 	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)

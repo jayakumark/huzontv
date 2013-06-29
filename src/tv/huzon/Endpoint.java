@@ -492,8 +492,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -545,8 +546,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -658,8 +660,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -734,8 +737,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -839,8 +843,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -904,8 +909,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -980,8 +986,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1063,8 +1070,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1170,8 +1178,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1275,8 +1284,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1351,8 +1361,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1416,8 +1427,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1495,6 +1507,7 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1584,6 +1597,7 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1642,6 +1656,7 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1700,6 +1715,7 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{
@@ -1708,6 +1724,58 @@ public class Endpoint extends HttpServlet {
 								User target_user = new User(designation, "designation");
 								boolean fbPageCredsAreValid = target_user.fbPageTokenIsValid();
 								jsonresponse.put("valid", fbPageCredsAreValid);
+								jsonresponse.put("response_status", "success");
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
+						}
+					}	
+				} 
+				else if (method.equals("getMostRecentAlerts"))
+				{	
+					System.out.println("Endpoint begin getMostRecentAlerts");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else // twitter creds were OK
+						{
+							if(user.isGlobalAdmin())
+							{
+								Platform p = new Platform();
+								jsonresponse.put("alerts_ja",p.getMostRecentAlerts(8));
 								jsonresponse.put("response_status", "success");
 							}
 							else
@@ -1985,9 +2053,9 @@ public class Endpoint extends HttpServlet {
 								} 
 								
 								if(twitter_triggered)
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
 								if(facebook_triggered)
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;
