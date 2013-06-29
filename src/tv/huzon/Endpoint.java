@@ -438,14 +438,15 @@ public class Endpoint extends HttpServlet {
 						}
 						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
 						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please connect your Twitter and huzon.tv accounts.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Please reconnect your Twitter and huzon.tv accounts.");
 							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
 						}
 						else // twitter creds were OK
 						{

@@ -832,7 +832,23 @@ public class User implements java.lang.Comparable<User> {
 			{
 				JSONObject fbresponse = new JSONObject(fbresponse_str);
 				if(fbresponse.has("data") && fbresponse.getJSONObject("data").has("is_valid") && fbresponse.getJSONObject("data").getBoolean("is_valid"))
-					return true;
+				{
+					boolean manage_pages = false;
+					boolean publish_stream = false;
+					if(fbresponse.getJSONObject("data").has("scopes"))
+					{
+						JSONArray scopes = fbresponse.getJSONObject("data").getJSONArray("scopes");
+						for(int x = 0; x < scopes.length(); x++)
+						{
+							if(scopes.getString(x).equals("publish_stream"))
+								publish_stream = true;
+							else if(scopes.getString(x).equals("manage_pages"))
+								manage_pages = true;
+						}
+					}
+					if(manage_pages && publish_stream) // there was a valid response from FB, it contained is_valid:true and the scopes value contained both publish_stream and manage_pages
+						return true;
+				}
 			}
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
@@ -874,7 +890,7 @@ public class User implements java.lang.Comparable<User> {
 		boolean fb_call_successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
-			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookPageAccessToken() + "&access_token=" + (new User("huzon_master", "designation").getFacebookAccessToken()));
+			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookPageAccessToken() + "&access_token=" + "CAACgjFMZB9ysBAEfqpWOYNcf5gjKs6JojekKZBYDxGc67z5f9hz8ORuQjOKo5doaMneLZCMlFllIMztSCVDZAqC0ZCEgco3PZA4sIVM5tfrzWDu7cishKZCxREjpqIDME2ZCJiHziKMRkJAyuCCXgPGh" ); //(new User("huzon_master", "designation").getFacebookAccessToken()));
 			HttpResponse response = httpClient.execute(hg);
 			int statusCode = response.getStatusLine().getStatusCode();
 	        fb_call_successful = statusCode == 200 ? true : false;
@@ -884,7 +900,23 @@ public class User implements java.lang.Comparable<User> {
 			{
 				JSONObject fbresponse = new JSONObject(fbresponse_str);
 				if(fbresponse.has("data") && fbresponse.getJSONObject("data").has("is_valid") && fbresponse.getJSONObject("data").getBoolean("is_valid"))
-					return true;
+				{
+					boolean manage_pages = false;
+					boolean publish_stream = false;
+					if(fbresponse.getJSONObject("data").has("scopes"))
+					{
+						JSONArray scopes = fbresponse.getJSONObject("data").getJSONArray("scopes");
+						for(int x = 0; x < scopes.length(); x++)
+						{
+							if(scopes.getString(x).equals("publish_stream"))
+								publish_stream = true;
+							else if(scopes.getString(x).equals("manage_pages"))
+								manage_pages = true;
+						}
+					}
+					if(manage_pages && publish_stream) // there was a valid response from FB, it contained is_valid:true and the scopes value contained both publish_stream and manage_pages
+						return true;
+				}
 			}
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
