@@ -63,7 +63,7 @@ public class Platform {
 			String ms = new Long(timestamp_in_ms%1000).toString();
 			if(ms.length() == 1) { ms = "00" + ms;} 
 			if(ms.length() == 2) { ms = "0" + ms;} 
-			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute;			
+			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute + ":" + second + " " + ms;			
 			
 			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);

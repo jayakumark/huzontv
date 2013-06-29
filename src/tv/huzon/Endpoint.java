@@ -54,7 +54,7 @@ public class Endpoint extends HttpServlet {
 
 	public void init(ServletConfig config) throws ServletException
 	{
-		System.err.println("Endpoint init()");
+		//System.err.println("Endpoint init()");
 		 try {
 		        Class.forName("com.mysql.jdbc.Driver");
 		    } catch (ClassNotFoundException e) {
@@ -112,6 +112,7 @@ public class Endpoint extends HttpServlet {
 						}
 						else // postbody exists and password is correct
 						{	
+							boolean process = true;
 							if(jsonpostbody.has("simulation") && (jsonpostbody.getString("simulation").equals("yes") || jsonpostbody.getString("simulation").equals("true")))
 							{ 
 								System.out.println("Endpoint.commitFrameDataAndAlert(): This is a simulation. Looking up existing frame....");
@@ -125,26 +126,67 @@ public class Endpoint extends HttpServlet {
 								ResultSet rs = null;
 								try
 								{
+									long inc_ts = jsonpostbody.getLong("timestamp_in_ms");
 									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
 									stmt = con.createStatement();
 									rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
 									if(rs.next()) // the only reason there wouldn't be a row is the VERY FIRST FRAME EVER for this station's table (or if the table gets emptied for some reason
 									{
-										if(rs.getLong("timestamp_in_ms") >= jsonpostbody.getLong("timestamp_in_ms")) // if the frame from the DB is NEWER than this one, then discard this incoming (old) frame entirely
+										// 1. if newer frames are ALREADY in the database, discard this one. Shouldn't happen.
+										// 2. if the newest frame in the database is between 0 and .8 seconds older, that's good. That's exactly what we want. Insert this one.
+										// 3. if the newest frame in the database is older than .8 seconds, we need to wait a few sec for our target frame to come in.
+										
+										// 1. THIS FRAME IS TOO OLD.
+										if(rs.getLong("timestamp_in_ms") >= inc_ts) // if the frame from the DB is NEWER than this one, then insert but don't process
 										{
-											(new Platform()).addMessageToLog("discarded out of order frame for station=" + jsonpostbody.getString("station") + " with timestamp=" + jsonpostbody.getString("image_name"));
-											rs.close();
-											stmt.close();
-											con.close();
-											jsonresponse.put("message", "There is at least one newer frame in the database. This one was old and discarded.");
+											System.out.println("Endpoint.commit(): Frame is too old. Discarding.");
+											//(new Platform()).addMessageToLog("discarded old frame for station=" + jsonpostbody.getString("station") + " with timestamp=" + jsonpostbody.getString("image_name"));
+											
+											jsonresponse.put("message", "There is at least one newer frame in the database. This one was old, inserted, but not processed for alerts.");
 											jsonresponse.put("response_status", "error");
-											tempcal = Calendar.getInstance();
-											long timestamp_at_exit = tempcal.getTimeInMillis();
-											long elapsed = timestamp_at_exit - timestamp_at_entry;
-											jsonresponse.put("elapsed", elapsed);
-											return;
+											process = false;
+										}
+										else
+										{	
+											if((inc_ts - rs.getLong("timestamp_in_ms")) > 3000) // this frame is VERY new. Don't wait.
+											{	
+												process = true;
+											}
+											else // this frame was between 1 and 3000 milliseconds newer than the last one. Go through waiting process, if need be.
+											{
+												// 3. THIS FRAME IS TOO NEW, wait up to 1.5 seconds, checking every 400ms for a "just right" frame
+												int x = 0;
+												while(!((inc_ts - rs.getLong("timestamp_in_ms")) < 800 && (inc_ts - rs.getLong("timestamp_in_ms")) > 0) && x < 5) // if it's not in the sweet zone, wait
+												{
+													System.out.println("Endpoint.commit(): Frame is too new. Waiting x=" + x);
+													try { Thread.sleep(300);} catch (InterruptedException e) { e.printStackTrace(); }
+													rs.close();
+													rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
+													rs.next();
+													x++;
+												}
+												
+												if(x==5)
+												{
+													System.out.println("Endpoint.commit(): Frame was too new and waiting failed. Discarding");
+													jsonresponse.put("message", "Frame was too new, waited unsuccessful, will be inserted, but not processed.");
+													jsonresponse.put("response_status", "error");
+													process = false;
+												}
+												else if(x == 0)
+												{
+													System.out.println("Endpoint.commit(): Frame was perfect on first try.");
+													process = true;
+												}
+												else
+												{
+													System.out.println("Endpoint.commit(): Frame is good now. Had to wait x=" + x);
+													process = true;
+												}
+											}
 										}
 									}
+									
 									double currentavgscore = 0.0;
 									double reporter_total = 0.0;
 									Station station = new Station(jsonpostbody.getString("station"));
@@ -185,7 +227,10 @@ public class Endpoint extends HttpServlet {
 									valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";
 									//System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
 									con.createStatement().execute("INSERT IGNORE INTO `frames_" + jsonpostbody.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
-									con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + jsonpostbody.getString("station") + "'");
+									con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + jsonpostbody.getString("station") + "'");	
+									
+									rs.close();
+									stmt.close();
 									con.close();
 								}
 								catch(SQLException sqle)
@@ -199,8 +244,7 @@ public class Endpoint extends HttpServlet {
 								{
 									try
 									{
-										if (con  != null)
-											con.close();
+										if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 									}
 									catch(SQLException sqle)
 									{
@@ -209,47 +253,50 @@ public class Endpoint extends HttpServlet {
 									}
 								}  
 							}
-							
-							Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
-							if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
-							{	
-								JSONObject jo2 = processNewFrame(newframe, simulation);
-								
-								// {
-								// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
-								//		(if alert_triggered==true)
-								//      	twitter_triggered: true or false,
-								//			(if twitter_triggered then)
-								//				twitter_successful: true or false,					// means alert posted and returned an id (or failed)
-								//				(if !twitter_successful, then)
-								//					twitter_failure_message: some message about why twitter failed,	
-								//
-								//      	facebook_triggered: true or false,
-								//			(if facebook_triggered then)				
-								//				facebook_successful: true or false,					// means alert posted and returned an id (or failed)
-								//				(if !facebook_successful, then)
-								//					facebook_failure_message: some message about why facebook failed,	
-								//		(else if alert_triggered== false)
-								//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
-								// }
-								
-								jsonresponse = jo2;
-								jsonresponse.put("response_status", "success"); // just means the insertion was received and a response is coming back. Means nothing in terms of alerts
-								if(simulation) // then return additional info to the simulator. If not, don't.
-								{	
-									if(jsonpostbody.has("designation"))
-									{
-										System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " was specified by the simulator. Returning specialized information in each frame_jo.");
-										jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
-									}
-									else
-										jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
-								}
-							}
-							else
+						
+							if(process)
 							{
-								jsonresponse.put("message", "There was a problem inserting the data and/or building a Frame object from it.");
-								jsonresponse.put("response_status", "error");
+								Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
+								if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
+								{	
+									JSONObject jo2 = processNewFrame(newframe, simulation);
+									
+									// {
+									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
+									//		(if alert_triggered==true)
+									//      	twitter_triggered: true or false,
+									//			(if twitter_triggered then)
+									//				twitter_successful: true or false,					// means alert posted and returned an id (or failed)
+									//				(if !twitter_successful, then)
+									//					twitter_failure_message: some message about why twitter failed,	
+									//
+									//      	facebook_triggered: true or false,
+									//			(if facebook_triggered then)				
+									//				facebook_successful: true or false,					// means alert posted and returned an id (or failed)
+									//				(if !facebook_successful, then)
+									//					facebook_failure_message: some message about why facebook failed,	
+									//		(else if alert_triggered== false)
+									//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
+									// }
+									
+									jsonresponse = jo2;
+									jsonresponse.put("response_status", "success"); // just means the insertion was received and a response is coming back. Means nothing in terms of alerts
+									if(simulation) // then return additional info to the simulator. If not, don't.
+									{	
+										if(jsonpostbody.has("designation"))
+										{
+											System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " was specified by the simulator. Returning specialized information in each frame_jo.");
+											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
+										}
+										else
+											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
+									}
+								}
+								else
+								{
+									jsonresponse.put("message", "There was a problem inserting the data and/or building a Frame object from it.");
+									jsonresponse.put("response_status", "error");
+								}
 							}
 						}
 					}
@@ -1163,7 +1210,7 @@ public class Endpoint extends HttpServlet {
 					String singlemodifier = request.getParameter("singlemodifier");
 					String mamodifier = request.getParameter("mamodifier");
 					String mawindow = request.getParameter("mawindow");
-					String delta = request.getParameter("delta");
+					String awp = request.getParameter("awp");
 					
 					if(twitter_handle == null)
 					{
@@ -1190,9 +1237,9 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("message", "A end value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
-					else if(delta == null)
+					else if(awp == null)
 					{
-						jsonresponse.put("message", "A delta value must be supplied to this method.");
+						jsonresponse.put("message", "An awp value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
 					else if(singlemodifier == null)
@@ -1245,11 +1292,11 @@ public class Endpoint extends HttpServlet {
 									int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
 									double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
 									double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-									double delta_double = (new Double(request.getParameter("delta"))).doubleValue();
+									int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
 									long begin_long = Long.parseLong(begin);
 									long end_long = Long.parseLong(end);
-									System.out.println("Endpoint.getAlertsForTimePeriod(): passed validation gauntlet, moving to getAlertFrames() function");
-									JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, delta_double);
+									System.out.println("Endpoint.getAlertFrames(): passed validation gauntlet, moving to getAlertFrames() function");
+									JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, awp_in_sec);
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("alert_frames_ja", alert_frames_ja);
 								}
@@ -1267,7 +1314,7 @@ public class Endpoint extends HttpServlet {
 				//***
 				else if (method.equals("resetProductionAlertTimers"))
 				{
-					System.out.println("Endpoint begin getAlertFrames");
+					System.out.println("Endpoint begin resetProductionAlertTimers");
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
 					String station_param = request.getParameter("station");
@@ -1332,7 +1379,7 @@ public class Endpoint extends HttpServlet {
 				} 
 				else if (method.equals("resetTestAlertTimers"))
 				{
-					System.out.println("Endpoint begin getAlertFrames");
+					System.out.println("Endpoint begin resetTestAlertTimers");
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
 					String station_param = request.getParameter("station");
@@ -1397,7 +1444,7 @@ public class Endpoint extends HttpServlet {
 				}
 				else if (method.equals("deleteAlert"))
 				{	
-					System.out.println("Endpoint begin getAlertFrames");
+					System.out.println("Endpoint begin deleteAlert");
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
 					String social_type = request.getParameter("social_type");
@@ -1496,6 +1543,180 @@ public class Endpoint extends HttpServlet {
 						}
 					}	
 				} 
+				else if (method.equals("verifyTwitterCredentials"))
+				{	
+					System.out.println("Endpoint begin verifyTwitterCredentials");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String designation = request.getParameter("designation");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(designation == null)
+					{
+						jsonresponse.put("message", "A designation value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							if(user.isGlobalAdmin())
+							{
+								User target_user = new User(designation, "designation");
+								boolean tCredsAreValid = target_user.twitterCredentialsAreValid();
+								jsonresponse.put("valid", tCredsAreValid);
+								jsonresponse.put("response_status", "success");
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
+						}
+					}	
+				}
+				else if (method.equals("verifyTopLevelFBCredentials"))
+				{	
+					System.out.println("Endpoint begin verifyTopLevelFBCredentials");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String designation = request.getParameter("designation");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(designation == null)
+					{
+						jsonresponse.put("message", "A designation value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							if(user.isGlobalAdmin())
+							{
+								User target_user = new User(designation, "designation");
+								boolean fbCredsAreValid = target_user.fbTopLevelTokenIsValid();
+								jsonresponse.put("valid", fbCredsAreValid);
+								jsonresponse.put("response_status", "success");
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
+						}
+					}	
+				} 
+				else if (method.equals("verifyPageFBCredentials"))
+				{	
+					System.out.println("Endpoint begin verifyPageFBCredentials");
+					String twitter_handle = request.getParameter("twitter_handle");
+					String twitter_access_token = request.getParameter("twitter_access_token");
+					String designation = request.getParameter("designation");
+					if(twitter_handle == null)
+					{
+						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(twitter_access_token == null)
+					{
+						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else if(designation == null)
+					{
+						jsonresponse.put("message", "A designation value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
+					else
+					{	
+						// check twitter_handle and twitter_access_token for validity
+						User user = new User(twitter_handle, "twitter_handle");
+						if(!user.isValid())
+						{
+							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("response_status", "error");
+						}
+						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
+						{
+							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("error_code", "07734");
+						}
+						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+						{
+							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
+							jsonresponse.put("response_status", "error");
+						}
+						else // twitter creds were OK
+						{
+							if(user.isGlobalAdmin())
+							{
+								User target_user = new User(designation, "designation");
+								boolean fbPageCredsAreValid = target_user.fbPageTokenIsValid();
+								jsonresponse.put("valid", fbPageCredsAreValid);
+								jsonresponse.put("response_status", "success");
+							}
+							else
+							{
+								jsonresponse.put("message", "You do not have the required permissions to call this method.");
+								jsonresponse.put("response_status", "error");
+							}
+						}
+					}	
+				} 
 			}
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
@@ -1515,8 +1736,6 @@ public class Endpoint extends HttpServlet {
 	
 	JSONObject processNewFrame(Frame newframe, boolean simulation)
 	{
-		//simulation = true; // FIXME temporarily prevent any real alerts from going out until I'm awake to watch them
-		
 		JSONObject return_jo = new JSONObject();
 		// return_jo form:
 		// {
@@ -1578,7 +1797,7 @@ public class Endpoint extends HttpServlet {
 		
 		long frame_ts = newframe.getTimestampInMillis();
 		User admin_user = new User("huzon_master", "designation");
-		System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
+		//System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
 		try
 		{
 			
@@ -1586,7 +1805,7 @@ public class Endpoint extends HttpServlet {
 			Station station_object = new Station(newframe.getStation());
 			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-5000, frame_ts, null, 0);
 			int num_frames_in_window = window_frames.size();
-			System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
+			//System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
 			
 			/***
 			 *     __             _____  _   _  _____ _____  _   __    _  _    ____________  ___  ___  ___ _____ _____ 
@@ -1603,7 +1822,7 @@ public class Endpoint extends HttpServlet {
 			if(num_frames_in_window < 5)  // all response boolean values remain false and return
 			{
 				alert_triggered_failure_message = "not enough frames in window";
-				System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
+				//System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
 			}
 			else
 			{
@@ -1623,7 +1842,7 @@ public class Endpoint extends HttpServlet {
 				double[] reporter_moving_average_thresholds = new double[reporter_designations.length];
 				double[] reporter_single_thresholds = new double[reporter_designations.length];
 				
-				System.out.println("Endpoint.processNewFrame(): looping frames for totals");
+				//System.out.println("Endpoint.processNewFrame(): looping frames for totals");
 				Iterator<Frame> it = window_frames.iterator();
 				Frame currentframe = null;
 				while(it.hasNext())
@@ -1642,7 +1861,7 @@ public class Endpoint extends HttpServlet {
 				double reporter_homogeneity = 0;
 				double max_moving_average = 0;
 				
-				System.out.println("Endpoint.processNewFrame(): looping reporters to get avgs from totals");
+				//System.out.println("Endpoint.processNewFrame(): looping reporters to get avgs from totals");
 				while(x < reporter_totals.length)
 				{
 					reporter_moving_averages[x] = reporter_totals[x] / num_frames_in_window;
@@ -1681,7 +1900,7 @@ public class Endpoint extends HttpServlet {
 				String designation_that_passed_ma_thresh = "";
 				String image_name_of_frame_in_window_that_passed_single_thresh = "";
 				x = 0;
-				System.out.println("Endpoint.processNewFrame(): looping reporters to determine if any pass ma thresh");
+				//System.out.println("Endpoint.processNewFrame(): looping reporters to determine if any pass ma thresh");
 				while(x < reporter_designations.length)
 				{
 					designation_passed_single_thresh = false;
@@ -1697,12 +1916,12 @@ public class Endpoint extends HttpServlet {
 								reporter.isWithinTwitterWindow(frame_ts,simulation) || !reporter.isTwitterActive())
 						{	
 							// twitter and facebook triggers stay false
-							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within window or inactive on both FB & TW.");
+							//System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within window or inactive on both FB & TW.");
 						}
 						
 						else
 						{	
-							System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
+							//System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
 							
 							/***
 							 *       ___           ___  ___  ___   ______  ___   _____ _____ ___________    _____ _____ _   _ _____  _      _____ ___  
@@ -1717,7 +1936,7 @@ public class Endpoint extends HttpServlet {
 							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-5000, frame_ts, true);
 							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
 							{
-								System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
+								//System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
 								if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
 								{
 									designation_passed_single_thresh = true;

@@ -58,7 +58,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 		JSONObject return_jo = new JSONObject();
 		try
 		{
-			(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + "\n\nurl=" + frame2upload.getURLString() + "\n\nmode=" + mode);
+			(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " mode=" + mode);
 			
 			if(mode.equals("silent"))
 			{
@@ -170,55 +170,72 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							image_files[2].delete();
 							image_files[3].delete();
 							
-							Twitter twitter = new Twitter();
-							Platform p = new Platform();
-
-							long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), frame2upload.getURLString());
-							String message = station_object.getMessage("twitter", frame2upload.getTimestampInMillis(), redirect_id, reporter);
 							
-							System.out.println("TwitterUploaderCallable.call(): posting image to admin twitter account.");
-							
-							JSONObject twit_jo = null;
-							twit_jo = twitter.updateStatusWithMedia(postinguser.getTwitterAccessToken(), postinguser.getTwitterAccessTokenSecret(), message, composite_file);
-							
-							if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
+							if(!station_object.isLocked("twitter"))
 							{
-								return_jo.put("twitter_successful", false);
-								return_jo.put("twitter_failure_message", twit_jo.getString("message"));
+								String uuid = UUID.randomUUID().toString();
+								boolean successfullylocked = station_object.lock(uuid, "twitter");
+								
+								if(successfullylocked)
+								{	
+									Twitter twitter = new Twitter();
+									Platform p = new Platform();
 
-								if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
-								{
-									if(mode.equals("live"))
+									long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), frame2upload.getURLString());
+									String message = station_object.getMessage("twitter", frame2upload.getTimestampInMillis(), redirect_id, reporter);
+									
+									System.out.println("TwitterUploaderCallable.call(): posting image to admin twitter account.");
+									
+									JSONObject twit_jo = null;
+									twit_jo = twitter.updateStatusWithMedia(postinguser.getTwitterAccessToken(), postinguser.getTwitterAccessTokenSecret(), message, composite_file);
+									
+									if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
 									{
-										reporter.resetTwitterCredentialsInDB(); // the user's credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
-										String emailmessage = getMissingCredentialsEmailMessage();
-										se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-										(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of a disconnected Twitter account");
+										return_jo.put("twitter_successful", false);
+										return_jo.put("twitter_failure_message", twit_jo.getString("message"));
+
+										if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
+										{
+											if(mode.equals("live"))
+											{
+												reporter.resetTwitterCredentialsInDB(); // the user's credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
+												String emailmessage = getMissingCredentialsEmailMessage();
+												se.sendMail("Action required: huzon.tv Twitter alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
+												(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of a disconnected Twitter account");
+											}
+											else
+											{
+												(new Platform()).addMessageToLog("test account TW creds invalid trying to fire for " + reporter.getDesignation() + ". user=" + postinguser.getDesignation() + ". mode=" + mode);
+											}
+										}
+										else if(twit_jo.has("twitter_code"))
+										{
+											(new Platform()).addMessageToLog(reporter.getDesignation() + " unknown twitter error. There was an unknown error trying to tweet. twit_jo=" + twit_jo + "user=" + postinguser.getDesignation() + ". mode=" + mode);
+										}
+										else
+										{
+											(new Platform()).addMessageToLog(reporter.getDesignation() + " some other twitter error. There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+										}
 									}
 									else
 									{
-										(new Platform()).addMessageToLog("test account TW creds invalid trying to fire for " + reporter.getDesignation() + ". user=" + postinguser.getDesignation() + ". mode=" + mode);
+										return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
+										(new Platform()).addMessageToLog("TW successful for " + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+										// if either of these fail, alert the admin within the functions themselves
+										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
+										boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
 									}
-								}
-								else if(twit_jo.has("twitter_code"))
-								{
-									(new Platform()).addMessageToLog(reporter.getDesignation() + " unknown twitter error. There was an unknown error trying to tweet. twit_jo=" + twit_jo + "user=" + postinguser.getDesignation() + ". mode=" + mode);
+									station_object.unlock(uuid, "twitter");		
 								}
 								else
 								{
-									(new Platform()).addMessageToLog(reporter.getDesignation() + " some other twitter error. There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+									(new Platform()).addMessageToLog("Skipped TW post for " + reporter.getDesignation() + ". Tried to set lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". mode=" + mode);
 								}
-									
 							}
 							else
 							{
-								return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
-								(new Platform()).addMessageToLog("TW successful for " + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
-								// if either of these fail, alert the admin within the functions themselves
-								boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
-								boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
+								(new Platform()).addMessageToLog("Skipped TW post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
 							}
-							
 							composite_file.delete();
 							
 						} catch (IOException e) {

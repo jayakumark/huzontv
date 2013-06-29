@@ -415,26 +415,38 @@ public class Frame implements Comparable<Frame> {
 		}
 		Frame[] frames_array = null;
 		URL[] return_urls = new URL[4];
-		
 		int numchecks = 0;
-		
 		String debug = "";
+		long lastframe_ts = 0L;
+		
 		// loop until the last frame is within 2.5 - 3.5 seconds from the current frame's timestamp (failing after 7 tries) 
-		while((frames_array == null || !(frames_array[frames_array.length - 1].getTimestampInMillis() >= (getTimestampInMillis() + 2500) &&
-				frames_array[frames_array.length - 1].getTimestampInMillis() <= (getTimestampInMillis() + 3500))) && numchecks < 7) // do up to 7 loops at 500ms sec each (i.e. > 3.5 seconds) 
+		while((numchecks == 0  || !((lastframe_ts >= (getTimestampInMillis() + 2500)) && (lastframe_ts <= (getTimestampInMillis() + 3500)))) && numchecks < 7) // do up to 7 loops at 500ms sec each (i.e. > 3.5 seconds) 
 		{
-			if(numchecks > 0) // on the first go, immediately look for the frames. After that, sleep for 1s
+			if(numchecks > 0) // on the first go, immediately look for the frames. After that, sleep for a brief period
 			{
 				try { Thread.sleep(500);} catch (InterruptedException e) { e.printStackTrace(); }
 			}
 			
 			// get the frame objects in the window
 			frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
-			frames_array = new Frame[frames_ts.size()];
-			System.out.println("Frame.get2x2CompositeURLs(): array length " + frames_array.length);
-			
+			Frame lastframe = frames_ts.last();
+			lastframe_ts = lastframe.getTimestampInMillis();
+			//debug = "numframes=" + frames_ts.size() + " and last=" + lastframe_ts + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500 + " numchecks=" + numchecks);
+		//	(new Platform()).addMessageToLog("get2x2: Reached end of loop without satisfying future frame condition. Returning null. " + debug);
+			numchecks++;
+		}
+		
+		if(numchecks == 7)
+		{
+			debug = "numframes=" + frames_ts.size() + " and last=" + lastframe_ts + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500);
+			(new Platform()).addMessageToLog("get2x2: Reached end of loop without satisfying future frame condition. Returning null. " + debug);
+			return null;
+		}
+		else // loop broke without reaching limit meaning frames_ts good to go. Get frames_array and create urls array
+		{
 			// create the frames_array from the frames object treeset
 			Iterator<Frame> frames_it = frames_ts.iterator();
+			frames_array = new Frame[frames_ts.size()];
 			Frame currentframe = null;
 			int x = 0;
 			while(frames_it.hasNext())
@@ -443,25 +455,6 @@ public class Frame implements Comparable<Frame> {
 				frames_array[x] = currentframe;
 				x++;
 			}
-			
-			System.out.println("Frame.get2x2CompositeURLs(): future frame ts=" + (frames_array[frames_array.length - 1].getTimestampInMillis()));
-			System.out.println("Frame.get2x2CompositeURLs(): is it >= " + (getTimestampInMillis() + 2500) + " and <= "+ (getTimestampInMillis() + 3500) + "?");
-			numchecks++;
-		}
-		
-		if(numchecks == 7)
-		{
-			System.out.println("Frame.get2x2CompositeURLs(): loop limit reached without satisfying the future frame condition. Returning null.");
-			if(frames_array != null)
-			{
-				debug = "numframes=" + frames_array.length + " and last=" + frames_array[frames_array.length - 1].getTimestampInMillis() + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500);
-			}
-			(new Platform()).addMessageToLog("get2x2: Reached end of loop without satisfying future frame condition. Returning null. " + debug);
-			return null;
-		}
-		else // loop broke without reaching limit meaning frames_array is correctly populated 
-		{
-			
 			return_urls[0] = frames_array[0].getURL();							// get first image
 			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[0] + " from index 0");
 			return_urls[1] = frames_array[frames_array.length / 3].getURL();      // get second image approx 1/3 through the array

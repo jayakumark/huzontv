@@ -1,3 +1,6 @@
+var endpoint = "https://www.huzon.tv/endpoint";
+//var endpoint = "https://localhost:8443/huzontv/endpoint";
+
 var reA = /[^a-zA-Z]/g;
 var reN = /[^0-9]/g;
 function sortAlphaNum(a,b) {
@@ -57,8 +60,7 @@ var docCookies = {
 
 
 
-var endpoint = "https://www.huzon.tv/endpoint";
-//var endpoint = "https://localhost:8443/huzontv/endpoint";
+
 var devel = true;
 
 document.addEventListener('DOMContentLoaded', function () {

@@ -19,6 +19,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 
 
 import com.amazonaws.util.json.JSONArray;
@@ -63,17 +64,12 @@ public class User implements java.lang.Comparable<User> {
 	private boolean reporter;
 	private boolean global_admin;
 	
-	// values collected from "stations" table in constructor
-	//private TreeSet<String> stations_appearing;
-	//private TreeSet<String> stations_as_admin;
-		
 	// additional values
 	boolean valid;
 		
 	public User(String inc_des_or_twit, String constructor_type)
 	{
 		//System.out.println("User(): entering inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
-		//System.out.println("Creating user from inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		valid = false;
 		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  	
 		try
@@ -149,7 +145,6 @@ public class User implements java.lang.Comparable<User> {
 				(new Platform()).addMessageToLog("SQLException in User constructor: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
-		//System.out.println("User(): exiting inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 	}
 	
 	public boolean isWithinFacebookWindow(long frame_millis, boolean simulation)
@@ -493,6 +488,7 @@ public class User implements java.lang.Comparable<User> {
 			return false;
 	}
 	
+	// boolean ok. Either db update succeeded or failed. If failed, then an error will be sent to admin.
 	boolean setFacebookAccessTokenExpiresAndUID(String access_token, long expires_timestamp, long fb_uid)
 	{
 		boolean returnval = false;
@@ -598,7 +594,7 @@ public class User implements java.lang.Comparable<User> {
 		return jsonresponse;
 	}
 	
-	
+	// FIXME can't return boolean. subaccount lookup either succeeded or failed, but if failed we need to know why
 	public JSONArray getSubAccountsFromFacebook()
 	{
 		// if returnvalue == null, then facebook access token was null, empty, invalid or we couldn't reach the server.
@@ -676,6 +672,7 @@ public class User implements java.lang.Comparable<User> {
 		return return_jo;
 	}
 	
+	// boolean ok. Either db update succeeded or failed. If failed, then an error will be sent to admin.
 	boolean resetFacebookSubAccountIdNameAndAccessToken()
 	{
 		boolean returnval = false;
@@ -719,6 +716,7 @@ public class User implements java.lang.Comparable<User> {
 		return returnval;
 	}
 	
+	// boolean ok. Either db update succeeded or failed. If failed, then an error will be sent to admin.
 	boolean setFacebookSubAccountIdNameAndAccessToken(String id, JSONArray fb_subaccounts_ja)
 	{
 		String name = "";
@@ -781,6 +779,127 @@ public class User implements java.lang.Comparable<User> {
 		return returnval;
 	}
 	
+	// FIXME can't return boolean. The token is either valid, invalid, or we had an error talking to facebook. Have to account for this third option.
+	public boolean twitterCredentialsAreValid()
+	{
+		Twitter t = new Twitter();
+		try {
+			JSONObject response = t.verifyCredentials(getTwitterAccessToken(), getTwitterAccessTokenSecret());
+			System.out.println("User.twitterCredentialsAreValid(): twitter_object response=" + response);
+			if(response.has("twitter_jo") && response.getJSONObject("twitter_jo").has("id"))
+				return true;
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false; // if we get here, something has gone wrong.
+	}
+	
+	// FIXME can't return boolean. The token is either valid, invalid, or we had an error talking to facebook. Have to account for this third option.
+	public boolean fbTopLevelTokenIsValid()
+	{
+		/*graph.facebook.com/debug_token?
+			     input_token={token-to-inspect}
+			     &access_token={app-token-or-admin-token}*/ 
+		
+		// fb returns {"error":{"message":"Invalid OAuth access token.","type":"OAuthException","code":190}} if admin token is bad.
+		// fb returns {"data":{"error":{"message":"Invalid OAuth access token.","code":190},"is_valid":false}} if input_token is bad
+		
+		/* sample response
+		 * {
+    			"data": {
+        		"app_id": 176524552501035,
+        		"is_valid": true,
+        		"application": "huzon.tv",
+        		"user_id": 1315750,
+        		"issued_at": 1371671725,
+        		"expires_at": 0,
+        		"scopes": ["create_note", "manage_pages", "photo_upload", "publish_actions", "publish_stream", "share_item", "status_update", "video_upload"]
+    			}
+			}
+		 */
+		
+		boolean fb_call_successful = false;
+		try {
+			HttpClient httpClient = new DefaultHttpClient();
+			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookAccessToken() + "&access_token=" + (new User("huzon_master", "designation").getFacebookAccessToken()));
+			HttpResponse response = httpClient.execute(hg);
+			int statusCode = response.getStatusLine().getStatusCode();
+	        fb_call_successful = statusCode == 200 ? true : false;
+	        String fbresponse_str = EntityUtils.toString(response.getEntity());
+	        System.out.println(fbresponse_str);
+			if(fb_call_successful)
+			{
+				JSONObject fbresponse = new JSONObject(fbresponse_str);
+				if(fbresponse.has("data") && fbresponse.getJSONObject("data").has("is_valid") && fbresponse.getJSONObject("data").getBoolean("is_valid"))
+					return true;
+			}
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	// FIXME can't return boolean. The token is either valid, invalid, or we had an error talking to facebook. Have to account for this third option.
+	public boolean fbPageTokenIsValid()
+	{
+		/*graph.facebook.com/debug_token?
+			     input_token={token-to-inspect}
+			     &access_token={app-token-or-admin-token}*/ 
+		
+		// fb returns {"error":{"message":"Invalid OAuth access token.","type":"OAuthException","code":190}} if admin token is bad.
+		// fb returns {"data":{"error":{"message":"Invalid OAuth access token.","code":190},"is_valid":false}} if input_token is bad
+		
+		/* sample response
+		 * {
+    			"data": {
+        		"app_id": 176524552501035,
+        		"is_valid": true,
+        		"application": "huzon.tv",
+        		"user_id": 1315750,
+        		"issued_at": 1371671725,
+        		"expires_at": 0,
+        		"scopes": ["create_note", "manage_pages", "photo_upload", "publish_actions", "publish_stream", "share_item", "status_update", "video_upload"]
+    			}
+			}
+		 */
+		
+		boolean fb_call_successful = false;
+		try {
+			HttpClient httpClient = new DefaultHttpClient();
+			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookPageAccessToken() + "&access_token=" + (new User("huzon_master", "designation").getFacebookAccessToken()));
+			HttpResponse response = httpClient.execute(hg);
+			int statusCode = response.getStatusLine().getStatusCode();
+	        fb_call_successful = statusCode == 200 ? true : false;
+	        String fbresponse_str = EntityUtils.toString(response.getEntity());
+	        System.out.println(fbresponse_str);
+			if(fb_call_successful)
+			{
+				JSONObject fbresponse = new JSONObject(fbresponse_str);
+				if(fbresponse.has("data") && fbresponse.getJSONObject("data").has("is_valid") && fbresponse.getJSONObject("data").getBoolean("is_valid"))
+					return true;
+			}
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	// FIXME can't return boolean. The deletion either was successful or unsuccessful, but if unsuccessful, we have to know WHY in order to take further action
 	public boolean deleteFacebookPost(String item_id)
 	{
 		 boolean successful = false;
@@ -816,5 +935,12 @@ public class User implements java.lang.Comparable<User> {
 	    else
 	    	return -1;
 	}
+	
+	public static void main(String args[])
+	{
+		User user = new User("huzon_master", "designation");
+		user.fbPageTokenIsValid();
+	}
+	
 	
 }

@@ -384,7 +384,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
+	fds = fds + "						Waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"3600\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130619_230355\"><br>";
@@ -457,24 +457,18 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	
 	fds = fds + "	<tr>";
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	/*fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
-	fds = fds + "						<b>Function 7:</b> Get fired alerts for time range (inclusive)";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
+	fds = fds + "						<b>Function 7:</b> Test reporter tokens";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function7_begin_input\" size=13 value=\"20130409_050000\">";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function7_end_input\" value=\"20130409_060000\" size=13>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
 	fds = fds + "   					<input id=\"function7_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
-	fds = fds + "			</table>";*/
+	fds = fds + "			</table>";
 	fds = fds + "		</td>";
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
@@ -775,7 +769,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            mamodifier: $('#function4_mamodifier_input').val(),
 				            singlemodifier: $('#function4_singlemodifier_input').val(),
 				            mawindow: $('#function4_mawindow_input').val(),
-				            delta:  $('#function4_delta_input').val(),
+				            awp:  $('#function4_awp_input').val(),
 				            station: station,
 		    	            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
@@ -800,8 +794,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 			        				for(var x = 0; x < data.alert_frames_ja.length; x++)
 			        				{
 			        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-				        				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-				        				rds = rds + "<br><img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
+				        				//rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
+				        				//rds = rds + "<br>";
+				        				rds = rds + "<img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
 				        				rds = rds + "<br>image_name:" + data.alert_frames_ja[x].image_name;
 				        				rds = rds + "<br>designation:" + data.alert_frames_ja[x].designation;
 				        				rds = rds + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
@@ -1055,6 +1050,54 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					});
 			});
 	
+	$("#function7_go_button").click(
+			function () {
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				rds = rds + "<table style=\"width:100%\">";
+				rds = rds + "	<tr>";
+				rds = rds + "		<td>";
+				rds = rds + "			Reporter";
+				rds = rds + "		</td>";
+				rds = rds + "		<td>";
+				rds = rds + "			Twitter token";
+				rds = rds + "		</td>";
+				rds = rds + "		<td>";
+				rds = rds + "			TL FB token";
+				rds = rds + "		</td>";
+				rds = rds + "		<td>";
+				rds = rds + "			Page FB token";
+				rds = rds + "		</td>";
+				rds = rds + "	</tr>";
+				
+				for(var x=0; x < reporters_ja.length; x++)
+				{
+					rds = rds + "	<tr>";
+					rds = rds + "		<td>";
+					rds = rds + "			" + reporters_ja[x];
+					rds = rds + "		</td>";
+					rds = rds + "		<td id=\"" + reporters_ja[x] + "_twitter_valid_td\">";
+					rds = rds + "		</td>";
+					rds = rds + "		<td id=\"" + reporters_ja[x] + "_fb_valid_td\">";
+					rds = rds + "			";
+					rds = rds + "		</td>";
+					rds = rds + "		<td id=\"" + reporters_ja[x] + "_fbpage_valid_td\">";
+					rds = rds + "			";
+					rds = rds + "		</td>";
+					rds = rds + "	</tr>";
+				}
+				rds = rds + "</table>";
+				$("#results_div").html(rds);
+				for(var x=0; x < reporters_ja.length; x++)
+				{
+					verifyTwitterCredentials(reporters_ja[x]);
+					verifyTopLevelFBCredentials(reporters_ja[x]);
+					verifyPageFBCredentials(reporters_ja[x]);
+				}
+				return;
+			});
+	
 	$("#function8_go_button").click(
 			function () {
 				$("#results_div").html("");
@@ -1091,6 +1134,108 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				return;
 			});
 	
+}
+
+function verifyTwitterCredentials(designation)
+{
+	var twitter_handle = docCookies.getItem("twitter_handle");
+	var twitter_access_token = docCookies.getItem("twitter_access_token");
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+            method: "verifyTwitterCredentials",
+            designation: designation,
+            twitter_handle: twitter_handle,
+            twitter_access_token: twitter_access_token
+		},
+        dataType: 'json',
+        async: true,
+        success: function (data, status) {
+        	if (data.response_status == "error")
+        		$("#" + designation + "_twitter_valid_td").html(data.message);
+        	else if(data.response_status == "success")
+        	{
+        		if(data.valid == true)
+        			$("#" + designation + "_twitter_valid_td").html("<span style=\"color:green\">VALID</span>");
+        		else
+        			$("#" + designation + "_twitter_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
+        	}
+        }
+        ,
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	$("#" + designation + "_twitter_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+            console.log(textStatus, errorThrown);
+        }
+	});
+}
+
+function verifyTopLevelFBCredentials(designation)
+{
+	var twitter_handle = docCookies.getItem("twitter_handle");
+	var twitter_access_token = docCookies.getItem("twitter_access_token");
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+            method: "verifyTopLevelFBCredentials",
+            designation: designation,
+            twitter_handle: twitter_handle,
+            twitter_access_token: twitter_access_token
+		},
+        dataType: 'json',
+        async: true,
+        success: function (data, status) {
+        	if (data.response_status == "error")
+        		$("#" + designation + "_fb_valid_td").html(data.message);
+        	else if(data.response_status == "success")
+        	{
+        		if(data.valid == true)
+        			$("#" + designation + "_fb_valid_td").html("<span style=\"color:green\">VALID</span>");
+        		else
+        			$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
+        	}
+        }
+        ,
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+            console.log(textStatus, errorThrown);
+        }
+	});
+}
+
+function verifyPageFBCredentials(designation)
+{
+	var twitter_handle = docCookies.getItem("twitter_handle");
+	var twitter_access_token = docCookies.getItem("twitter_access_token");
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+            method: "verifyPageFBCredentials",
+            designation: designation,
+            twitter_handle: twitter_handle,
+            twitter_access_token: twitter_access_token
+		},
+        dataType: 'json',
+        async: true,
+        success: function (data, status) {
+        	if (data.response_status == "error")
+        		$("#" + designation + "_fbpage_valid_td").html(data.message);
+        	else if(data.response_status == "success")
+        	{
+        		if(data.valid == true)
+        			$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:green\">VALID</span>");
+        		else
+        			$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
+        	}
+        }
+        ,
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+            console.log(textStatus, errorThrown);
+        }
+	});
 }
 
 var simulateNewFrame = function(timestamp_in_ms, station, designation){
