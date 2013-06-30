@@ -39,6 +39,12 @@ public class Station implements java.lang.Comparable<Station> {
 	private String livestream_url;
 	private String livestream_url_alias;
 	
+	String dbName = System.getProperty("RDS_DB_NAME"); 
+	String userName = System.getProperty("RDS_USERNAME"); 
+	String password = System.getProperty("RDS_PASSWORD"); 
+	String hostname = System.getProperty("RDS_HOSTNAME");
+	String port = System.getProperty("RDS_PORT");
+	
 	public Station(String inc_call_letters)
 	{
 		//System.err.println("Station init()");
@@ -54,7 +60,8 @@ public class Station implements java.lang.Comparable<Station> {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE call_letters='" + inc_call_letters + "'");
 			if(rs.next())
@@ -268,7 +275,8 @@ public class Station implements java.lang.Comparable<Station> {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			System.out.println("Station.getFrameTimestamps(): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
@@ -309,7 +317,8 @@ public class Station implements java.lang.Comparable<Station> {
 		
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			if(designation == null) // get all frames
 			{	
@@ -408,7 +417,8 @@ public class Station implements java.lang.Comparable<Station> {
 					System.out.println("Endpoint.gAF(): looping reporters. " + currentreporter.getDesignation());
 					current_homogeneity = currentreporter.getHomogeneity();
 					current_designation = currentreporter.getDesignation();
-					con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+					
+					con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 					stmt = con.createStatement();
 					// get frames where this designation crosses the single frame threshold
 					rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms >= " + (1000*begin_long) + " AND timestamp_in_ms <= " + (1000*end_long) + " AND " + current_designation + "_avg > " + (current_homogeneity * single_modifier_double) + ") ORDER BY timestamp_in_ms ASC");
@@ -536,7 +546,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				rs = stmt.executeQuery(query);
@@ -586,7 +597,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				rs = stmt.executeQuery(query);
@@ -629,7 +641,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 				stmt = con.createStatement();
 				// get frames where this designation crosses the single frame threshold
 				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "'";
@@ -679,7 +692,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "' ";
@@ -750,7 +764,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-				con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "' ";

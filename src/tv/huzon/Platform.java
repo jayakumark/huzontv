@@ -1,12 +1,10 @@
 package tv.huzon;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.TimeZone;
@@ -14,11 +12,6 @@ import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
@@ -42,6 +35,11 @@ public class Platform {
 
 	public void addMessageToLog(String message)
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		Connection con = null;
 		Statement stmt = null;
 		try
@@ -66,7 +64,8 @@ public class Platform {
 			if(ms.length() == 2) { ms = "0" + ms;} 
 			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute + ":" + second + " " + ms;			
 			
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			System.out.println("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
 	                    + " VALUES('" + hr_timestamp + "','" + message + "')");
@@ -102,6 +101,11 @@ public class Platform {
 	
 	public boolean populateStations()
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		stations = new TreeSet<Station>();
 		ResultSet rs = null;
@@ -109,7 +113,8 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT call_letters FROM `stations`");
 			Station currentstation = null;
@@ -173,13 +178,19 @@ public class Platform {
 	
 	long createAlertInDB(Station station_object, String social_type, String designation, String image_name)
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		long returnval = -1L;
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`) "
 	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "')");
@@ -221,13 +232,19 @@ public class Platform {
 	
 	boolean updateAlertText(long alert_id_long, String actual_text)
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
@@ -262,13 +279,19 @@ public class Platform {
 
 	boolean updateSocialItemID(long alert_id_long, String social_item_id_string)
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
@@ -303,13 +326,19 @@ public class Platform {
 	
 	JSONArray getMostRecentAlerts(int num_to_get)
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		JSONArray alerts_ja = new JSONArray();
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts ORDER BY creation_timestamp DESC");
 			int x = 0;
@@ -355,12 +384,18 @@ public class Platform {
 
 	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
 	{
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`, `station`) " +
 					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "','" + station + "')");

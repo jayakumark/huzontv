@@ -60,12 +60,18 @@ public class Frame implements Comparable<Frame> {
 		timestamp_in_ms = inc_timestamp_in_ms;
 		station = inc_station;
 		
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
 			
@@ -209,6 +215,11 @@ public class Frame implements Comparable<Frame> {
 		
 		reporter_moving_avgs = new double[reporter_designations.length];
 		maw_int = inc_maw_int;
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		Connection con = null;
 		Statement stmt = null;
 		ResultSet rs2 = null;
@@ -216,7 +227,8 @@ public class Frame implements Comparable<Frame> {
 		boolean returnval = false;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs2 = stmt.executeQuery("SELECT * FROM frames_" + getStation() + " WHERE (timestamp_in_ms > " + (timestamp_in_ms - maw_int*1000) + " AND timestamp_in_ms <= " + timestamp_in_ms + ")");
 			

@@ -121,13 +121,19 @@ public class Endpoint extends HttpServlet {
 							}
 							else // treat as real commit
 							{	
+								String dbName = System.getProperty("RDS_DB_NAME"); 
+								String userName = System.getProperty("RDS_USERNAME"); 
+								String password = System.getProperty("RDS_PASSWORD"); 
+								String hostname = System.getProperty("RDS_HOSTNAME");
+								String port = System.getProperty("RDS_PORT");
 								Connection con = null;
 								Statement stmt = null;
 								ResultSet rs = null;
 								try
 								{
 									long inc_ts = jsonpostbody.getLong("timestamp_in_ms");
-									con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+									con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+									
 									stmt = con.createStatement();
 									rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
 									if(rs.next()) // the only reason there wouldn't be a row is the VERY FIRST FRAME EVER for this station's table (or if the table gets emptied for some reason
@@ -2095,9 +2101,9 @@ public class Endpoint extends HttpServlet {
 								} 
 								
 								if(twitter_triggered)
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
 								if(facebook_triggered)
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;

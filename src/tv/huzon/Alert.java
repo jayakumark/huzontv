@@ -33,12 +33,18 @@ public class Alert {
 			e.printStackTrace();
 		} 
 		id = inc_id;
+		String dbName = System.getProperty("RDS_DB_NAME"); 
+		String userName = System.getProperty("RDS_USERNAME"); 
+		String password = System.getProperty("RDS_PASSWORD"); 
+		String hostname = System.getProperty("RDS_HOSTNAME");
+		String port = System.getProperty("RDS_PORT");
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://huzon.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com/huzon?user=huzon&password=6SzLvxo0B");
+			
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + inc_id); // get the frames in the time range
 			
