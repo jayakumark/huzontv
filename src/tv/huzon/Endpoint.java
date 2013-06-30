@@ -363,6 +363,8 @@ public class Endpoint extends HttpServlet {
 				{
 					Twitter twitter = new Twitter();
 					jsonresponse = twitter.startTwitterAuthentication();
+					SimpleEmailer se = new SimpleEmailer();
+					se.sendMail("Someone started Twitter authentication", "nt", "cyrus7580@gmail.com", "info@huzon.tv");
 				}
 				else if (method.equals("getTwitterAccessTokenFromAuthorizationCode"))
 				{
@@ -386,12 +388,16 @@ public class Endpoint extends HttpServlet {
 						// and we need to search the DB for it to figure out who it belongs to.
 						//String designation = getDesignationFromOAuthToken("wkyt", oauth_token);
 						
+						
+						
 						Twitter twitter = new Twitter();
 						JSONObject preliminary_jsonresponse = new JSONObject();
 						preliminary_jsonresponse = twitter.getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
 						if(preliminary_jsonresponse.getString("response_status").equals("success"))
 						{
-							System.out.println("Endpoint.getTATFromAUTHCode(): screen_name=" + preliminary_jsonresponse.getString("screen_name"));
+							SimpleEmailer se = new SimpleEmailer();
+							se.sendMail("Continuing TW authentication (gTwAuthTokFromAccCode) for " + preliminary_jsonresponse.getString("screen_name"), "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+							
 							User user = new User(preliminary_jsonresponse.getString("screen_name"), "twitter_handle");
 							if(!user.isValid())
 							{
@@ -562,6 +568,10 @@ public class Endpoint extends HttpServlet {
 							{	
 								// at this point the user has been sent to facebook for permission. The response came back with a code.
 								// Now we need to get and store the user's access_token
+								
+								SimpleEmailer se = new SimpleEmailer();
+								se.sendMail("Continuing FB authentication (gFBAccTokFromAuthCode) for twitter_handle=" + twitter_handle, "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+								
 								JSONObject preliminary_jsonresponse = new JSONObject();
 								preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
 								
@@ -594,22 +604,30 @@ public class Endpoint extends HttpServlet {
 											{	
 												jsonresponse.put("response_status", "success");
 												jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
+											
+												se.sendMail("FB authentication successful for twitter_handle=" + twitter_handle, "nt", "cyrus7580@gmail.com", "info@huzon.tv");
 											}
 											else
 											{
 												jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
 												jsonresponse.put("response_status", "error");
+												
+												se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, "encountered error attempting to update the database with the 3 fb values", "cyrus7580@gmail.com", "info@huzon.tv");
 											}
 										}
 										else if(fb_profile_jo != null && fb_profile_jo.has("error"))
 										{
 											jsonresponse.put("message", "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"));
 											jsonresponse.put("response_status", "error");
+											
+											se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"), "cyrus7580@gmail.com", "info@huzon.tv");
 										}
 										else
 										{
 											jsonresponse.put("message", "fb profile didn't have id field");
 											jsonresponse.put("response_status", "error");
+											
+											se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, "fb profile didn't have id field", "cyrus7580@gmail.com", "info@huzon.tv");
 										}
 									}
 									catch(NumberFormatException nfe)
@@ -621,6 +639,8 @@ public class Endpoint extends HttpServlet {
 								else
 								{
 									jsonresponse = preliminary_jsonresponse; // just return the error
+									
+									se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, preliminary_jsonresponse.toString(), "cyrus7580@gmail.com", "info@huzon.tv");
 								}
 							}
 						}
@@ -666,11 +686,17 @@ public class Endpoint extends HttpServlet {
 						}
 						else // twitter creds were OK
 						{
+							
+							SimpleEmailer se = new SimpleEmailer();
+							se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+							
 							// now check to see if top-level FB is linked
 							if(!user.facebookTopLevelIsLinked())
 							{
 								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't get the subaccount (reporter page) information.");
 								jsonresponse.put("response_status", "error");
+								
+								se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Top level was not linked. Not sure how the user got to this point.", "cyrus7580@gmail.com", "info@huzon.tv");
 							}
 							else
 							{
@@ -679,6 +705,8 @@ public class Endpoint extends HttpServlet {
 								{
 									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
 									jsonresponse.put("response_status", "error");
+									
+									se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Error retrieving subaccount information from Facebook.", "cyrus7580@gmail.com", "info@huzon.tv");
 								}
 								else
 								{	
@@ -686,11 +714,15 @@ public class Endpoint extends HttpServlet {
 									{
 										jsonresponse.put("response_status", "success");
 										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found.");
+										
+										se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Successfully pinged facebook, but no subaccounts found.", "cyrus7580@gmail.com", "info@huzon.tv");
 									}
 									else
 									{
 										jsonresponse.put("response_status", "success");
 										jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
+										
+										se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Success. Returned subaccounts to user for selection.", "cyrus7580@gmail.com", "info@huzon.tv");
 									}
 								}
 									
@@ -743,11 +775,13 @@ public class Endpoint extends HttpServlet {
 						}
 						else // twitter creds were OK
 						{
+							SimpleEmailer se = new SimpleEmailer();
 							// now check to see if top-level FB is linked
 							if(!user.facebookTopLevelIsLinked())
 							{
 								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't set the subaccount (reporter page).");
 								jsonresponse.put("response_status", "error");
+								se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Top level not linked. Not sure how user got here.", "cyrus7580@gmail.com", "info@huzon.tv");
 							}
 							else
 							{
@@ -756,6 +790,7 @@ public class Endpoint extends HttpServlet {
 								{
 									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
 									jsonresponse.put("response_status", "error");
+									se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Error retrieving subaccount information from Facebook.", "cyrus7580@gmail.com", "info@huzon.tv");
 								}
 								else
 								{	
@@ -763,6 +798,7 @@ public class Endpoint extends HttpServlet {
 									{
 										jsonresponse.put("response_status", "error");
 										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found. Can't set subaccount.");
+										se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Successfully pinged facebook, but no subaccounts found. Can't set subaccount.", "cyrus7580@gmail.com", "info@huzon.tv");
 									}
 									else
 									{
@@ -779,6 +815,7 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("message", "The specified subaccount id (" + fb_subaccount_id + ") doesn't exist for this user's top-level facebook account.");
 											jsonresponse.put("response_status", "error");
 											jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
+											se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "The specified subaccount id (" + fb_subaccount_id + ") doesn't exist for this user's top-level facebook account.", "cyrus7580@gmail.com", "info@huzon.tv");
 										}
 										else
 										{
@@ -786,11 +823,13 @@ public class Endpoint extends HttpServlet {
 											if(successful)
 											{
 												jsonresponse.put("response_status", "success");
+												se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Success. Subaccount set.", "cyrus7580@gmail.com", "info@huzon.tv");
 											}
 											else
 											{
 												jsonresponse.put("message", "Pinged facebook, specified subaccount is valid, but ran into error inserting into db.");
 												jsonresponse.put("response_status", "error");
+												se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Pinged facebook, specified subaccount is valid, but ran into error inserting into db.", "cyrus7580@gmail.com", "info@huzon.tv");
 											}
 										}
 									}
@@ -1797,6 +1836,9 @@ public class Endpoint extends HttpServlet {
 		{
 			out.println("{ \"error\": { \"message\": \"JSONException caught in Endpoint\" } }");
 			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}	
 		return;
 	}
@@ -2053,9 +2095,9 @@ public class Endpoint extends HttpServlet {
 								} 
 								
 								if(twitter_triggered)
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
 								if(facebook_triggered)
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "test")); // live, test or silent
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;
