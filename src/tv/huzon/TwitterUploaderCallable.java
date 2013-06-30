@@ -224,6 +224,8 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 										// if either of these fail, alert the admin within the functions themselves
 										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 										boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
+										se.sendMail("TW successful for " + reporter.getDesignation(), "user=" + postinguser.getDesignation() + ". mode=" + mode + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+										
 									}
 									station_object.unlock(uuid, "twitter");		
 								}

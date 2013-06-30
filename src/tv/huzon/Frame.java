@@ -420,7 +420,8 @@ public class Frame implements Comparable<Frame> {
 		long lastframe_ts = 0L;
 		
 		// loop until the last frame is within 2.5 - 3.5 seconds from the current frame's timestamp (failing after 7 tries) 
-		while((numchecks == 0  || !((lastframe_ts >= (getTimestampInMillis() + 2500)) && (lastframe_ts <= (getTimestampInMillis() + 3500)))) && numchecks < 7) // do up to 7 loops at 500ms sec each (i.e. > 3.5 seconds) 
+		int looplimit = 10;
+		while((numchecks == 0  || !((lastframe_ts >= (getTimestampInMillis() + 2500)) && (lastframe_ts <= (getTimestampInMillis() + 3500)))) && numchecks < looplimit) // do up to 10 loops at 500ms sec each (i.e. > 5 seconds) 
 		{
 			if(numchecks > 0) // on the first go, immediately look for the frames. After that, sleep for a brief period
 			{
@@ -431,12 +432,12 @@ public class Frame implements Comparable<Frame> {
 			frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
 			Frame lastframe = frames_ts.last();
 			lastframe_ts = lastframe.getTimestampInMillis();
-			//debug = "numframes=" + frames_ts.size() + " and last=" + lastframe_ts + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500 + " numchecks=" + numchecks);
-		//	(new Platform()).addMessageToLog("get2x2: Reached end of loop without satisfying future frame condition. Returning null. " + debug);
+			//debug = "numchecks=" + numchecks + " numframes=" + frames_ts.size() + " and last=" + lastframe_ts + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500 + " numchecks=" + numchecks);
+		 	//(new Platform()).addMessageToLog("get2x2: Looping, looking to satisfy condition. " + debug);
 			numchecks++;
 		}
 		
-		if(numchecks == 7)
+		if(numchecks == looplimit && !((lastframe_ts >= (getTimestampInMillis() + 2500)) && (lastframe_ts <= (getTimestampInMillis() + 3500)))) // if we hit the loop limit and STILL aren't within the target area, we failed. 
 		{
 			debug = "numframes=" + frames_ts.size() + " and last=" + lastframe_ts + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500);
 			(new Platform()).addMessageToLog("get2x2: Reached end of loop without satisfying future frame condition. Returning null. " + debug);
