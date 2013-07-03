@@ -181,7 +181,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 									Twitter twitter = new Twitter();
 									Platform p = new Platform();
 
-									long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), frame2upload.getURLString());
+									long redirect_id = p.createAlertInDB(station_object, "twitter", reporter.getDesignation(), frame2upload.getURLString(), postinguser);
 									String message = station_object.getMessage("twitter", frame2upload.getTimestampInMillis(), redirect_id, reporter);
 									
 									System.out.println("TwitterUploaderCallable.call(): posting image to admin twitter account.");

@@ -60,7 +60,6 @@ public class Station implements java.lang.Comparable<Station> {
 		Statement stmt = null;
 		try
 		{
-			
 			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE call_letters='" + inc_call_letters + "'");

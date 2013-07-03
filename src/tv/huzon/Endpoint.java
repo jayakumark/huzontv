@@ -370,7 +370,7 @@ public class Endpoint extends HttpServlet {
 					Twitter twitter = new Twitter();
 					jsonresponse = twitter.startTwitterAuthentication();
 					SimpleEmailer se = new SimpleEmailer();
-					se.sendMail("Someone started Twitter authentication", "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+					(new Platform()).addMessageToLog("Someone started Twitter authentication");
 				}
 				else if (method.equals("getTwitterAccessTokenFromAuthorizationCode"))
 				{
@@ -402,7 +402,7 @@ public class Endpoint extends HttpServlet {
 						if(preliminary_jsonresponse.getString("response_status").equals("success"))
 						{
 							SimpleEmailer se = new SimpleEmailer();
-							se.sendMail("Continuing TW authentication (gTwAuthTokFromAccCode) for " + preliminary_jsonresponse.getString("screen_name"), "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+							(new Platform()).addMessageToLog("Continuing TW authentication (gTwAuthTokFromAccCode) for " + preliminary_jsonresponse.getString("screen_name"));
 							
 							User user = new User(preliminary_jsonresponse.getString("screen_name"), "twitter_handle");
 							if(!user.isValid())
@@ -453,16 +453,22 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please connect your Twitter and huzon.tv accounts.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							SimpleEmailer se = new SimpleEmailer();
+							(new Platform()).addMessageToLog("getSelf called (and failed due to lack of credentials for) " + twitter_handle);
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid. Please reconnect your Twitter and huzon.tv accounts.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							SimpleEmailer se = new SimpleEmailer();
+							(new Platform()).addMessageToLog("getSelf called (and failed due to non-matching credentials for) " + twitter_handle);
 						}
 						else // twitter creds were OK
 						{
 							jsonresponse.put("response_status", "success");
+							SimpleEmailer se = new SimpleEmailer();
+							(new Platform()).addMessageToLog("getSelf called (and was successful for) " + twitter_handle);
 							System.out.println("Endpoint.getUser(): getting user for twitter_handle=" + twitter_handle + "... " + user.getJSONObject());
 							jsonresponse.put("user_jo", user.getJSONObject());
 						}
@@ -535,11 +541,13 @@ public class Endpoint extends HttpServlet {
 					{
 						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode twitter_handle not provided to method");
 					}
 					else if(twitter_access_token == null)
 					{
 						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " twitter_access_token not provided to method");
 					}
 					else
 					{	
@@ -549,18 +557,21 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "Invalid user.");
 							jsonresponse.put("response_status", "error");
+							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " invalid user");
 						}
 						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
 						{
 							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " no twitter creds");
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " twitter creds didn't match");
 						}
 						else // twitter creds were OK
 						{
@@ -569,23 +580,18 @@ public class Endpoint extends HttpServlet {
 							{
 								jsonresponse.put("message", "This method requires a facebook_code value.");
 								jsonresponse.put("response_status", "error");
+								(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " no fb code");
 							}
 							else
 							{	
 								// at this point the user has been sent to facebook for permission. The response came back with a code.
 								// Now we need to get and store the user's access_token
-								
-								SimpleEmailer se = new SimpleEmailer();
-								se.sendMail("Continuing FB authentication (gFBAccTokFromAuthCode) for twitter_handle=" + twitter_handle, "nt", "cyrus7580@gmail.com", "info@huzon.tv");
-								
 								JSONObject preliminary_jsonresponse = new JSONObject();
 								preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
 								
 								if(preliminary_jsonresponse.getString("response_status").equals("success"))
 								{
-									System.out.println("Endpoint.getFacebookAccessTokenFromAuthorizationCode(): " + preliminary_jsonresponse.getString("access_token"));
 									JSONObject fb_profile_jo = user.getProfileFromFacebook(preliminary_jsonresponse.getString("access_token"));
-									System.out.println("Endpoint.getFacebookAccessTokenFromAuthorizationCode(): " + fb_profile_jo);
 									long fb_uid = 0L;
 									try
 									{
@@ -610,43 +616,39 @@ public class Endpoint extends HttpServlet {
 											{	
 												jsonresponse.put("response_status", "success");
 												jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
-											
-												se.sendMail("FB authentication successful for twitter_handle=" + twitter_handle, "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+												(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " success");
 											}
 											else
 											{
 												jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
 												jsonresponse.put("response_status", "error");
-												
-												se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, "encountered error attempting to update the database with the 3 fb values", "cyrus7580@gmail.com", "info@huzon.tv");
+												(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " couldn't update db with 3 fb values");
 											}
 										}
 										else if(fb_profile_jo != null && fb_profile_jo.has("error"))
 										{
 											jsonresponse.put("message", "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"));
 											jsonresponse.put("response_status", "error");
-											
-											se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"), "cyrus7580@gmail.com", "info@huzon.tv");
+											(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " getting profile from FB produced an error" + fb_profile_jo.getJSONObject("error").getString("message"));
 										}
 										else
 										{
 											jsonresponse.put("message", "fb profile didn't have id field");
 											jsonresponse.put("response_status", "error");
-											
-											se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, "fb profile didn't have id field", "cyrus7580@gmail.com", "info@huzon.tv");
+											(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " fb profile didn't have id field");
 										}
 									}
 									catch(NumberFormatException nfe)
 									{
 										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
 										jsonresponse.put("response_status", "error");
+										(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " number format exception");
 									}
 								}
 								else
 								{
 									jsonresponse = preliminary_jsonresponse; // just return the error
-									
-									se.sendMail("FB authentication unsuccessful for twitter_handle=" + twitter_handle, preliminary_jsonresponse.toString(), "cyrus7580@gmail.com", "info@huzon.tv");
+									(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " preliminary response was erroneous");
 								}
 							}
 						}
@@ -663,11 +665,13 @@ public class Endpoint extends HttpServlet {
 					{
 						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook twitter_handle not provided to method");
 					}
 					else if(twitter_access_token == null)
 					{
 						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " twitter_access_token not provided to method");
 					}
 					else
 					{	
@@ -677,32 +681,34 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "Invalid user.");
 							jsonresponse.put("response_status", "error");
+							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " invalid user");
 						}
 						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
 						{
 							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " twitter creds not in db");
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " twitter creds were invalid");
 						}
 						else // twitter creds were OK
 						{
 							
 							SimpleEmailer se = new SimpleEmailer();
-							se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "nt", "cyrus7580@gmail.com", "info@huzon.tv");
+							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " ");
 							
 							// now check to see if top-level FB is linked
 							if(!user.facebookTopLevelIsLinked())
 							{
 								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't get the subaccount (reporter page) information.");
 								jsonresponse.put("response_status", "error");
-								
-								se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Top level was not linked. Not sure how the user got to this point.", "cyrus7580@gmail.com", "info@huzon.tv");
+								(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " top level fb not linked");
 							}
 							else
 							{
@@ -711,8 +717,7 @@ public class Endpoint extends HttpServlet {
 								{
 									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
 									jsonresponse.put("response_status", "error");
-									
-									se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Error retrieving subaccount information from Facebook.", "cyrus7580@gmail.com", "info@huzon.tv");
+									(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " error retrieving from fb");
 								}
 								else
 								{	
@@ -720,15 +725,13 @@ public class Endpoint extends HttpServlet {
 									{
 										jsonresponse.put("response_status", "success");
 										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found.");
-										
-										se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Successfully pinged facebook, but no subaccounts found.", "cyrus7580@gmail.com", "info@huzon.tv");
+										(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " got from fb, no subaccounts found");
 									}
 									else
 									{
 										jsonresponse.put("response_status", "success");
 										jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
-										
-										se.sendMail("Getting FB subaccount info for for designation=" + user.getDesignation(), "Success. Returned subaccounts to user for selection.", "cyrus7580@gmail.com", "info@huzon.tv");
+										(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " success getting subaccounts");
 									}
 								}
 									
@@ -747,16 +750,19 @@ public class Endpoint extends HttpServlet {
 					{
 						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo no twitter_handle supplied to method");
 					}
 					else if(twitter_access_token == null)
 					{
 						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no twitter_access_token supplied to method ");
 					}
 					else if(fb_subaccount_id == null)
 					{
 						jsonresponse.put("message", "A fb_subaccount_id value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no fb_subaccount_id supplied to method");
 					}
 					else
 					{	
@@ -766,18 +772,21 @@ public class Endpoint extends HttpServlet {
 						{
 							jsonresponse.put("message", "Invalid user.");
 							jsonresponse.put("response_status", "error");
+							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " user was not valid");
 						}
 						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
 						{
 							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no credentials");
 						}
 						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
 						{
 							jsonresponse.put("message", "The twitter credentials provided were invalid.");
 							jsonresponse.put("response_status", "error");
 							jsonresponse.put("error_code", "07734");
+							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " credentials didn't match what is/was in db");
 						}
 						else // twitter creds were OK
 						{
@@ -787,7 +796,7 @@ public class Endpoint extends HttpServlet {
 							{
 								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't set the subaccount (reporter page).");
 								jsonresponse.put("response_status", "error");
-								se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Top level not linked. Not sure how user got here.", "cyrus7580@gmail.com", "info@huzon.tv");
+								(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " top-level account is not linked. can't set subaccount");
 							}
 							else
 							{
@@ -796,7 +805,7 @@ public class Endpoint extends HttpServlet {
 								{
 									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
 									jsonresponse.put("response_status", "error");
-									se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Error retrieving subaccount information from Facebook.", "cyrus7580@gmail.com", "info@huzon.tv");
+									(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " error retrieving subaccount info from facebook");
 								}
 								else
 								{	
@@ -804,7 +813,7 @@ public class Endpoint extends HttpServlet {
 									{
 										jsonresponse.put("response_status", "error");
 										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found. Can't set subaccount.");
-										se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Successfully pinged facebook, but no subaccounts found. Can't set subaccount.", "cyrus7580@gmail.com", "info@huzon.tv");
+										(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " got info from fb but no subaccounts found");
 									}
 									else
 									{
@@ -821,7 +830,7 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("message", "The specified subaccount id (" + fb_subaccount_id + ") doesn't exist for this user's top-level facebook account.");
 											jsonresponse.put("response_status", "error");
 											jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
-											se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "The specified subaccount id (" + fb_subaccount_id + ") doesn't exist for this user's top-level facebook account.", "cyrus7580@gmail.com", "info@huzon.tv");
+											(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " the subaccount id provided to this method wasn't found in this user's facebook subaccounts");
 										}
 										else
 										{
@@ -829,13 +838,13 @@ public class Endpoint extends HttpServlet {
 											if(successful)
 											{
 												jsonresponse.put("response_status", "success");
-												se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Success. Subaccount set.", "cyrus7580@gmail.com", "info@huzon.tv");
+												(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " success setting fb subaccount id name and access token");
 											}
 											else
 											{
 												jsonresponse.put("message", "Pinged facebook, specified subaccount is valid, but ran into error inserting into db.");
 												jsonresponse.put("response_status", "error");
-												se.sendMail("Setting FB subaccount info for for designation=" + user.getDesignation(), "Pinged facebook, specified subaccount is valid, but ran into error inserting into db.", "cyrus7580@gmail.com", "info@huzon.tv");
+												(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " Pinged facebook, specified subaccount is valid, but ran into error inserting into db.");
 											}
 										}
 									}
@@ -1500,14 +1509,14 @@ public class Endpoint extends HttpServlet {
 						}
 					}
 				}
-				else if (method.equals("deleteAlert"))
+				else if (method.equals("deleteSocialItem"))
 				{	
-					System.out.println("Endpoint begin deleteAlert");
+					System.out.println("Endpoint begin deleteSocialItem");
 					String twitter_handle = request.getParameter("twitter_handle");
 					String twitter_access_token = request.getParameter("twitter_access_token");
-					String social_type = request.getParameter("social_type");
-					String designation = request.getParameter("designation");
-					String id = request.getParameter("id");
+					//String social_type = request.getParameter("social_type");
+					//String designation = request.getParameter("designation");
+					String id = request.getParameter("id"); // this is the huzon.tv ID. NOT the social item ID
 					if(twitter_handle == null)
 					{
 						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
@@ -1516,16 +1525,6 @@ public class Endpoint extends HttpServlet {
 					else if(twitter_access_token == null)
 					{
 						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(social_type == null)
-					{
-						jsonresponse.put("message", "A social_type value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "A designation value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
 					else if(id == null)
@@ -1558,39 +1557,16 @@ public class Endpoint extends HttpServlet {
 						{
 							if(user.isGlobalAdmin())
 							{
-								User target_user = new User(designation, "designation");
-								if(social_type.equals("facebook"))
+								Alert alert = new Alert(Long.parseLong(id));
+								boolean deletionsuccessful = alert.deleteSocialItem();
+								if(deletionsuccessful)
 								{
-									boolean successful = target_user.deleteFacebookPost(id);
-									if(successful)
-									{
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("response_from_facebook", "true");
-									}
-									else
-									{
-										jsonresponse.put("message", "Error. Could not delete from facebook. Unknown error. Try using graph api explorer instead.");
-										jsonresponse.put("response_status", "error");
-									}
-								}
-								else if(social_type.equals("twitter"))
-								{
-									if(!user.getTwitterAccessToken().isEmpty() && !user.getTwitterAccessTokenSecret().isEmpty())
-									{	
-										Twitter twitter = new Twitter();
-										JSONObject response_from_twitter = twitter.deleteStatus(target_user.getTwitterAccessToken(), target_user.getTwitterAccessTokenSecret(), id);
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("response_from_twitter", response_from_twitter);
-									}
-									else
-									{
-										jsonresponse.put("message", "Error. Could not get user twitter access token and secret");
-										jsonresponse.put("response_status", "error");
-									}
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("social_response", true);
 								}
 								else
 								{
-									jsonresponse.put("message", "Error deleting alert. social_type must be twitter or facebook.");
+									jsonresponse.put("message", "Error. Could not delete from the social service.");
 									jsonresponse.put("response_status", "error");
 								}
 							}
@@ -1820,7 +1796,7 @@ public class Endpoint extends HttpServlet {
 							if(user.isGlobalAdmin())
 							{
 								Platform p = new Platform();
-								jsonresponse.put("alerts_ja",p.getMostRecentAlerts(8));
+								jsonresponse.put("alerts_ja",p.getMostRecentAlerts(24));
 								jsonresponse.put("response_status", "success");
 							}
 							else
@@ -1830,7 +1806,14 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 					}	
-				} 
+				}
+				else if (method.equals("getAlertMode"))
+				{	
+					Platform p = new Platform();
+					String value = p.getAlertMode();
+					jsonresponse.put("response_status", "success");
+					jsonresponse.put("alert_mode", value);
+				}
 			}
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
@@ -1842,10 +1825,7 @@ public class Endpoint extends HttpServlet {
 		{
 			out.println("{ \"error\": { \"message\": \"JSONException caught in Endpoint\" } }");
 			System.out.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
-		} catch (MessagingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
+		} 
 		return;
 	}
 	
@@ -2029,13 +2009,18 @@ public class Endpoint extends HttpServlet {
 						User reporter = new User(designation_that_passed_ma_thresh, "designation");
 						
 						// prelim check: If reporter within (FB window or FB inactive) && (within TW window or TW inactive), then skip everything. Saves CPU avoiding single check
-						if((reporter.isWithinFacebookWindow(frame_ts, simulation) || !reporter.isFacebookActive()) && 
-								reporter.isWithinTwitterWindow(frame_ts,simulation) || !reporter.isTwitterActive())
+						if(
+								(reporter.isWithinFacebookWindow(frame_ts, simulation) || !reporter.isFacebookActive()) && 
+								(reporter.isWithinTwitterWindow(frame_ts,simulation) || !reporter.isTwitterActive())
+						  )
 						{	
 							// twitter and facebook triggers stay false
-							//System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within window or inactive on both FB & TW.");
+							/*(new Platform()).addMessageToLog("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within window or inactive on both FB & TW." +
+									" inFBWindow=" +	reporter.isWithinFacebookWindow(frame_ts, simulation) +
+									" FBActive=" +	reporter.isFacebookActive() +
+									" inTWWindow=" +	reporter.isWithinTwitterWindow(frame_ts,simulation) +
+									" TWActive=" +	reporter.isTwitterActive());*/
 						}
-						
 						else
 						{	
 							//System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
@@ -2101,9 +2086,9 @@ public class Endpoint extends HttpServlet {
 								} 
 								
 								if(twitter_triggered)
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
+									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
 								if(facebook_triggered)
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, "live")); // live, test or silent
+									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;
@@ -2226,7 +2211,7 @@ public class Endpoint extends HttpServlet {
 					 }
 				}
 				//String longlived_access_token = getLongLivedFacebookAccessToken(access_token);
-				//se.sendMail("Attempted to get long-lived FB access token", "previous token=" + access_token + "\nLL token=" + longlived_access_token + "\n\nSubaccount tokens gotten with this LL access token should be non-expiring.\n\nresponse from fb original access token request (not LL)=" + text, "cyrus7580@gmail.com", "info@huzon.tv");
+				//(new Platform()).addMessageToLog("Attempted to get long-lived FB access token", "previous token=" + access_token + "\nLL token=" + longlived_access_token + "\n\nSubaccount tokens gotten with this LL access token should be non-expiring.\n\nresponse from fb original access token request (not LL)=" + text, "cyrus7580@gmail.com", "info@huzon.tv");
 				jsonresponse.put("access_token", access_token);
 				jsonresponse.put("expires", expires);
 			} catch (ClientProtocolException e) {

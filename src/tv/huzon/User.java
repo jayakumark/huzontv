@@ -943,31 +943,7 @@ public class User implements java.lang.Comparable<User> {
 		return false;
 	}
 	
-	// FIXME can't return boolean. The deletion either was successful or unsuccessful, but if unsuccessful, we have to know WHY in order to take further action
-	public boolean deleteFacebookPost(String item_id)
-	{
-		 boolean successful = false;
-		try {
-			HttpClient httpClient = new DefaultHttpClient();
-			HttpDelete hd = new HttpDelete("https://graph.facebook.com/" + item_id + "?access_token=" + getFacebookSubAccount().getString("facebook_page_access_token"));
-			HttpResponse response = httpClient.execute(hd);
-			int statusCode = response.getStatusLine().getStatusCode();
-	        successful = statusCode == 200 ? true : false;
-			//String responseBody = EntityUtils.toString(response.getEntity());
-			//System.out.println("Endpoint.deleteFacebookPost(): responsebody=" + responseBody);
-			//response_from_facebook = new JSONObject(responseBody);
-		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return successful;
-	}
+	
 	
 	
 	public int compareTo(User o) // this sorts by designation alphabetically

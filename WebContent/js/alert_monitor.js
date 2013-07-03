@@ -169,17 +169,17 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		var alerts_ja = data.alerts_ja;
 	        		var mds = "";
 	        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
-	        		mds = mds + "	<tr>";
+	        		/*mds = mds + "	<tr>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\">";
 	        		mds = mds + "			Alert";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\">";
-	        		mds = mds + "			Time<br>Designation<br>Station<br>Type";
+	        		mds = mds + "			Time<br>Designation<br>Station<br>Type<br>Created by";
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\">";
 	        		mds = mds + "			Delete?";
 	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
+	        		mds = mds + "	</tr>";*/
 	        		for(var x = 0; x < alerts_ja.length; x++)
 	        		{	
 	        			mds = mds + "	<tr>";
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        		mds = mds + "			<img src=\"" + alerts_ja[x].image_url + "\" style=\"width:400px;height:225px\">";
 		        		mds = mds + "		</td>";
 		        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
-		        		mds = mds + "			" + alerts_ja[x].creation_timestamp + "<br>" +  alerts_ja[x].designation + "<br>" + alerts_ja[x].station + "<br>" + alerts_ja[x].social_type;
+		        		mds = mds + "			" + alerts_ja[x].creation_timestamp + "<br>" +  alerts_ja[x].designation + "<br>" + alerts_ja[x].station + "<br>" + alerts_ja[x].social_type + "<br>" + alerts_ja[x].created_by;;
 		        		mds = mds + "		</td>";
 		        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
 		        		mds = mds + "			<a href=\"#\" id=\"delete_link_" + x + "\">DELETE</a>";
@@ -200,14 +200,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	        		{	
 	        			$("#delete_link_" + x).click({value1: x},
 	        					function (event) {
-		        					alert("deleting index=" + event.data.value1);
+		        					//alert("deleting index=" + event.data.value1);
 		        					$.ajax({
 		        						type: 'GET',
 		        						url: endpoint,
 		        						data: {
-		        				            method: "deleteAlert",
-		        				            designation: alerts_ja[event.data.value1].designation,
-		        				            social_type:  alerts_ja[event.data.value1].social_type,           
+		        				            method: "deleteSocialItem",
 		        				            id: alerts_ja[event.data.value1].id, 
 		        				            twitter_handle: twitter_handle,
 		        				            twitter_access_token: twitter_access_token
@@ -219,8 +217,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		        				        		$("#message_div").html("error message=" + data.message);
 		        				        	else
 		        				        	{
-		        				        		rds = JSON.stringify(data);
-		        				        		$("#message_div").html(rds);
+		        				        		if(data.social_response === true)
+		        				        			window.location.reload();
 		        				        	}
 		        				        }
 		        				        ,

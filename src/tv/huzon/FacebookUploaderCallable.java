@@ -187,7 +187,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 								{	
 							
 									Platform p = new Platform();
-									long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), frame2upload.getURLString());
+									long redirect_id = p.createAlertInDB(station_object, "facebook", reporter.getDesignation(), frame2upload.getURLString(), postinguser);
 									String message = station_object.getMessage("facebook", frame2upload.getTimestampInMillis(), redirect_id, reporter);
 
 									Facebook facebook = new FacebookFactory().getInstance();

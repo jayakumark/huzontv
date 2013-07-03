@@ -501,6 +501,38 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "		</td>";
 	fds = fds + "	</tr>";
 	
+	fds = fds + "	<tr>";
+	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
+	fds = fds + "						<b>Function 9:</b> Reset PRODUCTION alert timers";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
+	fds = fds + "   					<input id=\"function9_go_button\" type=button value=\"GO\">";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "			</table>";
+	fds = fds + "		</td>";
+	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
+	fds = fds + "			<table style=\"border-spacing:3px\">";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
+	fds = fds + "						<b>Function 10:</b> Reset TEST alert timers";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
+	fds = fds + "   					<input id=\"function10_go_button\" type=button value=\"GO\">";
+	fds = fds + "					</td>";
+	fds = fds + "				</tr>";
+	fds = fds + "			</table>";
+	fds = fds + "		</td>";
+	fds = fds + "		</td>";
+	fds = fds + "	</tr>";
+	
 	fds = fds + "</table>";
 	$("#functions_div").html(fds);
 	
@@ -1111,6 +1143,74 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            designation: $('#function8_designation_select').val(),
 				            social_type: $('#function8_social_type_input').val(),             
 				            id: $('#function8_id_input').val(),
+				            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
+						},
+				        dataType: 'json',
+				        async: false,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error message=" + data.message);
+				        	else
+				        	{
+				        		rds = JSON.stringify(data);
+				        		$("#results_div").html(rds);
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				return;
+			});
+	
+	$("#function9_go_button").click(
+			function () {
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "resetProductionAlertTimers",
+				            station: station,
+				            twitter_handle: twitter_handle,
+				            twitter_access_token: twitter_access_token
+						},
+				        dataType: 'json',
+				        async: false,
+				        success: function (data, status) {
+				        	if (data.response_status == "error")
+				        		$("#results_div").html("error message=" + data.message);
+				        	else
+				        	{
+				        		rds = JSON.stringify(data);
+				        		$("#results_div").html(rds);
+				        	}
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#results_div").html("ajax error");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+				return;
+			});
+	
+	$("#function10_go_button").click(
+			function () {
+				$("#results_div").html("");
+				$("#chart1").html("");
+				var rds = "";
+				$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "resetTestAlertTimers",
+				            station: station,
 				            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
 						},

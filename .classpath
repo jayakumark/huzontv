@@ -19,5 +19,7 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/java-aws-mturk.jar"/>
+	<classpathentry kind="lib" path="/home/cyrus/Desktop/libraries/aws-mturk-wsdl.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

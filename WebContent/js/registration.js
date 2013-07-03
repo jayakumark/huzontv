@@ -252,7 +252,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
 	        	        	else if(data.response_status == "success")
 	        	        	{
-	        	        		if(data.valid == true)
+	        	        		//alert(JSON.stringify(data));
+	        	        		if(data.valid === true)
 	        	        		{
 	        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
 	        	        			fb_toplevel_valid = true;
@@ -288,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	        	        	else if(data.response_status == "success")
 	        	        	{
 	        	        		var valid_page_id = "";
-	        	        		if(data.valid == true)
+	        	        		if(data.valid === true)
 	        	        		{
 	        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
 	        	        			fb_page_valid = true;
@@ -298,12 +299,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	        	        		}
 	        	        		else
 	        	        		{
-	        	        			if(fb_toplevel_valid)
+	        	        			if(fb_toplevel_valid === true)
 	        	        				mds = mds + "<span style=\"color:red\">NO</span> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> select a page below <br>";
 	        	        			else
-	        	        			{
 	        	        				mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
-	        	        			}
 	        	        		}
 
 	        	        		// in either case...
@@ -319,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
         					        dataType: 'json',
         					        async: false,
         					        success: function (data, status) {
-        					        	if (data.response_status == "error")
+        					        	if (data.response_status === "error")
         					        	{
         					        		// This is ok. Probably just means the user has not linked their top-level account yet. Fail silently
         					        	}
@@ -330,7 +329,9 @@ document.addEventListener('DOMContentLoaded', function () {
         					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
         					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
         					        		{
-        					        			if(fb_page_valid && fb_subaccounts_ja[x].id == valid_page_id) // this is the checked option
+        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
+        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + (fb_subaccounts_ja[x].id == valid_page_id));
+        					        			if(fb_page_valid === true && (fb_subaccounts_ja[x].id == valid_page_id)) // this is the checked option
         					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
         					        			else
         					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";

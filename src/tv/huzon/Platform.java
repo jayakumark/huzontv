@@ -1,5 +1,6 @@
 package tv.huzon;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -12,6 +13,12 @@ import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
@@ -20,10 +27,14 @@ import com.amazonaws.util.json.JSONObject;
 public class Platform {
 
 	private TreeSet<Station> stations;
+	String dbName = System.getProperty("RDS_DB_NAME"); 
+	String userName = System.getProperty("RDS_USERNAME"); 
+	String password = System.getProperty("RDS_PASSWORD"); 
+	String hostname = System.getProperty("RDS_HOSTNAME");
+	String port = System.getProperty("RDS_PORT");
 	
 	public Platform()
 	{
-		System.err.println("Platform init()");
 		try {
 		        Class.forName("com.mysql.jdbc.Driver");
 		} catch (ClassNotFoundException e) {
@@ -33,13 +44,47 @@ public class Platform {
 		stations = null; 
 	}
 
+	public String getAlertMode()
+	{
+		String returnstring = null;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='alert_mode'");
+			if(rs.next())
+				returnstring = rs.getString("v");
+			else
+				addMessageToLog("Platform.getAlertMode: no row found for global_vars key='alert_mode'");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.getAlertMode: message=" +sqle.getMessage());
+		} 
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				addMessageToLog("SQLException in Platform.getAlertMode: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return returnstring;
+	}
+	
 	public void addMessageToLog(String message)
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		Connection con = null;
 		Statement stmt = null;
 		try
@@ -101,11 +146,6 @@ public class Platform {
 	
 	public boolean populateStations()
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		stations = new TreeSet<Station>();
 		ResultSet rs = null;
@@ -113,7 +153,6 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			
 			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT call_letters FROM `stations`");
@@ -130,7 +169,7 @@ public class Platform {
 		}
 		catch(SQLException sqle) 
 		{ 
-			(new Platform()).addMessageToLog("SQLException in Platform.populateStations: message=" +sqle.getMessage());
+			addMessageToLog("SQLException in Platform.populateStations: message=" +sqle.getMessage());
 			sqle.printStackTrace(); 
 		}
 		finally
@@ -176,13 +215,8 @@ public class Platform {
 	
 
 	
-	long createAlertInDB(Station station_object, String social_type, String designation, String image_name)
+	long createAlertInDB(Station station_object, String social_type, String designation, String image_name, User postinguser)
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		long returnval = -1L;
 		ResultSet rs = null;
 		Connection con = null;
@@ -192,11 +226,10 @@ public class Platform {
 			
 			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`) "
-	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "')");
-			stmt.executeUpdate(
-	                    "INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`) "
-	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "')",
+			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`,`created_by`) "
+	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')");
+			stmt.executeUpdate("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`,`created_by`) "
+                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')",
 	                    Statement.RETURN_GENERATED_KEYS);
 			
 		    rs = stmt.getGeneratedKeys();
@@ -213,7 +246,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.createAlertInDB: message=" +sqle.getMessage());
+			addMessageToLog("SQLException in Platform.createAlertInDB: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -224,7 +257,7 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Platform.createAlertInDB: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				addMessageToLog("SQLException in Platform.createAlertInDB: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -232,11 +265,6 @@ public class Platform {
 	
 	boolean updateAlertText(long alert_id_long, String actual_text)
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		ResultSet rs = null;
 		Connection con = null;
@@ -260,7 +288,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.updateAlertText: message=" +sqle.getMessage());
+			addMessageToLog("SQLException in Platform.updateAlertText: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -271,7 +299,7 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database.");
-				(new Platform()).addMessageToLog("SQLException in Platform.updateAlertText: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				addMessageToLog("SQLException in Platform.updateAlertText: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
@@ -279,11 +307,6 @@ public class Platform {
 
 	boolean updateSocialItemID(long alert_id_long, String social_item_id_string)
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		ResultSet rs = null;
 		Connection con = null;
@@ -307,7 +330,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.updateSocialItemID: message=" +sqle.getMessage());
+			addMessageToLog("SQLException in Platform.updateSocialItemID: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -318,19 +341,16 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Platform.updateSocialItemID: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				addMessageToLog("SQLException in Platform.updateSocialItemID: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
 	}
 	
+	
+	
 	JSONArray getMostRecentAlerts(int num_to_get)
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		JSONArray alerts_ja = new JSONArray();
 		ResultSet rs = null;
 		Connection con = null;
@@ -340,7 +360,7 @@ public class Platform {
 			
 			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM alerts ORDER BY creation_timestamp DESC");
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE deletion_timestamp IS NULL ORDER BY creation_timestamp DESC");
 			int x = 0;
 			JSONObject jo;
 			while(rs.next() && x < num_to_get)
@@ -350,6 +370,10 @@ public class Platform {
 				jo.put("designation", rs.getString("designation"));
 				java.util.Date date = rs.getTimestamp("creation_timestamp");
 				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
+				if(rs.getString("created_by").isEmpty())
+					jo.put("created_by", rs.getString("designation"));
+				else
+					jo.put("created_by", rs.getString("created_by"));
 				jo.put("social_type", rs.getString("social_type"));
 				jo.put("station", rs.getString("station"));
 				jo.put("id", rs.getLong("id"));
@@ -363,7 +387,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
+			addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -376,7 +400,7 @@ public class Platform {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return alerts_ja;
@@ -384,11 +408,6 @@ public class Platform {
 
 	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
 	{
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
 		boolean returnval = false;
 		Connection con = null;
 		Statement stmt = null;
@@ -408,7 +427,7 @@ public class Platform {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.putRedirectHitInDB: Error putting redirect hit in db. message=" +sqle.getMessage());
+			addMessageToLog("SQLException in Platform.putRedirectHitInDB: Error putting redirect hit in db. message=" +sqle.getMessage());
 		}
 		finally
 		{
