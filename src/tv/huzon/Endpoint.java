@@ -265,7 +265,11 @@ public class Endpoint extends HttpServlet {
 								Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
 								if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
 								{	
-									JSONObject jo2 = processNewFrame(newframe, simulation);
+									JSONObject jo2 = processNewFrame(newframe, simulation, 
+											(new Platform()).getSingleModifier(), 
+											(new Platform()).getMAModifier(), 
+											(new Platform()).getMAWindow(), 
+											(new Platform()).getNRPST());
 									
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
@@ -291,11 +295,11 @@ public class Endpoint extends HttpServlet {
 									{	
 										if(jsonpostbody.has("designation"))
 										{
-											System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " was specified by the simulator. Returning specialized information in each frame_jo.");
-											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
+											System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " (maw_int=" + jsonpostbody.getInt("maw_int") + ") was specified by the simulator. Returning specialized information in each frame_jo.");
+											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation"), jsonpostbody.getInt("maw_int")));
 										}
 										else
-											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
+											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null, -1));
 									}
 								}
 								else
@@ -1275,6 +1279,7 @@ public class Endpoint extends HttpServlet {
 					String mamodifier = request.getParameter("mamodifier");
 					String mawindow = request.getParameter("mawindow");
 					String awp = request.getParameter("awp");
+					String nrpst = request.getParameter("nrpst"); // number required past single threshold
 					
 					if(twitter_handle == null)
 					{
@@ -1321,6 +1326,11 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("message", "A mawindow value must be supplied to this method.");
 						jsonresponse.put("response_status", "error");
 					}
+					else if(nrpst == null)
+					{
+						jsonresponse.put("message", "A nrpst value must be supplied to this method.");
+						jsonresponse.put("response_status", "error");
+					}
 					else
 					{	
 						// check twitter_handle and twitter_access_token for validity
@@ -1360,8 +1370,9 @@ public class Endpoint extends HttpServlet {
 									int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
 									long begin_long = Long.parseLong(begin);
 									long end_long = Long.parseLong(end);
+									int nrpst_int = (new Integer(request.getParameter("nrpst"))).intValue();
 									System.out.println("Endpoint.getAlertFrames(): passed validation gauntlet, moving to getAlertFrames() function");
-									JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, awp_in_sec);
+									JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, awp_in_sec, nrpst_int);
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("alert_frames_ja", alert_frames_ja);
 								}
@@ -1829,9 +1840,7 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
-	// this is hardcoded with a 5 second moving average window, a .67 moving average threshold and a 1 single frame threshold
-	
-	JSONObject processNewFrame(Frame newframe, boolean simulation)
+	JSONObject processNewFrame(Frame newframe, boolean simulation, double singlemodifier, double mamodifier, int maw_int, int nrpst)
 	{
 		JSONObject return_jo = new JSONObject();
 		// return_jo form:
@@ -1897,10 +1906,9 @@ public class Endpoint extends HttpServlet {
 		//System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
 		try
 		{
-			
 			// get all frames over the moving average window backward from this timestamp
 			Station station_object = new Station(newframe.getStation());
-			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-5000, frame_ts, null, 0);
+			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-(maw_int * 1000), frame_ts, null, 0);
 			int num_frames_in_window = window_frames.size();
 			//System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
 			
@@ -1916,7 +1924,7 @@ public class Endpoint extends HttpServlet {
 			 */
 			boolean a_designation_passed_ma_thresh_and_was_highest = false;
 			
-			if(num_frames_in_window < 5)  // all response boolean values remain false and return
+			if(num_frames_in_window < maw_int)  // all response boolean values remain false and return
 			{
 				alert_triggered_failure_message = "not enough frames in window";
 				//System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
@@ -1969,8 +1977,8 @@ public class Endpoint extends HttpServlet {
 					if(reporter_moving_averages[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
 					{	
 						reporter_homogeneity = (new User(reporter_designations[x],"designation")).getHomogeneity();
-						reporter_moving_average_thresholds[x] = .67 * reporter_homogeneity;
-						reporter_single_thresholds[x] = reporter_homogeneity;
+						reporter_moving_average_thresholds[x] = mamodifier * reporter_homogeneity;
+						reporter_single_thresholds[x] = singlemodifier * reporter_homogeneity;
 					}
 					else
 					{
@@ -1994,8 +2002,9 @@ public class Endpoint extends HttpServlet {
 				
 				
 				boolean designation_passed_single_thresh = false;
+				int num_frames_that_passed_single_thresh = 0;
 				String designation_that_passed_ma_thresh = "";
-				String image_name_of_frame_in_window_that_passed_single_thresh = "";
+				//String image_name_of_frame_in_window_that_passed_single_thresh = "";
 				x = 0;
 				//System.out.println("Endpoint.processNewFrame(): looping reporters to determine if any pass ma thresh");
 				while(x < reporter_designations.length)
@@ -2035,14 +2044,19 @@ public class Endpoint extends HttpServlet {
 							 *                                                                                                                         
 							 *                                                                                                                         
 							 */
-							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-5000, frame_ts, true);
+							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-(maw_int * 1000), frame_ts, true);
+							num_frames_that_passed_single_thresh = 0;
 							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
 							{
 								//System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
 								if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
 								{
-									designation_passed_single_thresh = true;
-									image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
+									num_frames_that_passed_single_thresh++;
+									if(num_frames_that_passed_single_thresh >= nrpst)
+									{
+										designation_passed_single_thresh = true;
+									}
+									//image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
 								}
 							}
 							
@@ -2085,10 +2099,14 @@ public class Endpoint extends HttpServlet {
 									reporter.setLastAlert(frame_ts, "facebook", simulation); // set last alert regardless of credentials or successful posting
 								} 
 								
-								if(twitter_triggered)
-									twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
-								if(facebook_triggered)
-									facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+								if(!simulation)
+								{
+									if(twitter_triggered)
+										twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+									if(facebook_triggered)
+										facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+								}
+								// else if simulation do do not perform any actual twitter or facebook postings.
 								
 								// CHECK THE RESULTS OF THE CALLABLE THREADS
 								JSONObject twittertask_jo = null;

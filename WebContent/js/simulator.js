@@ -338,7 +338,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function3_singlemodifier_input\" value=\"1\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function3_mamodifier_input\" value=\".67\" size=4>";
+	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function3_mamodifier_input\" value=\".8\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "					</td>";
@@ -372,14 +372,14 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function4_singlemodifier_input\" value=\"1.0\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".67\" size=4>";
+	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".8\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function4_mawindow_input\" value=\"5\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	// alert waiting periods should be separated, but this function doesn't actually use one
-	//fds = fds + "						Alert waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"7200\" size=4>";
+	fds = fds + "						NRPST: <input type=\"text\" id=\"function4_nrpst_input\" value=\"2\" size=1>";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
@@ -424,19 +424,22 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=5>";
 	fds = fds + "						<b>Function 6:</b> Simulate Alerts (inclusive)";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
-	//fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	//fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\".1\" size=4> ";
-	//fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130619_230355\"><br>";
+	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function6_singlemodifier_input\" value=\"1.0\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130619_230410\" size=13><br>";
+	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function6_mamodifier_input\" value=\".8\" size=4>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function6_mawindow_input\" value=\"5\" size=4>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						NRPST: <input type=\"text\" id=\"function6_nrpst_input\" value=\"2\" size=1>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Designation: <select id=\"function6_designation_select\">";
@@ -446,6 +449,21 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 		fds = fds + "							<option value=\"" + reporters_ja[a] + "\">" + reporters_ja[a] + "</option>";
 	}	
 	fds = fds + "	</select> ";
+	fds = fds + "					</td>";
+	
+	fds = fds + "				</tr>";
+	fds = fds + "				<tr>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"3600\" size=4> ";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130619_230355\"><br>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130619_230410\" size=13><br>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function6_go_button\" type=button value=\"GO\">";
@@ -781,6 +799,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 
 	$("#function4_go_button").click(
 			function () {
+				alert("function4_go_button clicked");
 				$("#results_div").html("");
 				$("#chart1").html("");
 				var rds = "";
@@ -794,6 +813,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				$.ajax({
 						type: 'GET',
 						url: endpoint,
+						timeout: 600000,
 						data: {
 				            method: "getAlertFrames",
 				            begin: begin,             
@@ -801,6 +821,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            mamodifier: $('#function4_mamodifier_input').val(),
 				            singlemodifier: $('#function4_singlemodifier_input').val(),
 				            mawindow: $('#function4_mawindow_input').val(),
+				            nrpst: $('#function4_nrpst_input').val(), // number required past single threshold
 				            awp:  $('#function4_awp_input').val(),
 				            station: station,
 		    	            twitter_handle: twitter_handle,
@@ -964,6 +985,13 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				var end = d.getTime()/1000;
 				var timestamps_ja = null;
 				var designation = $('#function6_designation_select').val();
+				var singlemodifier = $('#function6_singlemodifier_input').val() * 1;
+				var mamodifier = $('#function6_mamodifier_input').val() * 1;
+				var mawindow = $('#function6_mawindow_input').val() * 1;
+				var nrpst = $('#function6_nrpst_input').val() * 1;
+				
+				//fds = fds + "						Waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"3600\" size=4> ";
+				
 				var dograph = false;
 				var reporter_homogeneity = 0;
 				if(designation !== "none")
@@ -975,7 +1003,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 						data: {
 				            method: "getUser",
 				            designation: designation,
-		    	            twitter_handle: twitter_handle,
+				            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
 						},
 				        dataType: 'json',
@@ -1049,7 +1077,6 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        			timestamps_ja.sort();
 				        			$("#results_div").append("<div>" + data.timestamps_ja.length + " frames in range</div>");
 					        		
-				        			
 				        			var frames_ja = [];
 				        			var length = data.timestamps_ja.length;
 				        			var index = 0;
@@ -1058,14 +1085,14 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 					        			if(index < length)
 					        			{
 					        				if(designation)
-					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, designation);
+					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, designation, mawindow);
 					        				else
-					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, null);
+					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, null, -1);
 					        				//alert(JSON.stringify(currentframe));
 					        				frames_ja.push(currentframe);
 					        				//alert(JSON.stringify(frames_ja));
 					        				if(dograph)
-					        					graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, 1, .67, 5);
+					        					graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, singlemodifier, mamodifier, mawindow);
 					        			}
 					        			index++;
 					        		};
@@ -1338,7 +1365,7 @@ function verifyPageFBCredentials(designation)
 	});
 }
 
-var simulateNewFrame = function(timestamp_in_ms, station, designation){
+function simulateNewFrame(timestamp_in_ms, station, designation, maw_int){
 //function simulateNewFrame(timestamp_in_ms, station) {
 	var rds = "";
 	var frame_to_display = null;
@@ -1349,7 +1376,8 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
 		jsonpostbody = { 
 				timestamp_in_ms: timestamp_in_ms,
 				station: station,
-	            simulation: "true"
+	            simulation: "true",
+	            password: pass
 			};
 	}
 	else
@@ -1359,6 +1387,7 @@ var simulateNewFrame = function(timestamp_in_ms, station, designation){
 				station: station,
 	            simulation: "true",
 	            designation: designation,
+	            maw_int: maw_int,
 	            password: pass
 			};
 	}
@@ -1515,11 +1544,12 @@ function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homo
 	var sum = 0; 
 	var num = 0;
 	var ts = 0;
+	// looping through all frames gathered to graph
 	for(var x = 0; x < frames_ja.length; x++)
 	{
 		scores.push(frames_ja[x].reporters[designation].score_avg);
-		
-		sum = 0;
+		moving_avg.push(frames_ja[x].designation_moving_average);
+		/*sum = 0;
 		num = 0;
 		// loop through all the frames, looking for timestamps in the moving average window in the past
 		ts = frames_ja[x].timestamp_in_ms;
@@ -1527,14 +1557,16 @@ function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homo
 		{
 			// if the timestamp of this frame is within the moving average window x seconds in the past, then add this designation's score
 			// to a running total.
-			if(frames_ja[y].timestamp_in_ms > (ts - (maw_int * 1000)) && frames_ja[y].timestamp_in_ms <= ts)
+			if((frames_ja[y].timestamp_in_ms > (ts - (maw_int * 1000))) && (frames_ja[y].timestamp_in_ms <= ts))
 			{
+				alert(frames_ja[y].timestamp_in_ms + " > " + (ts - (maw_int * 1000)) + " && " + frames_ja[y].timestamp_in_ms + " <= " + ts);
 				sum = sum + frames_ja[y].reporters[designation].score_avg;
 				num++;
 			}
 		}
-		ma = sum / num; // now derive the moving average for this designation
-		moving_avg.push(ma);
+		//alert("pushing sum=" + sum + " / num=" + num + " = ma=" + ma);
+		ma = sum / num; // now derive the moving average for this designation. Sum / number of frames in this window.
+		moving_avg.push(ma);*/
 	}
 	var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
 		axes: {

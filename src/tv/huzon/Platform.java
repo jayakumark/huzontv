@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
@@ -81,6 +82,170 @@ public class Platform {
 			}
 		}  	
 		return returnstring;
+	}
+	
+	public double getSingleModifier()
+	{
+		String returnstring = null;
+		double returndouble = 0.0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='singlemodifier'");
+			if(rs.next())
+				returnstring = rs.getString("v");
+			else
+				addMessageToLog("Platform.getSingleModifier: no row found for global_vars key='singlemodifier'");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.getSingleModifier: message=" +sqle.getMessage());
+		} 
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				addMessageToLog("SQLException in Platform.getSingleModifier: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		returndouble = Double.parseDouble(returnstring);
+		return returndouble;
+	}
+	
+	public double getMAModifier()
+	{
+		String returnstring = null;
+		double returndouble = 0.0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='mamodifier'");
+			if(rs.next())
+				returnstring = rs.getString("v");
+			else
+				addMessageToLog("Platform.getMAModifier: no row found for global_vars key='mamodifier'");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.getMAModifier: message=" +sqle.getMessage());
+		} 
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				addMessageToLog("SQLException in Platform.getMAModifier: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		returndouble = Double.parseDouble(returnstring);
+		return returndouble;
+	}
+	
+	public int getMAWindow()
+	{
+		String returnstring = null;
+		int returnint = 0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='mawindow'");
+			if(rs.next())
+				returnstring = rs.getString("v");
+			else
+				addMessageToLog("Platform.getMAWindow: no row found for global_vars key='mawindow'");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.getMAWindow: message=" +sqle.getMessage());
+		} 
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				addMessageToLog("SQLException in Platform.getMAWindow: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		returnint = Integer.parseInt(returnstring);
+		return returnint;
+	}
+	
+	public int getNRPST() // number required past single threshold
+	{
+		String returnstring = null;
+		int returnint = 0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='nrpst'");
+			if(rs.next())
+				returnstring = rs.getString("v");
+			else
+				addMessageToLog("Platform.getNRPST: no row found for global_vars key='nrpst'");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.getNRPST: message=" +sqle.getMessage());
+		} 
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				addMessageToLog("SQLException in Platform.getNRPST: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		returnint = Integer.parseInt(returnstring);
+		return returnint;
 	}
 	
 	public void addMessageToLog(String message)
@@ -360,7 +525,7 @@ public class Platform {
 			
 			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM alerts WHERE deletion_timestamp IS NULL ORDER BY creation_timestamp DESC");
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE deletion_timestamp IS NULL ORDER BY creation_timestamp DESC LIMIT 0," + num_to_get);
 			int x = 0;
 			JSONObject jo;
 			while(rs.next() && x < num_to_get)
@@ -441,6 +606,101 @@ public class Platform {
 			}
 		}  	
 		return returnval;
+	}
+	
+	TreeSet<Frame> getFramesFromResultSet(ResultSet rs)
+	{
+		TreeSet<Frame> returnframes = new TreeSet<Frame>();
+		try
+		{
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columncount = rsmd.getColumnCount();
+			int reportercount = 0;
+			int x = 1; 
+			//System.out.println("Starting loop through " + columncount + " columns to find how many reporters are there...");
+			String station = "";
+			while(x <= columncount)
+			{
+				if(x == 1)
+					station = rsmd.getTableName(1).substring(rsmd.getTableName(1).indexOf("_") + 1);
+				if(rsmd.getColumnName(x).endsWith("_avg"))
+				{
+					reportercount++;
+				}
+				x++;
+			}
+			//System.out.println("Found " + reportercount + " columns. Initalizing arrays.");
+			//String reporter_designations[] = new String[reportercount];
+			//double reporter_avgs[] = new double[reportercount];
+			//JSONArray reporter_score_arrays[] = new JSONArray[reportercount];
+			//int reporter_nums[] = new int[reportercount];
+			String reporter_designations[] = null;
+			double reporter_avgs[] = null;
+			JSONArray reporter_score_arrays[] = null;
+			int reporter_nums[] = null;
+			rs.beforeFirst();
+			//System.out.println("Starting loop through resultset of frames...");
+			while(rs.next())
+			{
+				reporter_designations = new String[reportercount];
+				reporter_avgs = new double[reportercount];
+				reporter_score_arrays = new JSONArray[reportercount];
+				reporter_nums = new int[reportercount];
+				int reporter_index = 0;
+				x=1; 
+				//System.out.println("Starting loop through " + columncount + " columns to fill reporter arrays...");
+				while(x <= columncount)
+				{
+					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
+					if(rsmd.getColumnName(x).endsWith("_avg"))
+					{
+						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
+						reporter_avgs[reporter_index] = rs.getDouble(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_scores"))
+					{
+						if(rs.getString(x) == null || rs.getString(x).isEmpty())
+							reporter_score_arrays[reporter_index] = new JSONArray();
+						else
+							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
+					}
+					else if(rsmd.getColumnName(x).endsWith("_num"))
+					{
+						reporter_nums[reporter_index] = rs.getInt(x);
+						reporter_index++;
+					}
+					else
+					{
+						//System.out.println("Skipping a non-score-related row.");
+					}
+					x++;
+				}
+				//System.out.println("Adding Frame object to treeset and going to next...");
+				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
+						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
+						reporter_avgs, reporter_score_arrays, reporter_nums));
+				//System.out.println("... frame added");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}  
+		return returnframes;
 	}
 	
 	public boolean isNumeric(String incoming_string) // only works for whole numbers, positive and negative

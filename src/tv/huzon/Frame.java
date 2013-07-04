@@ -25,6 +25,7 @@ public class Frame implements Comparable<Frame> {
 	String url;
 	int frame_rate;
 	String station;
+	Station station_object;
 	String[] reporter_designations;
 	double[] reporter_avgs;
 	//JSONArray[] reporter_score_arrays;
@@ -38,6 +39,12 @@ public class Frame implements Comparable<Frame> {
 	double second_max_ma;
 	
 	
+	String dbName = System.getProperty("RDS_DB_NAME"); 
+	String userName = System.getProperty("RDS_USERNAME"); 
+	String password = System.getProperty("RDS_PASSWORD"); 
+	String hostname = System.getProperty("RDS_HOSTNAME");
+	String port = System.getProperty("RDS_PORT");
+	
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
 			double[] inc_reporter_avgs, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums)
@@ -48,6 +55,7 @@ public class Frame implements Comparable<Frame> {
 		url = inc_url;
 		frame_rate = inc_frame_rate;
 		station = inc_station;
+		station_object = new Station(station);
 		reporter_designations = inc_reporter_designations;
 		reporter_avgs = inc_reporter_avgs;
 		//reporter_score_arrays = inc_reporter_score_arrays;
@@ -59,12 +67,8 @@ public class Frame implements Comparable<Frame> {
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
 		station = inc_station;
-		
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
+		station_object = new Station(station);
+	
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
@@ -205,9 +209,8 @@ public class Frame implements Comparable<Frame> {
 		return 0;
 	}
 	
-	boolean populateMovingAverages(int inc_maw_int)
+	void populateMovingAverages(int inc_maw_int)
 	{
-		//System.out.println("Frame.populateMovingAverages()");
 		max_ma = 0;
 		second_max_ma = 0;
 		max_ma_designation = null;
@@ -215,6 +218,55 @@ public class Frame implements Comparable<Frame> {
 		
 		reporter_moving_avgs = new double[reporter_designations.length];
 		maw_int = inc_maw_int;
+		
+		//System.out.println("Frame.populateMovingAverages(): inc_maw_int=" + maw_int);
+		TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(maw_int * 1000), getTimestampInMillis(), null, 0);
+		int num_frames_in_window = window_frames.size();
+		
+		double[] reporter_totals = new double[reporter_designations.length];
+		
+		//System.out.println("Endpoint.processNewFrame(): looping frames for totals");
+		Iterator<Frame> it = window_frames.iterator();
+		Frame currentframe = null;
+		while(it.hasNext())
+		{
+			currentframe = it.next();
+			int x = 0;
+			while(x < reporter_designations.length)
+			{
+				reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
+				x++;
+			}
+		}
+		
+		// then divide the sum designation_avgs by dividing by the number of frames in the window
+		int x = 0;
+		
+		//System.out.println("Endpoint.processNewFrame(): looping reporters to get avgs from totals");
+		while(x < reporter_totals.length)
+		{
+			reporter_moving_avgs[x] = reporter_totals[x] / num_frames_in_window;
+			if(reporter_moving_avgs[x] > max_ma)
+			{
+				second_max_ma = max_ma;
+				max_ma = reporter_moving_avgs[x];
+				second_max_ma_designation = max_ma_designation;
+				max_ma_designation = reporter_designations[x];
+			}
+			x++;
+		}
+	}
+	
+	/*
+	boolean populateMovingAveragesOld(int inc_maw_int)
+	{
+		max_ma = 0;
+		second_max_ma = 0;
+		max_ma_designation = null;
+		second_max_ma_designation = null;
+		reporter_moving_avgs = new double[reporter_designations.length];
+		maw_int = inc_maw_int;
+		
 		String dbName = System.getProperty("RDS_DB_NAME"); 
 		String userName = System.getProperty("RDS_USERNAME"); 
 		String password = System.getProperty("RDS_PASSWORD"); 
@@ -236,6 +288,8 @@ public class Frame implements Comparable<Frame> {
 			
 			// so what we're doing here is we've got a single frame with a single score above the single thresh.
 			// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
+		
+			
 			
 			rs2.last();
 			int num_frames_in_window = rs2.getRow();
@@ -300,30 +354,29 @@ public class Frame implements Comparable<Frame> {
 				(new Platform()).addMessageToLog("SQLException in Endpoint testFrameForMovingAverage Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}   
-		return returnval; // something went wrong along the way
-	}
+		return returnval; // something went wrong along the way 
+	}*/
 	
 	
-	double getMovingAverage(int inc_maw_int, String current_designation)
+	double getMovingAverage(String designation, int inc_maw_int)
 	{
-		//System.out.println("Frame.getMovingAverage(" + inc_maw_int + "," + current_designation + ")");
+		
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
 		{
-			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
-			if(!successfullypopulated)
-			{
-				System.out.println("******** Moving averages population unsuccessful. returning double value of -1");
-				return -1;
-			}
+			populateMovingAverages(inc_maw_int);
 		}
 			
 		int x = 0;
 		while(x < reporter_designations.length)
 		{
-			if(reporter_designations[x].equals(current_designation))
+			if(reporter_designations[x].equals(designation))
+			{
+				//System.out.println("Frame.getMovingAverage(" + inc_maw_int + "," + designation + ") = " + reporter_moving_avgs[x]);
 				return reporter_moving_avgs[x];
+			}
 			x++;
 		}
+		//System.out.println("Frame.getMovingAverage(" + inc_maw_int + "," + designation + ") = " + " error, returning 0");
 		return 0;
 	}
 		
@@ -332,12 +385,7 @@ public class Frame implements Comparable<Frame> {
 		//System.out.println("Frame.getHighestMovingAverage()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
 		{
-			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
-			if(!successfullypopulated)
-			{
-				System.out.println("******** Moving averages population unsuccessful. returning double value of -1");
-				return -1;
-			}
+			populateMovingAverages(inc_maw_int);
 		}
 		
 		return max_ma;
@@ -348,12 +396,7 @@ public class Frame implements Comparable<Frame> {
 		//System.out.println("Frame.getHighestMovingAverageDesignation()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
 		{
-			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
-			if(!successfullypopulated)
-			{
-				System.out.println("******** Moving averages population unsuccessful. returning null");
-				return null;
-			}
+			populateMovingAverages(inc_maw_int);
 		}
 		
 		return max_ma_designation;
@@ -364,12 +407,7 @@ public class Frame implements Comparable<Frame> {
 		//System.out.println("Frame.getSecondHighestMovingAverage()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
 		{
-			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
-			if(!successfullypopulated)
-			{
-				System.out.println("******** Moving averages population unsuccessful. returning double value of -1");
-				return -1;
-			}
+			populateMovingAverages(inc_maw_int);
 		}
 		
 		return second_max_ma;
@@ -380,38 +418,43 @@ public class Frame implements Comparable<Frame> {
 		//System.out.println("Frame.getSecondHighestMovingAverageDesignation()");
 		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
 		{
-			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
-			if(!successfullypopulated)
-			{
-				System.out.println("******** Moving averages population unsuccessful. returning double value of 0.0");
-				return null;
-			}
+			populateMovingAverages(inc_maw_int);
 		}
 		
 		return second_max_ma_designation;
 	}
 	
-	double getMovingAverageForDesignation(String designation, int inc_maw_int)
+	
+	
+	int getNumFramesInWindowAboveSingleThresh(String designation, int inc_maw_int, double single_thresh)
 	{
-		//System.out.println("Frame.getSecondHighestMovingAverageDesignation()");
-		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+		Station station_object = new Station(station);
+		TreeSet<Frame> frames = station_object.getFrames(timestamp_in_ms - (inc_maw_int * 1000), timestamp_in_ms, designation, 1.0); // FIXME 1.0 as single modifier should not be hardcoded
+		Iterator<Frame> it = frames.iterator();
+		Frame currentframe = null;
+		int returnval = 0;
+		while(it.hasNext())
 		{
-			boolean successfullypopulated = populateMovingAverages(inc_maw_int);
-			if(!successfullypopulated)
-			{
-				System.out.println("******** Moving averages population unsuccessful. returning double value of 0.0");
-				return -1;
-			}
+			currentframe = it.next();
+			if(currentframe.getDesignationScore(designation) > single_thresh)
+				returnval++;
 		}
+		return returnval;
+		
+	}
+	
+	double getDesignationScore(String designation)
+	{
+		// reporter_avgs[] should always be populated. No need to check here.
 		
 		int x = 0;
 		while(x < reporter_designations.length)
 		{
 			if(reporter_designations[x].equals(designation))
-				return reporter_moving_avgs[x];
+				return reporter_avgs[x];
 			x++;
 		}
-		return 0;
+		return -1;
 	}
 	
 	// 
@@ -492,14 +535,14 @@ public class Frame implements Comparable<Frame> {
 	 * 				score_avg: score_avg,
 	 * 				num: num,
 	 * 				moving_average: moving_average,
-	 * 				scores: [ score1, score2, .... score3]
+	 * 				scores: [ score1, score2, .... score3]  // OPTIONAL
 	 * 			},
 	 * 			designation2: {
 	 * 				designation: designation2,
 	 * 				score_avg: score_avg,
 	 * 				num: num,
 	 * 				moving_average: moving_average,
-	 * 				scores: [ score1, score2, .... score3]
+	 * 				scores: [ score1, score2, .... score3] // OPTIONAL
 	 * 			},
 	 * 			...
 	 * 		]
@@ -507,7 +550,7 @@ public class Frame implements Comparable<Frame> {
 	 *
 	 */
 	
-	JSONObject getAsJSONObject(boolean get_score_data, String designation)
+	JSONObject getAsJSONObject(boolean get_score_data, String designation, int maw_int)
 	{
 		JSONObject jo = new JSONObject();
 		try
@@ -520,11 +563,12 @@ public class Frame implements Comparable<Frame> {
 			jo.put("station", station);
 			if(designation != null)
 			{
-				System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " was specified by the simulator. Returning specialized information.");
 				double homogeneity = new User(designation,"designation").getHomogeneity();
+				double des_ma = getMovingAverage(designation, maw_int);
+				System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " (maw_int=" + maw_int + ") was specified by the simulator. Returning specialized information. designation=" + designation + " ma=" + des_ma);
 				jo.put("designation", designation);
 				jo.put("designation_homogeneity", homogeneity);
-				jo.put("designation_moving_average", getMovingAverageForDesignation(designation, 5));
+				jo.put("designation_moving_average", des_ma);
 			}
 			//jo.put("highest_designation", getHighestDesig)
 			if(get_score_data)
