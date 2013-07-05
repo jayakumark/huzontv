@@ -27,12 +27,13 @@ public class Frame implements Comparable<Frame> {
 	String station;
 	Station station_object;
 	String[] reporter_designations;
-	double[] reporter_avgs;
+	double[] reporter_avgs; // FIXME this should be called reporter_scores
 	//JSONArray[] reporter_score_arrays;
 	int[] reporter_nums;
+	//double[] reporter_ma5s;
+	double[] reporter_ma6s;
 	
-	double[] reporter_moving_avgs; // starts out null until populated
-	int maw_int; // since the moving average can be over any window, we have to keep track of the window used to calculate moving averages
+	boolean max_and_second_set;
 	String max_ma_designation;
 	String second_max_ma_designation;
 	double max_ma;
@@ -45,9 +46,13 @@ public class Frame implements Comparable<Frame> {
 	String hostname = System.getProperty("RDS_HOSTNAME");
 	String port = System.getProperty("RDS_PORT");
 	
+	//String connectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + pass word;
+	String connectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
+	
+	
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
-			double[] inc_reporter_avgs, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums)
+			double[] inc_reporter_avgs, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma6s)
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
 		image_name = inc_image_name;
@@ -60,6 +65,9 @@ public class Frame implements Comparable<Frame> {
 		reporter_avgs = inc_reporter_avgs;
 		//reporter_score_arrays = inc_reporter_score_arrays;
 		reporter_nums = inc_reporter_nums;
+		//reporter_ma5s = inc_reporter_ma5s;
+		reporter_ma6s = inc_reporter_ma6s;
+		max_and_second_set = false;
 	}
 	
 	
@@ -68,14 +76,15 @@ public class Frame implements Comparable<Frame> {
 		timestamp_in_ms = inc_timestamp_in_ms;
 		station = inc_station;
 		station_object = new Station(station);
-	
+		max_and_second_set = false;
+		
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
 			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(connectionstring);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
 			
@@ -209,227 +218,107 @@ public class Frame implements Comparable<Frame> {
 		return 0;
 	}
 	
-	void populateMovingAverages(int inc_maw_int)
-	{
-		max_ma = 0;
-		second_max_ma = 0;
-		max_ma_designation = null;
-		second_max_ma_designation = null;
-		
-		reporter_moving_avgs = new double[reporter_designations.length];
-		maw_int = inc_maw_int;
-		
-		//System.out.println("Frame.populateMovingAverages(): inc_maw_int=" + maw_int);
-		TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(maw_int * 1000), getTimestampInMillis(), null, 0);
-		int num_frames_in_window = window_frames.size();
-		
-		double[] reporter_totals = new double[reporter_designations.length];
-		
-		//System.out.println("Endpoint.processNewFrame(): looping frames for totals");
-		Iterator<Frame> it = window_frames.iterator();
-		Frame currentframe = null;
-		while(it.hasNext())
-		{
-			currentframe = it.next();
-			int x = 0;
-			while(x < reporter_designations.length)
-			{
-				reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
-				x++;
-			}
-		}
-		
-		// then divide the sum designation_avgs by dividing by the number of frames in the window
-		int x = 0;
-		
-		//System.out.println("Endpoint.processNewFrame(): looping reporters to get avgs from totals");
-		while(x < reporter_totals.length)
-		{
-			reporter_moving_avgs[x] = reporter_totals[x] / num_frames_in_window;
-			if(reporter_moving_avgs[x] > max_ma)
-			{
-				second_max_ma = max_ma;
-				max_ma = reporter_moving_avgs[x];
-				second_max_ma_designation = max_ma_designation;
-				max_ma_designation = reporter_designations[x];
-			}
-			x++;
-		}
-	}
+	// this function needs to be rewritten to account for the new moving averages colums
 	
-	/*
-	boolean populateMovingAveragesOld(int inc_maw_int)
+	double getMovingAverage6(String designation)
 	{
-		max_ma = 0;
-		second_max_ma = 0;
-		max_ma_designation = null;
-		second_max_ma_designation = null;
-		reporter_moving_avgs = new double[reporter_designations.length];
-		maw_int = inc_maw_int;
-		
-		String dbName = System.getProperty("RDS_DB_NAME"); 
-		String userName = System.getProperty("RDS_USERNAME"); 
-		String password = System.getProperty("RDS_PASSWORD"); 
-		String hostname = System.getProperty("RDS_HOSTNAME");
-		String port = System.getProperty("RDS_PORT");
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs2 = null;
-		double ma_over_window = 0;
-		boolean returnval = false;
-		try
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
-			stmt = con.createStatement();
-			rs2 = stmt.executeQuery("SELECT * FROM frames_" + getStation() + " WHERE (timestamp_in_ms > " + (timestamp_in_ms - maw_int*1000) + " AND timestamp_in_ms <= " + timestamp_in_ms + ")");
-			
-			// 6/12/2013 simplified this function. To see old vers2ion, check github prior to this date.
-			
-			// so what we're doing here is we've got a single frame with a single score above the single thresh.
-			// we want to check the moving average of this frame (going back maw_int*1000 milliseconds) to see if the ma is above its required thresh, too
-		
-			
-			
-			rs2.last();
-			int num_frames_in_window = rs2.getRow();
-			
-			if(num_frames_in_window < maw_int) // only process this frame if there were enough prior frames to warrn
-			{
-				// NOT ENOUGH FRAMES (i.e. less than 1 per second) 
-				reporter_moving_avgs = null;
-				System.out.println("Frame.populateMovingAverages(): not enough frames in this moving average window (" + num_frames_in_window + " < " + maw_int + ")");
-				returnval = false;
-			}
-			else
-			{
-				for(int x = 0; x < reporter_designations.length; x++)
-				{
-					int i = 0; 
-					double total = 0;
-					rs2.beforeFirst();
-					while(rs2.next()) // looping through all the frames in the moving average window before the current frame
-					{
-						total = total + rs2.getDouble(reporter_designations[x] + "_avg"); // the running total of the last maw_int frames
-						i++;
-					}
-					ma_over_window = total / i; // i should = num_frames_in_window
-					reporter_moving_avgs[x] = ma_over_window;
-				}
-
-				//double max_moving_average = 0;
-				//double second_max_moving_average = 0;
-				//String max_designation;
-				//String second_max_designation;
-				for(int x = 0; x < reporter_designations.length; x++)
-				{
-					if(reporter_moving_avgs[x] > max_ma)
-					{
-						second_max_ma = max_ma;
-						max_ma = reporter_moving_avgs[x];
-						second_max_ma_designation = max_ma_designation;
-						max_ma_designation = reporter_designations[x];
-					}
-				}
-				returnval = true; // reporter_moving_avgs[], max_ma, second_max_ma, max_ma_designation, second_max_ma_designation should be set now.
-			}
-			rs2.close();
-			stmt.close();
-			con.close();
+			return -1;
 		}
-		catch(SQLException sqle)
-		{
-			returnval = false;
-			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Endpoint testFrameForMovingAverage: message=" +sqle.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				if (rs2  != null){ rs2.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				(new Platform()).addMessageToLog("SQLException in Endpoint testFrameForMovingAverage Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}   
-		return returnval; // something went wrong along the way 
-	}*/
-	
-	
-	double getMovingAverage(String designation, int inc_maw_int)
-	{
 		
-		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-		{
-			populateMovingAverages(inc_maw_int);
-		}
-			
 		int x = 0;
 		while(x < reporter_designations.length)
 		{
 			if(reporter_designations[x].equals(designation))
 			{
-				//System.out.println("Frame.getMovingAverage(" + inc_maw_int + "," + designation + ") = " + reporter_moving_avgs[x]);
-				return reporter_moving_avgs[x];
+				return reporter_ma6s[x];
 			}
 			x++;
 		}
-		//System.out.println("Frame.getMovingAverage(" + inc_maw_int + "," + designation + ") = " + " error, returning 0");
 		return 0;
 	}
-		
-	double getHighestMovingAverage(int inc_maw_int)
+	
+	// reporter_ma6s presumed to be set if this is called. Calling functions should be responsible for this.
+	private void setMaxAndSecond()
 	{
-		//System.out.println("Frame.getHighestMovingAverage()");
-		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
-		{
-			populateMovingAverages(inc_maw_int);
-		}
+		max_ma = 0;
+		second_max_ma = 0;
+		max_ma_designation = null;
+		second_max_ma_designation = null;
 		
-		return max_ma;
+		int x = 0;
+		
+		while(x < reporter_ma6s.length)
+		{
+			if(reporter_ma6s[x] > max_ma)
+			{
+				second_max_ma = max_ma;
+				max_ma = reporter_ma6s[x];
+				second_max_ma_designation = max_ma_designation;
+				max_ma_designation = reporter_designations[x];
+			}
+			x++;
+		}
+		max_and_second_set = true;
 	}
 	
-	String getHighestMovingAverageDesignation(int inc_maw_int)
+	double getHighestMovingAverage()
 	{
-		//System.out.println("Frame.getHighestMovingAverageDesignation()");
-		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return -1;
+		else if (max_and_second_set == false)
 		{
-			populateMovingAverages(inc_maw_int);
+			setMaxAndSecond();
+			return max_ma;
 		}
-		
-		return max_ma_designation;
+		else
+			return max_ma;
 	}
 	
-	double getSecondHighestMovingAverage(int inc_maw_int)
+	double getSecondHighestMovingAverage()
 	{
-		//System.out.println("Frame.getSecondHighestMovingAverage()");
-		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return -1;
+		else if (max_and_second_set == false)
 		{
-			populateMovingAverages(inc_maw_int);
+			setMaxAndSecond();
+			return second_max_ma;
 		}
-		
-		return second_max_ma;
+		else
+			return second_max_ma;
 	}
 	
-	String getSecondHighestMovingAverageDesignation(int inc_maw_int)
+	String getHighestMovingAverageDesignation()
 	{
-		//System.out.println("Frame.getSecondHighestMovingAverageDesignation()");
-		if(reporter_moving_avgs == null || maw_int != inc_maw_int)
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return null;
+		else if (max_and_second_set == false)
 		{
-			populateMovingAverages(inc_maw_int);
+			setMaxAndSecond();
+			return max_ma_designation;
 		}
-		
-		return second_max_ma_designation;
+		else
+			return max_ma_designation;
 	}
 	
+	String getSecondHighestMovingAverageDesignation()
+	{
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return null;
+		else if (max_and_second_set == false)
+		{
+			setMaxAndSecond();
+			return second_max_ma_designation;
+		}
+		else
+			return second_max_ma_designation;
+	}
 	
-	
-	int getNumFramesInWindowAboveSingleThresh(String designation, int inc_maw_int, double single_thresh)
+	int getNumFramesInWindowAboveSingleThresh(String designation, double single_thresh)
 	{
 		Station station_object = new Station(station);
-		TreeSet<Frame> frames = station_object.getFrames(timestamp_in_ms - (inc_maw_int * 1000), timestamp_in_ms, designation, 1.0); // FIXME 1.0 as single modifier should not be hardcoded
+		TreeSet<Frame> frames = station_object.getFrames(timestamp_in_ms - (6 * 1000), timestamp_in_ms, designation, 1.0); // FIXME 1.0 as single modifier should not be hardcoded
 		Iterator<Frame> it = frames.iterator();
 		Frame currentframe = null;
 		int returnval = 0;
@@ -455,6 +344,51 @@ public class Frame implements Comparable<Frame> {
 			x++;
 		}
 		return -1;
+	}
+	
+	void updateRowWithMovingAverage6s(String[] reporter_designations, double[] inc_reporter_ma6s)
+	{
+		// after calculating moving average, update the row with the information
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;		
+		try
+		{
+			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM frames_" + station_object.getCallLetters() + " WHERE timestamp_in_ms=" + getTimestampInMillis()); // get the frames in the time range
+			if(!rs.next())
+			{
+				System.out.println("Frame.updateRowWithMovingAverage6s(): ERROR could not find frame in table frames_" + station_object.getCallLetters() + " for timestamp_in_ms=" + getTimestampInMillis());
+			}
+			else
+			{
+				for(int y = 0; y < inc_reporter_ma6s.length; y++)
+				{
+					rs.updateDouble(reporter_designations[y] + "_ma6", inc_reporter_ma6s[y]);
+				}
+				rs.updateRow();
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}  
+		reporter_ma6s = inc_reporter_ma6s;
 	}
 	
 	// 
@@ -550,7 +484,7 @@ public class Frame implements Comparable<Frame> {
 	 *
 	 */
 	
-	JSONObject getAsJSONObject(boolean get_score_data, String designation, int maw_int)
+	JSONObject getAsJSONObject(boolean get_score_data, String designation)
 	{
 		JSONObject jo = new JSONObject();
 		try
@@ -564,8 +498,8 @@ public class Frame implements Comparable<Frame> {
 			if(designation != null)
 			{
 				double homogeneity = new User(designation,"designation").getHomogeneity();
-				double des_ma = getMovingAverage(designation, maw_int);
-				System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " (maw_int=" + maw_int + ") was specified by the simulator. Returning specialized information. designation=" + designation + " ma=" + des_ma);
+				double des_ma = getMovingAverage6(designation);
+				System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " (window=6) was specified by the simulator. Returning specialized information. designation=" + designation + " ma=" + des_ma);
 				jo.put("designation", designation);
 				jo.put("designation_homogeneity", homogeneity);
 				jo.put("designation_moving_average", des_ma);
@@ -604,5 +538,140 @@ public class Frame implements Comparable<Frame> {
 	    else
 	    	return 1;
 	}
+	
+	public static void main(String args[])
+	{
+		Station s = new Station("wkyt");
+		TreeSet<Frame> frames = s.getFrames(args[0], args[1], null, -1); // begin, end, no designation, no single thresh
+		Iterator<Frame> it = frames.iterator();
+		Frame currentframe = null;
+		while(it.hasNext())
+		{
+			currentframe = it.next();
+			System.out.println("Looping " + currentframe.getImageName());
+			//currentframe.setMovingAveragesForFrame(5);
+			currentframe.setMovingAverage6sForFrame();
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	// these 2 functions below  should be essentially obsolete after working through the backlog. They were built to populate _ma5 and _ma6 columns for the wkyt table from existing raw score data
+	// although I guess it could be tweaked for longer moving averages, too
+		
+		void populateMovingAverage6s()
+		{
+			reporter_ma6s = new double[reporter_designations.length];
+			TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null, 0);
+			int num_frames_in_window = window_frames.size();
+			int x = 0;
+			if(num_frames_in_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+			{
+				while(x < reporter_designations.length)
+				{
+					reporter_ma6s[x] = -1;
+					x++;
+				}
+			}
+			else
+			{	
+				double[] reporter_totals = new double[reporter_designations.length];
+				//System.out.println("Frame.populateMovingAverages(): looping " + num_frames_in_window + " frames for totals");
+				Iterator<Frame> it = window_frames.iterator();
+				Frame currentframe = null;
+				while(it.hasNext())
+				{
+					currentframe = it.next();
+					x = 0;
+					while(x < reporter_designations.length)
+					{
+						reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
+						x++;
+					}
+				}
+				
+				// then divide the sum designation_avgs by dividing by the number of frames in the window
+				x = 0;
+				//System.out.println("Frame.populateMovingAverages(): looping reporters to get ma6s from totals");
+				while(x < reporter_totals.length)
+				{
+					reporter_ma6s[x] = reporter_totals[x] / num_frames_in_window;
+					x++;
+				}
+			}
+		}
+		
+		void setMovingAverage6sForFrame() // WILL OVERWRITE EXISTING DATA
+		{
+			//System.out.println("Frame.setMovingAveragesForFrame(): " + image_name);
+			
+			populateMovingAverage6s();
+			
+			ResultSet rs = null;
+			Connection con = null;
+			Statement stmt = null;		
+			try
+			{
+				con = DriverManager.getConnection(connectionstring);
+				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
+				if(!rs.next())
+				{
+					System.out.println("Frame.setMovingAveragesForFrame(): ERROR could not find frame in table frames_" + station + " for timestamp_in_ms=" + timestamp_in_ms);
+				}
+				else
+				{
+					for(int x = 0; x < reporter_ma6s.length; x++)
+					{
+						if(reporter_ma6s[x] == -1)
+							rs.updateNull(reporter_designations[x] + "_ma6");
+						else
+							rs.updateDouble(reporter_designations[x] + "_ma6", reporter_ma6s[x]);
+					}
+					rs.updateRow();
+				}
+				rs.close();
+				stmt.close();
+				con.close();
+			}
+			catch(SQLException sqle)
+			{
+				sqle.printStackTrace();
+			}
+			finally
+			{
+				try
+				{
+					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				}
+				catch(SQLException sqle)
+				{ 
+					sqle.printStackTrace();
+				}
+			}  
+		}
+		
+	
+	
+	
+	
 	
 }

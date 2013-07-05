@@ -34,6 +34,9 @@ public class Platform {
 	String hostname = System.getProperty("RDS_HOSTNAME");
 	String port = System.getProperty("RDS_PORT");
 	
+	//String connectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userN ame + "&password=" + pass word;
+	String jdbcconnectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
+	
 	public Platform()
 	{
 		try {
@@ -44,6 +47,12 @@ public class Platform {
 		} 
 		stations = null; 
 	}
+	
+	public String getJDBCConnectionString()
+	{
+		return jdbcconnectionstring;
+	}
+	
 
 	public String getAlertMode()
 	{
@@ -53,7 +62,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='alert_mode'");
 			if(rs.next())
@@ -93,7 +102,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='singlemodifier'");
 			if(rs.next())
@@ -134,7 +143,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='mamodifier'");
 			if(rs.next())
@@ -175,7 +184,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='mawindow'");
 			if(rs.next())
@@ -216,7 +225,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='nrpst'");
 			if(rs.next())
@@ -274,8 +283,8 @@ public class Platform {
 			if(ms.length() == 2) { ms = "0" + ms;} 
 			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute + ":" + second + " " + ms;			
 			
-			System.out.println("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			System.out.println(jdbcconnectionstring);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
 	                    + " VALUES('" + hr_timestamp + "','" + message + "')");
@@ -318,7 +327,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT call_letters FROM `stations`");
 			Station currentstation = null;
@@ -389,7 +398,7 @@ public class Platform {
 		try
 		{
 			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`,`created_by`) "
 	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')");
@@ -437,7 +446,7 @@ public class Platform {
 		try
 		{
 			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
@@ -479,7 +488,7 @@ public class Platform {
 		try
 		{
 			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
@@ -523,7 +532,7 @@ public class Platform {
 		try
 		{
 			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE deletion_timestamp IS NULL ORDER BY creation_timestamp DESC LIMIT 0," + num_to_get);
 			int x = 0;
@@ -579,7 +588,7 @@ public class Platform {
 		try
 		{
 			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`, `station`) " +
 					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "','" + station + "')");
@@ -608,101 +617,7 @@ public class Platform {
 		return returnval;
 	}
 	
-	TreeSet<Frame> getFramesFromResultSet(ResultSet rs)
-	{
-		TreeSet<Frame> returnframes = new TreeSet<Frame>();
-		try
-		{
-			ResultSetMetaData rsmd = rs.getMetaData();
-			int columncount = rsmd.getColumnCount();
-			int reportercount = 0;
-			int x = 1; 
-			//System.out.println("Starting loop through " + columncount + " columns to find how many reporters are there...");
-			String station = "";
-			while(x <= columncount)
-			{
-				if(x == 1)
-					station = rsmd.getTableName(1).substring(rsmd.getTableName(1).indexOf("_") + 1);
-				if(rsmd.getColumnName(x).endsWith("_avg"))
-				{
-					reportercount++;
-				}
-				x++;
-			}
-			//System.out.println("Found " + reportercount + " columns. Initalizing arrays.");
-			//String reporter_designations[] = new String[reportercount];
-			//double reporter_avgs[] = new double[reportercount];
-			//JSONArray reporter_score_arrays[] = new JSONArray[reportercount];
-			//int reporter_nums[] = new int[reportercount];
-			String reporter_designations[] = null;
-			double reporter_avgs[] = null;
-			JSONArray reporter_score_arrays[] = null;
-			int reporter_nums[] = null;
-			rs.beforeFirst();
-			//System.out.println("Starting loop through resultset of frames...");
-			while(rs.next())
-			{
-				reporter_designations = new String[reportercount];
-				reporter_avgs = new double[reportercount];
-				reporter_score_arrays = new JSONArray[reportercount];
-				reporter_nums = new int[reportercount];
-				int reporter_index = 0;
-				x=1; 
-				//System.out.println("Starting loop through " + columncount + " columns to fill reporter arrays...");
-				while(x <= columncount)
-				{
-					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
-					if(rsmd.getColumnName(x).endsWith("_avg"))
-					{
-						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
-						reporter_avgs[reporter_index] = rs.getDouble(x);
-					}
-					else if(rsmd.getColumnName(x).endsWith("_scores"))
-					{
-						if(rs.getString(x) == null || rs.getString(x).isEmpty())
-							reporter_score_arrays[reporter_index] = new JSONArray();
-						else
-							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
-					}
-					else if(rsmd.getColumnName(x).endsWith("_num"))
-					{
-						reporter_nums[reporter_index] = rs.getInt(x);
-						reporter_index++;
-					}
-					else
-					{
-						//System.out.println("Skipping a non-score-related row.");
-					}
-					x++;
-				}
-				//System.out.println("Adding Frame object to treeset and going to next...");
-				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
-						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
-						reporter_avgs, reporter_score_arrays, reporter_nums));
-				//System.out.println("... frame added");
-			}
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				sqle.printStackTrace();
-			}
-		}  
-		return returnframes;
-	}
-	
+
 	public boolean isNumeric(String incoming_string) // only works for whole numbers, positive and negative
 	{
 		  int x=0;

@@ -51,16 +51,21 @@ import facebook4j.auth.AccessToken;
 public class Endpoint extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
-
+	String dbName = System.getProperty("RDS_DB_NAME"); 
+	String userName = System.getProperty("RDS_USERNAME"); 
+	String password = System.getProperty("RDS_PASSWORD"); 
+	String hostname = System.getProperty("RDS_HOSTNAME");
+	String port = System.getProperty("RDS_PORT");
+	
 	public void init(ServletConfig config) throws ServletException
 	{
 		//System.err.println("Endpoint init()");
-		 try {
-		        Class.forName("com.mysql.jdbc.Driver");
-		    } catch (ClassNotFoundException e) {
-		        // TODO Auto-generated catch block
-		        e.printStackTrace();
-		    } 
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		super.init(config);
 	}
 
@@ -121,11 +126,7 @@ public class Endpoint extends HttpServlet {
 							}
 							else // treat as real commit
 							{	
-								String dbName = System.getProperty("RDS_DB_NAME"); 
-								String userName = System.getProperty("RDS_USERNAME"); 
-								String password = System.getProperty("RDS_PASSWORD"); 
-								String hostname = System.getProperty("RDS_HOSTNAME");
-								String port = System.getProperty("RDS_PORT");
+								
 								Connection con = null;
 								Statement stmt = null;
 								ResultSet rs = null;
@@ -133,7 +134,7 @@ public class Endpoint extends HttpServlet {
 								{
 									long inc_ts = jsonpostbody.getLong("timestamp_in_ms");
 									con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
-									
+
 									stmt = con.createStatement();
 									rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
 									if(rs.next()) // the only reason there wouldn't be a row is the VERY FIRST FRAME EVER for this station's table (or if the table gets emptied for some reason
@@ -141,13 +142,13 @@ public class Endpoint extends HttpServlet {
 										// 1. if newer frames are ALREADY in the database, discard this one. Shouldn't happen.
 										// 2. if the newest frame in the database is between 0 and .8 seconds older, that's good. That's exactly what we want. Insert this one.
 										// 3. if the newest frame in the database is older than .8 seconds, we need to wait a few sec for our target frame to come in.
-										
+
 										// 1. THIS FRAME IS TOO OLD.
 										if(rs.getLong("timestamp_in_ms") >= inc_ts) // if the frame from the DB is NEWER than this one, then insert but don't process
 										{
 											System.out.println("Endpoint.commit(): Frame is too old. Discarding.");
 											//(new Platform()).addMessageToLog("discarded old frame for station=" + jsonpostbody.getString("station") + " with timestamp=" + jsonpostbody.getString("image_name"));
-											
+
 											jsonresponse.put("message", "There is at least one newer frame in the database. This one was old, inserted, but not processed for alerts.");
 											jsonresponse.put("response_status", "error");
 											process = false;
@@ -171,7 +172,7 @@ public class Endpoint extends HttpServlet {
 													rs.next();
 													x++;
 												}
-												
+
 												if(x==5)
 												{
 													System.out.println("Endpoint.commit(): Frame was too new and waiting failed. Discarding");
@@ -192,7 +193,7 @@ public class Endpoint extends HttpServlet {
 											}
 										}
 									}
-									
+
 									double currentavgscore = 0.0;
 									double reporter_total = 0.0;
 									Station station = new Station(jsonpostbody.getString("station"));
@@ -220,7 +221,7 @@ public class Endpoint extends HttpServlet {
 											//total_score = total_score + ja.getJSONObject(x).getJSONArray("scores").getDouble(i); 
 										}
 										currentavgscore = reporter_total / ja.getJSONObject(x).getJSONArray("scores").length();
-										
+
 										// have decided these raw scores are unnecessary. Leaving it out makes for a smaller, more efficient database.
 										//fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_scores" + "`, ";
 										//valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").toString() + "', ";
@@ -234,7 +235,7 @@ public class Endpoint extends HttpServlet {
 									//System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
 									con.createStatement().execute("INSERT IGNORE INTO `frames_" + jsonpostbody.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
 									con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + jsonpostbody.getString("station") + "'");	
-									
+
 									rs.close();
 									stmt.close();
 									con.close();
@@ -259,7 +260,7 @@ public class Endpoint extends HttpServlet {
 									}
 								}  
 							}
-						
+
 							if(process)
 							{
 								Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
@@ -268,9 +269,8 @@ public class Endpoint extends HttpServlet {
 									JSONObject jo2 = processNewFrame(newframe, simulation, 
 											(new Platform()).getSingleModifier(), 
 											(new Platform()).getMAModifier(), 
-											(new Platform()).getMAWindow(), 
 											(new Platform()).getNRPST());
-									
+
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
 									//		(if alert_triggered==true)
@@ -288,7 +288,7 @@ public class Endpoint extends HttpServlet {
 									//		(else if alert_triggered== false)
 									//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
 									// }
-									
+
 									jsonresponse = jo2;
 									jsonresponse.put("response_status", "success"); // just means the insertion was received and a response is coming back. Means nothing in terms of alerts
 									if(simulation) // then return additional info to the simulator. If not, don't.
@@ -296,10 +296,10 @@ public class Endpoint extends HttpServlet {
 										if(jsonpostbody.has("designation"))
 										{
 											System.out.println("Endpoint.commitFrameDataAndAlert(): a designation=" + jsonpostbody.getString("designation") + " (maw_int=" + jsonpostbody.getInt("maw_int") + ") was specified by the simulator. Returning specialized information in each frame_jo.");
-											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation"), jsonpostbody.getInt("maw_int")));
+											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, jsonpostbody.getString("designation")));
 										}
 										else
-											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null, -1));
+											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
 									}
 								}
 								else
@@ -1840,7 +1840,7 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
-	JSONObject processNewFrame(Frame newframe, boolean simulation, double singlemodifier, double mamodifier, int maw_int, int nrpst)
+	JSONObject processNewFrame(Frame newframe, boolean simulation, double singlemodifier, double mamodifier, int nrpst)
 	{
 		JSONObject return_jo = new JSONObject();
 		// return_jo form:
@@ -1908,7 +1908,7 @@ public class Endpoint extends HttpServlet {
 		{
 			// get all frames over the moving average window backward from this timestamp
 			Station station_object = new Station(newframe.getStation());
-			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-(maw_int * 1000), frame_ts, null, 0);
+			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-(6 * 1000), frame_ts, null, 0);
 			int num_frames_in_window = window_frames.size();
 			//System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
 			
@@ -1924,7 +1924,7 @@ public class Endpoint extends HttpServlet {
 			 */
 			boolean a_designation_passed_ma_thresh_and_was_highest = false;
 			
-			if(num_frames_in_window < maw_int)  // all response boolean values remain false and return
+			if(num_frames_in_window < 6)  // all response boolean values remain false and return
 			{
 				alert_triggered_failure_message = "not enough frames in window";
 				//System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
@@ -1943,7 +1943,7 @@ public class Endpoint extends HttpServlet {
 				 */
 				String[] reporter_designations = newframe.getReporterDesignations();
 				double[] reporter_totals = new double[reporter_designations.length];
-				double[] reporter_moving_averages = new double[reporter_designations.length];
+				double[] reporter_ma6s = new double[reporter_designations.length];
 				double[] reporter_moving_average_thresholds = new double[reporter_designations.length];
 				double[] reporter_single_thresholds = new double[reporter_designations.length];
 				
@@ -1969,12 +1969,12 @@ public class Endpoint extends HttpServlet {
 				//System.out.println("Endpoint.processNewFrame(): looping reporters to get avgs from totals");
 				while(x < reporter_totals.length)
 				{
-					reporter_moving_averages[x] = reporter_totals[x] / num_frames_in_window;
-					if(reporter_moving_averages[x] > max_moving_average)
+					reporter_ma6s[x] = reporter_totals[x] / num_frames_in_window;
+					if(reporter_ma6s[x] > max_moving_average)
 					{
-						max_moving_average = reporter_moving_averages[x];
+						max_moving_average = reporter_ma6s[x];
 					}
-					if(reporter_moving_averages[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
+					if(reporter_ma6s[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
 					{	
 						reporter_homogeneity = (new User(reporter_designations[x],"designation")).getHomogeneity();
 						reporter_moving_average_thresholds[x] = mamodifier * reporter_homogeneity;
@@ -1988,6 +1988,7 @@ public class Endpoint extends HttpServlet {
 					x++;
 				}
 				
+				newframe.updateRowWithMovingAverage6s(reporter_designations, reporter_ma6s);
 				
 				/***
 				 *     _____             ___   _   ___   __ ______  ___   _____ _____  ___  ___  ___    _____ _   _ ______ _____ _____ _   _ ___  
@@ -2011,7 +2012,7 @@ public class Endpoint extends HttpServlet {
 				{
 					designation_passed_single_thresh = false;
 					
-					if(reporter_moving_averages[x] > reporter_moving_average_thresholds[x] && reporter_moving_averages[x] == max_moving_average) 
+					if(reporter_ma6s[x] > reporter_moving_average_thresholds[x] && reporter_ma6s[x] == max_moving_average) 
 					{
 						a_designation_passed_ma_thresh_and_was_highest = true;
 						designation_that_passed_ma_thresh = reporter_designations[x];
@@ -2044,7 +2045,7 @@ public class Endpoint extends HttpServlet {
 							 *                                                                                                                         
 							 *                                                                                                                         
 							 */
-							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-(maw_int * 1000), frame_ts, true);
+							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-(6 * 1000), frame_ts, true);
 							num_frames_that_passed_single_thresh = 0;
 							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
 							{

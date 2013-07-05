@@ -53,7 +53,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 	String hostname = System.getProperty("RDS_HOSTNAME");
 	String port = System.getProperty("RDS_PORT");
 	
-	public GAF4ReporterCallable(User inc_reporter, Station inc_station_object, long inc_begin, long inc_end, int inc_mawindow, double inc_mamodifier, double inc_singlemodifier, int inc_awp, int inc_nrpst)
+	public GAF4ReporterCallable(User inc_reporter, Station inc_station_object, long inc_begin, long inc_end, double inc_mamodifier, double inc_singlemodifier, int inc_awp, int inc_nrpst)
 	{
 		try {
 	        Class.forName("com.mysql.jdbc.Driver");
@@ -62,7 +62,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 		} 
 		begin = inc_begin;
 		end = inc_end;
-		mawindow = inc_mawindow;
+		//mawindow = inc_mawindow;
 		mamodifier = inc_mamodifier;
 		singlemodifier = inc_singlemodifier;
 		awp = inc_awp;
@@ -86,7 +86,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 		JSONArray alert_frames_ja = new JSONArray();
 		try
 		{
-			//con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			//con = DriverManager.getConnection(p.getJDBCConnectionString());
 			//stmt = con.createStatement();
 			// get frames where this designation crosses the single frame threshold
 			//rs = stmt.executeQuery("SELECT * FROM frames_" + station_object + " WHERE (timestamp_in_ms >= " + (1000*begin) + " AND timestamp_in_ms <= " + (1000*end) + " AND " + designation + "_avg > " + single_thresh + ") ORDER BY timestamp_in_ms ASC");
@@ -108,7 +108,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 				if((currentframe.getTimestampInMillis() - last_ts_of_frame_added) > (awp * 1000)) // if this frame is outside the awp and eligible to be returned
 				{	
 					System.out.println("GAF4ReporterCallable.call() Calculating moving average of " + designation + " for the current frame with maw_int=" + mawindow);
-					moving_average = currentframe.getMovingAverage(designation, mawindow);
+					moving_average = currentframe.getMovingAverage6(designation);
 					frame_that_passed_ma_thresh = null;
 					if(moving_average == -1)
 					{
@@ -116,7 +116,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 					}
 					else
 					{
-						if(moving_average > ma_thresh && moving_average == currentframe.getHighestMovingAverage(mawindow))
+						if(moving_average > ma_thresh && moving_average == currentframe.getHighestMovingAverage())
 						{
 							//System.out.println("GAF4ReporterCallable.call() " + designation + " passed ma threshold on first shot and is the highest moving average of the frame. ma=" + moving_average);
 							frame_that_passed_ma_thresh = currentframe;
@@ -138,8 +138,8 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 							while(subsequent_frames_it.hasNext())
 							{
 								subsequentframe = subsequent_frames_it.next();
-								moving_average = subsequentframe.getMovingAverage(designation, mawindow);
-								if(moving_average > ma_thresh && moving_average == subsequentframe.getHighestMovingAverage(mawindow))
+								moving_average = subsequentframe.getMovingAverage6(designation);
+								if(moving_average > ma_thresh && moving_average == subsequentframe.getHighestMovingAverage())
 								{
 									frame_that_passed_ma_thresh = subsequentframe;
 									break;
@@ -156,13 +156,13 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 						int num_frames_in_window_above_single_thresh = 0;
 						if(frame_that_passed_ma_thresh != null) 
 						{
-							num_frames_in_window_above_single_thresh = frame_that_passed_ma_thresh.getNumFramesInWindowAboveSingleThresh(designation, mawindow, single_thresh);
+							num_frames_in_window_above_single_thresh = frame_that_passed_ma_thresh.getNumFramesInWindowAboveSingleThresh(designation, single_thresh);
 							if(num_frames_in_window_above_single_thresh >= nrpst)
 							{	
-								JSONObject jo2add = frame_that_passed_ma_thresh.getAsJSONObject(true, null, -1); // no designation specified
+								JSONObject jo2add = frame_that_passed_ma_thresh.getAsJSONObject(true, null); // no designation specified
 								jo2add.put("designation", designation);
-								jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage(designation, mawindow));
-								jo2add.put("ma_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getMovingAverage(designation, mawindow));
+								jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage6(designation));
+								jo2add.put("ma_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getMovingAverage6(designation));
 								jo2add.put("score_for_alert_frame", currentframe.getScore(designation));
 								jo2add.put("score_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getScore(designation));
 								jo2add.put("image_name_for_frame_that_passed_ma_thresh", frame_that_passed_ma_thresh.getImageName());

@@ -55,8 +55,8 @@ public class Alert {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + inc_id); // get the frames in the time range
 			
@@ -155,8 +155,8 @@ public class Alert {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + id); // get the frames in the time range
 			

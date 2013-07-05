@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -65,7 +66,8 @@ public class Station implements java.lang.Comparable<Station> {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE call_letters='" + inc_call_letters + "'");
 			if(rs.next())
@@ -188,8 +190,8 @@ public class Station implements java.lang.Comparable<Station> {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement();
 			System.out.println("Station.getFrameTimestamps(): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
@@ -220,9 +222,75 @@ public class Station implements java.lang.Comparable<Station> {
 		return timestamps_ja; 
 	}
 	
+	public TreeSet<Frame> getFrames(String beginstring, String endstring, String designation, double single_modifier_double) // convenience method for taking datestring in the form YYYYMMDD_HHMMSS_sss
+	{
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			return null;
+		}
+		
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		cal.set(Calendar.YEAR, Integer.parseInt(beginstring.substring(0,4)));
+		cal.set(Calendar.MONTH, Integer.parseInt(beginstring.substring(4,6)) - 1);
+		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(beginstring.substring(6,8)));
+		if(beginstring.length() >= 11)
+			cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(beginstring.substring(9,11)));
+		else
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+		if(beginstring.length() >= 13)
+			cal.set(Calendar.MINUTE, Integer.parseInt(beginstring.substring(11,13)));
+		else
+			cal.set(Calendar.MINUTE, 0);
+		if(beginstring.length() >= 15)
+			cal.set(Calendar.SECOND, Integer.parseInt(beginstring.substring(13,15)));
+		else
+			cal.set(Calendar.SECOND, 0);
+		if(beginstring.length() ==19)
+			cal.set(Calendar.MILLISECOND, Integer.parseInt(beginstring.substring(16,19)));
+		else
+			cal.set(Calendar.MILLISECOND, 0);
+		
+		long begin_in_ms = cal.getTimeInMillis();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		System.out.println(dateFormat.format(cal.getTime()));
+
+		cal.set(Calendar.YEAR, Integer.parseInt(endstring.substring(0,4)));
+		cal.set(Calendar.MONTH, Integer.parseInt(endstring.substring(4,6)) - 1);
+		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(endstring.substring(6,8)));
+		if(endstring.length() >= 11)
+			cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endstring.substring(9,11)));
+		else
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+		if(endstring.length() >= 13)
+			cal.set(Calendar.MINUTE, Integer.parseInt(endstring.substring(11,13)));
+		else
+			cal.set(Calendar.MINUTE, 0);
+		if(endstring.length() >= 15)
+			cal.set(Calendar.SECOND, Integer.parseInt(endstring.substring(13,15)));
+		else
+			cal.set(Calendar.SECOND, 0);
+		if(endstring.length() ==19)
+			cal.set(Calendar.MILLISECOND, Integer.parseInt(endstring.substring(16,19)));
+		else
+			cal.set(Calendar.MILLISECOND, 0);
+		
+		long end_in_ms = cal.getTimeInMillis();
+		System.out.println(dateFormat.format(cal.getTime()));
+		
+		return getFrames(begin_in_ms, end_in_ms, designation, single_modifier_double);
+	}
+	
 	// designation can be null. If designation supplied, then get all frames above the single threshold
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double) // INCLUSIVE
 	{
+		//System.out.println("Station.getFrames(): getting frames from " + begin_in_ms + " to " + end_in_ms);
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -230,8 +298,8 @@ public class Station implements java.lang.Comparable<Station> {
 		
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement();
 			if(designation == null) // get all frames
 			{	
@@ -247,12 +315,21 @@ public class Station implements java.lang.Comparable<Station> {
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 			}
 		
+			// this loop gets each frame the database individually
+			/*while(rs.next())
+			{
+				System.out.println("Station.getFrames(): " + rs.getLong("timestamp_in_ms"));
+				returnset.add(new Frame(rs.getLong("timestamp_in_ms"), getCallLetters()));
+			}*/
+
+			// this if statement gets the whole resultset from the database as a whole, then parses it to create Frame objects manually. I don't know which method is faster.
 			//System.out.println("Does the resultset have any rows?");
 			if(rs.next()) // at least one row exists
 			{
-				Platform p = new Platform();
-				returnset = p.getFramesFromResultSet(rs);
+				//System.out.println("Getting frames from resultset");
+				returnset = getFramesFromResultSet(rs);
 			}
+			
 			rs.close();
 			stmt.close();
 			con.close();
@@ -286,7 +363,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			currentframe = it.next();
 			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
-			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null, -1)); // no designation specified
+			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null)); // no designation specified
 		}
 		return frames_ja;
 	}
@@ -301,7 +378,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			currentframe = it.next();
 			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
-			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null, -1)); // no designation specified
+			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null)); // no designation specified
 		}
 		return frames_ja;
 	}
@@ -323,7 +400,7 @@ public class Station implements java.lang.Comparable<Station> {
 			System.out.println("Station.getAlertFrames(): looping reporters and spinning off tasks to get alert frames for each " + currentreporter.getDesignation());
 			
 			// get an alert_frames_ja for each reporter
-			currenttask = executor.submit(new GAF4ReporterCallable(currentreporter, this, begin_long, end_long, maw_int, ma_modifier_double, single_modifier_double, awp_int, nrpst));
+			currenttask = executor.submit(new GAF4ReporterCallable(currentreporter, this, begin_long, end_long, ma_modifier_double, single_modifier_double, awp_int, nrpst));
 			
 			// add this Future<JSONArray> of alert frames to the vector above to be accessed below
 		    reportertasks.add(currenttask);
@@ -379,8 +456,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				rs = stmt.executeQuery(query);
@@ -430,8 +507,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				rs = stmt.executeQuery(query);
@@ -474,8 +551,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 				stmt = con.createStatement();
 				// get frames where this designation crosses the single frame threshold
 				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "'";
@@ -525,8 +602,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "' ";
@@ -597,8 +674,8 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "' ";
@@ -762,6 +839,123 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	
+	TreeSet<Frame> getFramesFromResultSet(ResultSet rs)
+	{
+		if(rs == null)
+		{
+			System.out.println("Station.getFramesFromResultSet() entering with rs == null, returning");
+			return null;
+		}
+		else
+		{
+			//System.out.println("Station.getFramesFromResultSet() entering with rs != null");
+		}
+		
+		TreeSet<Frame> returnframes = new TreeSet<Frame>();
+		try
+		{
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columncount = rsmd.getColumnCount();
+			int reportercount = 0;
+			int x = 1; 
+			//System.out.println("Station.getFramesFromResultSet() Starting loop through " + columncount + " columns to find how many reporters are there...");
+			String station = "";
+			while(x <= columncount)
+			{
+				if(x == 1)
+					station = rsmd.getTableName(1).substring(rsmd.getTableName(1).indexOf("_") + 1);
+				if(rsmd.getColumnName(x).endsWith("_avg"))
+				{
+					reportercount++;
+				}
+				x++;
+			}
+			//System.out.println("Found " + reportercount + " columns. Initalizing arrays.");
+			//String reporter_designations[] = new String[reportercount];
+			//double reporter_avgs[] = new double[reportercount];
+			//JSONArray reporter_score_arrays[] = new JSONArray[reportercount];
+			//int reporter_nums[] = new int[reportercount];
+			String reporter_designations[] = null;
+			double reporter_avgs[] = null;
+			JSONArray reporter_score_arrays[] = null;
+			int reporter_nums[] = null;
+			double reporter_ma5s[] = null;
+			double reporter_ma6s[] = null;
+			rs.beforeFirst();
+			//System.out.println("Starting loop through resultset of frames...");
+			while(rs.next())
+			{
+				reporter_designations = new String[reportercount];
+				reporter_avgs = new double[reportercount];
+				reporter_score_arrays = new JSONArray[reportercount];
+				reporter_nums = new int[reportercount];
+				reporter_ma5s = new double[reportercount];
+				reporter_ma6s = new double[reportercount];
+				int reporter_index = 0;
+				x=1; 
+				//System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
+				while(x <= columncount)
+				{
+					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
+					if(rsmd.getColumnName(x).endsWith("_avg"))
+					{
+						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
+						reporter_avgs[reporter_index] = rs.getDouble(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_scores"))
+					{
+						if(rs.getString(x) == null || rs.getString(x).isEmpty())
+							reporter_score_arrays[reporter_index] = new JSONArray();
+						else
+							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
+					}
+					else if(rsmd.getColumnName(x).endsWith("_num"))
+					{
+						reporter_nums[reporter_index] = rs.getInt(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma5")) // FIXME this is obsolete for the moment, in favor of ma6 by itself
+					{
+						reporter_ma5s[reporter_index] = rs.getDouble(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma6"))
+					{
+						reporter_ma6s[reporter_index] = rs.getDouble(x);
+						reporter_index++;
+					}
+					else
+					{
+						//System.out.println("Skipping a non-score-related row.");
+					}
+					x++;
+				}
+				//System.out.println("Adding Frame object to treeset and going to next...");
+				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
+						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
+						reporter_avgs, reporter_score_arrays, reporter_nums, reporter_ma6s));
+				//System.out.println("... frame added");
+			}
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}  
+		return returnframes;
+	}
+	
+	
 	public JSONObject getAsJSONObject()
 	{
 		JSONObject return_jo = new JSONObject();
@@ -797,6 +991,7 @@ public class Station implements java.lang.Comparable<Station> {
 		Station s = new Station("wkyt");
 		//s.resetProductionAlertTimers();
 		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
+		s.getFrames("20130704_1243", "20130704", null, -1);
 	}
 
 }

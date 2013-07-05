@@ -80,8 +80,8 @@ public class User implements java.lang.Comparable<User> {
 		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  	
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement();
 			String query_to_exec = "";
 			if(constructor_type.equals("twitter_handle"))
@@ -310,8 +310,8 @@ public class User implements java.lang.Comparable<User> {
 			String hr_timestamp = year  + month + day + "_" + hour24 + minute + second + "_" + ms;			
 			
 			
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			while(rs.next())
@@ -443,8 +443,8 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -506,8 +506,8 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -691,8 +691,8 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -755,8 +755,8 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
