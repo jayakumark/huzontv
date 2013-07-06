@@ -181,6 +181,62 @@ public class Station implements java.lang.Comparable<Station> {
 		return s3_bucket_public_hostname;
 	}
 	
+	JSONArray getMostRecentAlerts(int num_to_get)
+	{
+		JSONArray alerts_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		Platform p = new Platform();
+		try
+		{
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `deletion_timestamp` IS NULL) ORDER BY creation_timestamp DESC LIMIT 0," + num_to_get);
+			int x = 0;
+			JSONObject jo;
+			while(rs.next() && x < num_to_get)
+			{
+				jo = new JSONObject();
+				jo.put("image_url", rs.getString("image_url"));
+				jo.put("designation", rs.getString("designation"));
+				java.util.Date date = rs.getTimestamp("creation_timestamp");
+				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
+				if(rs.getString("created_by").isEmpty())
+					jo.put("created_by", rs.getString("designation"));
+				else
+					jo.put("created_by", rs.getString("created_by"));
+				jo.put("social_type", rs.getString("social_type"));
+				jo.put("station", rs.getString("station"));
+				jo.put("id", rs.getLong("id"));
+				alerts_ja.put(jo);
+				x++;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			p.addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				p.addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return alerts_ja;
+	}
 	
 	public JSONArray getFrameTimestamps(long begin_in_ms, long end_in_ms)
 	{
@@ -258,7 +314,7 @@ public class Station implements java.lang.Comparable<Station> {
 			cal.set(Calendar.MILLISECOND, 0);
 		
 		long begin_in_ms = cal.getTimeInMillis();
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z");
 		System.out.println(dateFormat.format(cal.getTime()));
 
 		cal.set(Calendar.YEAR, Integer.parseInt(endstring.substring(0,4)));
@@ -893,7 +949,7 @@ public class Station implements java.lang.Comparable<Station> {
 				reporter_ma6s = new double[reportercount];
 				int reporter_index = 0;
 				x=1; 
-				//System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
+				System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
 				while(x <= columncount)
 				{
 					//System.out.println("Reading columname: " + rsmd.getColumnName(x));

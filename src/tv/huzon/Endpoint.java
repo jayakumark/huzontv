@@ -335,6 +335,13 @@ public class Endpoint extends HttpServlet {
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
+		// All requests must be secure
+		// All requests must have a method value
+		// startTwitterAuthentication and getTwitterAccessTokenFromAuthorizationCode do not need TW authorization, every other request does.
+		// for methods requiring authentication there are currently two permission levels: normal and global
+		
+		
+		
 		//System.out.println("tv.huzon.Endpoint.doGet(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
 		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
@@ -344,37 +351,37 @@ public class Endpoint extends HttpServlet {
 		long timestamp_at_entry = tempcal.getTimeInMillis();
 		try
 		{
+			String method = request.getParameter("method");
+			String twitter_handle = request.getParameter("twitter_handle");
+			String twitter_access_token = request.getParameter("twitter_access_token");
 			if(!request.isSecure())
 			{
 				jsonresponse.put("message", "The huzon.tv API endpoint must be communicated with securely.");
 				jsonresponse.put("response_status", "error");
+				(new Platform()).addMessageToLog("Endpoint.doGet(): Endpoint rejected request for being insecure.");
 			}
-			else
-			{	
-				String method = request.getParameter("method");
-				if(method == null)
+			else if(method == null)
+			{
+				jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
+				jsonresponse.put("response_status", "error");
+				(new Platform()).addMessageToLog("Endpoint.doGet(): Endpoint rejected incoming request for lacking a method value.");
+			}
+			/***
+			 *     _   _ _____ _   _         ___  _   _ _____ _   _  ___  ___ _____ _____ _   _ ___________  _____ 
+			 *    | \ | |  _  | \ | |       / _ \| | | |_   _| | | | |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___|
+			 *    |  \| | | | |  \| |______/ /_\ \ | | | | | | |_| | | .  . || |__   | | | |_| | | | | | | |\ `--. 
+			 *    | . ` | | | | . ` |______|  _  | | | | | | |  _  | | |\/| ||  __|  | | |  _  | | | | | | | `--. \
+			 *    | |\  \ \_/ / |\  |      | | | | |_| | | | | | | | | |  | || |___  | | | | | \ \_/ / |/ / /\__/ /
+			 *    \_| \_/\___/\_| \_/      \_| |_/\___/  \_/ \_| |_/ \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/ 
+			 *                                                                                                     
+			 *                                                                                                     
+			 */
+			else if (method.equals("startTwitterAuthentication") || method.equals("getTwitterAccessTokenFromAuthorizationCode"))
+			{
+				if (method.equals("startTwitterAuthentication"))
 				{
-					jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
-					jsonresponse.put("response_status", "error");
-				}
-				
-				/***
-				 *    ______ _____ _____ _____ _____ ___________  ___ _____ _____ _____ _   _ 
-				 *    | ___ \  ___|  __ \_   _/  ___|_   _| ___ \/ _ \_   _|_   _|  _  | \ | |
-				 *    | |_/ / |__ | |  \/ | | \ `--.  | | | |_/ / /_\ \| |   | | | | | |  \| |
-				 *    |    /|  __|| | __  | |  `--. \ | | |    /|  _  || |   | | | | | | . ` |
-				 *    | |\ \| |___| |_\ \_| |_/\__/ / | | | |\ \| | | || |  _| |_\ \_/ / |\  |
-				 *    \_| \_\____/ \____/\___/\____/  \_/ \_| \_\_| |_/\_/  \___/ \___/\_| \_/
-				 *                                                                            
-				 *                                                                            
-				 */
-				
-				else if (method.equals("startTwitterAuthentication"))
-				{
-					Twitter twitter = new Twitter();
-					jsonresponse = twitter.startTwitterAuthentication();
-					SimpleEmailer se = new SimpleEmailer();
-					(new Platform()).addMessageToLog("Someone started Twitter authentication");
+					jsonresponse = (new Twitter()).startTwitterAuthentication();
+					(new Platform()).addMessageToLog("Endpoint.startTwitterAuthentication(): Someone started Twitter authentication");
 				}
 				else if (method.equals("getTwitterAccessTokenFromAuthorizationCode"))
 				{
@@ -384,30 +391,21 @@ public class Endpoint extends HttpServlet {
 					{
 						jsonresponse.put("message", "This method requires an oauth_verifier value.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Endpoint.getTwitterAccessTokenFromAuthorizationCode(): Error: getTwitterAccessTokenFromAuthorizationCode called without oauth_verifier value.");
 					}
 					else if(oauth_token == null)
 					{
 						jsonresponse.put("message", "This method requires an oauth_token value.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Endpoint.getTwitterAccessTokenFromAuthorizationCode(): Error: getTwitterAccessTokenFromAuthorizationCode called without oauth_token value.");
 					}
 					else
 					{	
-						// at this point the user has been sent to twitter with an initial request_token. They've been sent back
-						// to the registration page with an oauth_token and oauth_verifier. However, as they come back, we don't know who they are 
-						// except for this oauth_token we've seen before. Therefore, we've saved it above in startTwitterAuthentication
-						// and we need to search the DB for it to figure out who it belongs to.
-						//String designation = getDesignationFromOAuthToken("wkyt", oauth_token);
-						
-						
-						
-						Twitter twitter = new Twitter();
-						JSONObject preliminary_jsonresponse = new JSONObject();
-						preliminary_jsonresponse = twitter.getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
+						(new Platform()).addMessageToLog("Endpoint.getTwitterAccessTokenFromAuthorizationCode(): Continuing TW authentication. Will make call to Twitter and return immediately with screen_name");
+						JSONObject preliminary_jsonresponse = (new Twitter()).getTwitterAccessTokenFromAuthorizationCode(oauth_verifier, oauth_token);
 						if(preliminary_jsonresponse.getString("response_status").equals("success"))
 						{
-							SimpleEmailer se = new SimpleEmailer();
-							(new Platform()).addMessageToLog("Continuing TW authentication (gTwAuthTokFromAccCode) for " + preliminary_jsonresponse.getString("screen_name"));
-							
+							(new Platform()).addMessageToLog("Endpoint.getTwitterAccessTokenFromAuthorizationCode(): Continuing TW authentication (gTwAuthTokFromAccCode) for " + preliminary_jsonresponse.getString("screen_name"));
 							User user = new User(preliminary_jsonresponse.getString("screen_name"), "twitter_handle");
 							if(!user.isValid())
 							{
@@ -417,7 +415,6 @@ public class Endpoint extends HttpServlet {
 							else
 							{
 								user.setTwitterAccessTokenAndSecret(preliminary_jsonresponse.getString("access_token"), preliminary_jsonresponse.getString("access_token_secret"));
-								//setTwitterAccessTokenAndSecret("wkyt", designation, preliminary_jsonresponse.getString("access_token"), preliminary_jsonresponse.getString("access_token_secret"));
 								jsonresponse.put("response_status", "success");
 								jsonresponse.put("message", "The access_token and access_token_secret should be set in the database now.");
 								jsonresponse.put("twitter_handle", preliminary_jsonresponse.getString("screen_name"));
@@ -426,376 +423,217 @@ public class Endpoint extends HttpServlet {
 						}
 						else
 						{
+							(new Platform()).addMessageToLog("Endpoint.getTwitterAccessTokenFromAuthorizationCode(): Failed talking to twitter. Twitter object jsonresponse=" + jsonresponse);
 							jsonresponse = preliminary_jsonresponse;
 						}
 					}
 				}
-				else if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
-				{
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "This method requires a twitter_handle value.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "This method requires an twitter_access_token value.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please connect your Twitter and huzon.tv accounts.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							SimpleEmailer se = new SimpleEmailer();
-							(new Platform()).addMessageToLog("getSelf called (and failed due to lack of credentials for) " + twitter_handle);
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Please reconnect your Twitter and huzon.tv accounts.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							SimpleEmailer se = new SimpleEmailer();
-							(new Platform()).addMessageToLog("getSelf called (and failed due to non-matching credentials for) " + twitter_handle);
-						}
-						else // twitter creds were OK
-						{
-							jsonresponse.put("response_status", "success");
-							SimpleEmailer se = new SimpleEmailer();
-							(new Platform()).addMessageToLog("getSelf called (and was successful for) " + twitter_handle);
-							System.out.println("Endpoint.getUser(): getting user for twitter_handle=" + twitter_handle + "... " + user.getJSONObject());
-							jsonresponse.put("user_jo", user.getJSONObject());
-						}
-					}
+			}
+			/***
+			 *      ___  _   _ _____ _   _       ______ _____ _____    ___  ___ _____ _____ _   _ ___________  _____ 
+			 *     / _ \| | | |_   _| | | |      | ___ \  ___|  _  |   |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___|
+			 *    / /_\ \ | | | | | | |_| |______| |_/ / |__ | | | |   | .  . || |__   | | | |_| | | | | | | |\ `--. 
+			 *    |  _  | | | | | | |  _  |______|    /|  __|| | | |   | |\/| ||  __|  | | |  _  | | | | | | | `--. \
+			 *    | | | | |_| | | | | | | |      | |\ \| |___\ \/' /_  | |  | || |___  | | | | | \ \_/ / |/ / /\__/ /
+			 *    \_| |_/\___/  \_/ \_| |_/      \_| \_\____/ \_/\_(_) \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/ 
+			 *                                                                                                       
+			 *                                                                                                       
+			 */			
+			else if(twitter_access_token == null || twitter_handle == null)
+			{
+				if(twitter_handle == null && twitter_access_token == null) // both missing
+				{	
+					jsonresponse.put("message", "Endpoint.doGet(): The method you have specified requires twitter_handle and twitter_access_token values. Neither was specified.");
+					jsonresponse.put("response_status", "error");
 				}
-				else if (method.equals("getUser")) // for getting a DIFFERENT user, global_admin required
-				{
-					String designation = request.getParameter("designation");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "This method requires a twitter_handle value.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "This method requires a twitter_access_token value.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "This method requires a designation value.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								jsonresponse.put("response_status", "success");
-								User target_user = new User(designation, "designation");
-								System.out.println("Endpoint.getUser(): getting user for designation=" + designation + "... " + target_user.getJSONObject());
-								jsonresponse.put("user_jo", target_user.getJSONObject());
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
+				else if(twitter_handle == null) // just twitter_handle missing
+				{	
+					jsonresponse.put("message", "Endpoint.doGet(): The method you have specified requires a twitter_handle value.");
+					jsonresponse.put("response_status", "error");
 				}
-				else if (method.equals("getFacebookAccessTokenFromAuthorizationCode"))
+				else if (twitter_access_token == null)
 				{
-					// twitter account must be linked first. That info is then used as the verifier in lieu of a password
-					// hence, this is why we're asking for that information here.
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					if(twitter_handle == null)
+					jsonresponse.put("message", "Endpoint.doGet(): The method you have specified requires a twitter_access_token value.");
+					jsonresponse.put("response_status", "error");
+				}
+				(new Platform()).addMessageToLog("Endpoint.doGet(): Rejected incoming request for lacking twitter credentials.");
+			}
+			else  // at this point, we know the request is secure, has a method value and the user has supplied credentials (which have not been checked yet)
+			{
+				/***
+				 *     _____  _   _  _____ _____  _   __  _____ _    _   _____ ______ ___________ _____ _   _ _____ _____  ___   _      _____ 
+				 *    /  __ \| | | ||  ___/  __ \| | / / |_   _| |  | | /  __ \| ___ \  ___|  _  \  ___| \ | |_   _|_   _|/ _ \ | |    /  ___|
+				 *    | /  \/| |_| || |__ | /  \/| |/ /    | | | |  | | | /  \/| |_/ / |__ | | | | |__ |  \| | | |   | | / /_\ \| |    \ `--. 
+				 *    | |    |  _  ||  __|| |    |    \    | | | |/\| | | |    |    /|  __|| | | |  __|| . ` | | |   | | |  _  || |     `--. \
+				 *    | \__/\| | | || |___| \__/\| |\  \   | | \  /\  / | \__/\| |\ \| |___| |/ /| |___| |\  | | |  _| |_| | | || |____/\__/ /
+				 *     \____/\_| |_/\____/ \____/\_| \_/   \_/  \/  \/   \____/\_| \_\____/|___/ \____/\_| \_/ \_/  \___/\_| |_/\_____/\____/ 
+				 *                                                                                                                            
+				 *                                                                                                                            
+				 */
+				User user = new User(twitter_handle, "twitter_handle");
+				if(!user.isValid()) // meaning, this twitter_handle/user was found in the database. Auth token not checked yet. 
+				{
+					jsonresponse.put("message", "Invalid user.");
+					jsonresponse.put("response_status", "error");
+					(new Platform()).addMessageToLog("Endpoint.doGet(): incoming request rejected bc twitter_handle not found in db.) " + twitter_handle);
+				}
+				else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals("")) // twitter_handle was in the db, but no twitter_access_token value exists. User needs to register.
+				{
+					jsonresponse.put("message", "Your twitter_handle was found in our database, but does not appear to be linked yet. Please register.");
+					jsonresponse.put("response_status", "error"); 
+					jsonresponse.put("error_code", "07734");  // this code tells the frontend to forget everything it knows about this user.
+					(new Platform()).addMessageToLog("Endpoint.doGet(): incoming request rejected bc although twitter_handle found in db, no twitter_access_token provided. User needs to register." + twitter_handle);
+				}
+				else if(!user.getTwitterAccessToken().equals(twitter_access_token))
+				{
+					jsonresponse.put("message", "The user's twitter_access_token has become invalid. Please re-link your Twitter account to huzon.tv via the registration page.");
+					jsonresponse.put("response_status", "error");
+					jsonresponse.put("error_code", "07734"); // this code tells the frontend to forget everything it knows about this user.
+					(new Platform()).addMessageToLog("Endpoint.doGet(): incoming request rejected bc provided twitter_access_token did not match the value in the database. " + twitter_handle);
+				}
+				else // twitter creds were OK -- permission level has not been checked yet.
+				{
+					/***
+					 *     _   _ ______________  ___  ___   _      ______ ______________  ________ _____ _____ _____ _____ _   _  ___  ___ _____ _____ _   _ ___________  _____ 
+					 *    | \ | |  _  | ___ \  \/  | / _ \ | |     | ___ \  ___| ___ \  \/  |_   _/  ___/  ___|_   _|  _  | \ | | |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___|
+					 *    |  \| | | | | |_/ / .  . |/ /_\ \| |     | |_/ / |__ | |_/ / .  . | | | \ `--.\ `--.  | | | | | |  \| | | .  . || |__   | | | |_| | | | | | | |\ `--. 
+					 *    | . ` | | | |    /| |\/| ||  _  || |     |  __/|  __||    /| |\/| | | |  `--. \`--. \ | | | | | | . ` | | |\/| ||  __|  | | |  _  | | | | | | | `--. \
+					 *    | |\  \ \_/ / |\ \| |  | || | | || |____ | |   | |___| |\ \| |  | |_| |_/\__/ /\__/ /_| |_\ \_/ / |\  | | |  | || |___  | | | | | \ \_/ / |/ / /\__/ /
+					 *    \_| \_/\___/\_| \_\_|  |_/\_| |_/\_____/ \_|   \____/\_| \_\_|  |_/\___/\____/\____/ \___/ \___/\_| \_/ \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/ 
+					 *                                                                                                                                                          
+					 *                                                                                                                                                          
+					 */
+					// getSelf and the three FB auth methods do not require global permissions.
+					if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
 					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode twitter_handle not provided to method");
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("user_jo", user.getJSONObject());
+						(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
-					else if(twitter_access_token == null)
+					else if(method.equals("getFacebookAccessTokenFromAuthorizationCode"))
 					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " twitter_access_token not provided to method");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
+						String facebook_code = request.getParameter("facebook_code");
+						if(facebook_code == null)
 						{
-							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("message", "This method requires a facebook_code value.");
 							jsonresponse.put("response_status", "error");
-							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " invalid user");
+							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " no fb code");
 						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " no twitter creds");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " twitter creds didn't match");
-						}
-						else // twitter creds were OK
-						{
-							String facebook_code = request.getParameter("facebook_code");
-							if(facebook_code == null)
+						else
+						{	
+							// at this point the user has been sent to facebook for permission. The response came back with a code.
+							// Now we need to get and store the user's access_token
+							JSONObject preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
+							if(preliminary_jsonresponse.getString("response_status").equals("success"))
 							{
-								jsonresponse.put("message", "This method requires a facebook_code value.");
-								jsonresponse.put("response_status", "error");
-								(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " no fb code");
-							}
-							else
-							{	
-								// at this point the user has been sent to facebook for permission. The response came back with a code.
-								// Now we need to get and store the user's access_token
-								JSONObject preliminary_jsonresponse = new JSONObject();
-								preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
-								
-								if(preliminary_jsonresponse.getString("response_status").equals("success"))
+								JSONObject fb_profile_jo = user.getProfileFromFacebook(preliminary_jsonresponse.getString("access_token"));
+								long fb_uid = 0L;
+								try
 								{
-									JSONObject fb_profile_jo = user.getProfileFromFacebook(preliminary_jsonresponse.getString("access_token"));
-									long fb_uid = 0L;
-									try
+									if(fb_profile_jo != null && fb_profile_jo.has("id"))
 									{
-										if(fb_profile_jo != null && fb_profile_jo.has("id"))
+										fb_uid = fb_profile_jo.getLong("id");
+										Calendar cal = Calendar.getInstance();
+										cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+										String expires = preliminary_jsonresponse.getString("expires");
+										int expires_in_seconds = 0;
+										if(expires == null || expires.isEmpty()) // this seems to happen when the user has already given the fb permission but is re-linking the account for whatever reason 
 										{
-											fb_uid = fb_profile_jo.getLong("id");
-											Calendar cal = Calendar.getInstance();
-											cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-											String expires = preliminary_jsonresponse.getString("expires");
-											int expires_in_seconds = 0;
-											if(expires == null || expires.isEmpty()) // this seems to happen when the user has already given the fb permission but is re-linking the account for whatever reason 
-											{
-												expires_in_seconds = 5184000; // FIXME? Defaulting to 60 days may not be the right behavior. 
-											}
-											else
-												expires_in_seconds = Integer.parseInt(expires);
-											cal.add(Calendar.SECOND, expires_in_seconds);
-											long expires_timestamp = cal.getTimeInMillis() / 1000;
-											boolean successful = user.setFacebookAccessTokenExpiresAndUID(preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
-																						
-											if(successful)
-											{	
-												jsonresponse.put("response_status", "success");
-												jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
-												(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " success");
-											}
-											else
-											{
-												jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
-												jsonresponse.put("response_status", "error");
-												(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " couldn't update db with 3 fb values");
-											}
+											expires_in_seconds = 5184000; // FIXME? Defaulting to 60 days may not be the right behavior. 
 										}
-										else if(fb_profile_jo != null && fb_profile_jo.has("error"))
-										{
-											jsonresponse.put("message", "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"));
-											jsonresponse.put("response_status", "error");
-											(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " getting profile from FB produced an error" + fb_profile_jo.getJSONObject("error").getString("message"));
+										else
+											expires_in_seconds = Integer.parseInt(expires);
+										cal.add(Calendar.SECOND, expires_in_seconds);
+										long expires_timestamp = cal.getTimeInMillis() / 1000;
+										boolean successful = user.setFacebookAccessTokenExpiresAndUID(preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
+																					
+										if(successful)
+										{	
+											jsonresponse.put("response_status", "success");
+											jsonresponse.put("message", "The access_token, expires and uid should be set in the database now.");
+											(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " success");
 										}
 										else
 										{
-											jsonresponse.put("message", "fb profile didn't have id field");
+											jsonresponse.put("message", "encountered error attempting to update the database with the 3 fb values");
 											jsonresponse.put("response_status", "error");
-											(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " fb profile didn't have id field");
+											(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " couldn't update db with 3 fb values");
 										}
 									}
-									catch(NumberFormatException nfe)
+									else if(fb_profile_jo != null && fb_profile_jo.has("error"))
 									{
-										jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
+										jsonresponse.put("message", "Getting profile from FB produced an error. message=" + fb_profile_jo.getJSONObject("error").getString("message") + " code=" + fb_profile_jo.getJSONObject("error").getString("code"));
 										jsonresponse.put("response_status", "error");
-										(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " number format exception");
-									}
-								}
-								else
-								{
-									jsonresponse = preliminary_jsonresponse; // just return the error
-									(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " preliminary response was erroneous");
-								}
-							}
-						}
-					
-					}		
-				}
-				else if (method.equals("getFacebookSubAccountInfoFromFacebook"))
-				{
-					// twitter account must be linked first. That info is then used as the verifier in lieu of a password
-					// hence, this is why we're asking for that information here.
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook twitter_handle not provided to method");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " twitter_access_token not provided to method");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " invalid user");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " twitter creds not in db");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " twitter creds were invalid");
-						}
-						else // twitter creds were OK
-						{
-							
-							SimpleEmailer se = new SimpleEmailer();
-							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " ");
-							
-							// now check to see if top-level FB is linked
-							if(!user.facebookTopLevelIsLinked())
-							{
-								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't get the subaccount (reporter page) information.");
-								jsonresponse.put("response_status", "error");
-								(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " top level fb not linked");
-							}
-							else
-							{
-								JSONArray fb_subaccounts_ja = user.getSubAccountsFromFacebook();
-								if(fb_subaccounts_ja == null)
-								{
-									jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
-									jsonresponse.put("response_status", "error");
-									(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " error retrieving from fb");
-								}
-								else
-								{	
-									if(fb_subaccounts_ja.length() == 0)
-									{
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found.");
-										(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " got from fb, no subaccounts found");
+										(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " getting profile from FB produced an error" + fb_profile_jo.getJSONObject("error").getString("message"));
 									}
 									else
 									{
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
-										(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " success getting subaccounts");
+										jsonresponse.put("message", "fb profile didn't have id field");
+										jsonresponse.put("response_status", "error");
+										(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " fb profile didn't have id field");
 									}
 								}
-									
+								catch(NumberFormatException nfe)
+								{
+									jsonresponse.put("message", "Number format exception for expires=" + preliminary_jsonresponse.getString("expires") + " or for fb profile id value full preliminary_jsonresponse=" + preliminary_jsonresponse);
+									jsonresponse.put("response_status", "error");
+									(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " number format exception");
+								}
+							}
+							else
+							{
+								jsonresponse = preliminary_jsonresponse; // just return the error
+								(new Platform()).addMessageToLog("Ep.getFBAccTokFromAuthCode for twitter_handle=" + twitter_handle + " preliminary response was erroneous");
 							}
 						}
 					}
-				}
-				else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
-				{
-					// twitter account must be linked first. That info is then used as the verifier in lieu of a password
-					// hence, this is why we're asking for that information here.
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String fb_subaccount_id = request.getParameter("fb_subaccount_id");
-					if(twitter_handle == null)
+					else if (method.equals("getFacebookSubAccountInfoFromFacebook"))
 					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo no twitter_handle supplied to method");
+						(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " ");
+						// now check to see if top-level FB is linked
+						if(!user.facebookTopLevelIsLinked())
+						{
+							jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't get the subaccount (reporter page) information.");
+							jsonresponse.put("response_status", "error");
+							(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " top level fb not linked");
+						}
+						else
+						{
+							JSONArray fb_subaccounts_ja = user.getSubAccountsFromFacebook();
+							if(fb_subaccounts_ja == null)
+							{
+								jsonresponse.put("message", "Error retrieving subaccount information from Facebook.");
+								jsonresponse.put("response_status", "error");
+								(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " error retrieving from fb");
+							}
+							else
+							{	
+								if(fb_subaccounts_ja.length() == 0)
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("message", "Successfully pinged facebook, but no subaccounts found.");
+									(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " got from fb, no subaccounts found");
+								}
+								else
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("fb_subaccounts_ja", fb_subaccounts_ja);
+									(new Platform()).addMessageToLog("Ep.getFacebookSubAccountInfoFromFacebook for twitter_handle=" + twitter_handle + " success getting subaccounts");
+								}
+							}
+						}
 					}
-					else if(twitter_access_token == null)
+					else if (method.equals("setFacebookSubAccountInfo")) // sets the designated journalist page for this user
 					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no twitter_access_token supplied to method ");
-					}
-					else if(fb_subaccount_id == null)
-					{
-						jsonresponse.put("message", "A fb_subaccount_id value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-						(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no fb_subaccount_id supplied to method");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
+						String fb_subaccount_id = request.getParameter("fb_subaccount_id");
+						if(fb_subaccount_id == null)
 						{
-							jsonresponse.put("message", "Invalid user.");
+							jsonresponse.put("message", "A fb_subaccount_id value must be supplied to this method.");
 							jsonresponse.put("response_status", "error");
-							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " user was not valid");
+							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no fb_subaccount_id supplied to method");
 						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " no credentials");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-							(new Platform()).addMessageToLog("Ep.setFacebookSubAccountInfo for twitter_handle=" + twitter_handle + " credentials didn't match what is/was in db");
-						}
-						else // twitter creds were OK
-						{
-							SimpleEmailer se = new SimpleEmailer();
-							// now check to see if top-level FB is linked
+						else
+						{	
 							if(!user.facebookTopLevelIsLinked())
 							{
 								jsonresponse.put("message", "It appears the top-level facebook account is not linked. Thus, we can't set the subaccount (reporter page).");
@@ -856,976 +694,353 @@ public class Endpoint extends HttpServlet {
 							}
 						}
 					}
-				}
-				
-				
-				/***
-				 *     _____ ________  ____   _ _       ___ _____ ___________ 
-				 *    /  ___|_   _|  \/  | | | | |     / _ \_   _|  _  | ___ \
-				 *    \ `--.  | | | .  . | | | | |    / /_\ \| | | | | | |_/ /
-				 *     `--. \ | | | |\/| | | | | |    |  _  || | | | | |    / 
-				 *    /\__/ /_| |_| |  | | |_| | |____| | | || | \ \_/ / |\ \ 
-				 *    \____/ \___/\_|  |_/\___/\_____/\_| |_/\_/  \___/\_| \_|
-				 *                                                            
-				 *                                                            
-				 */
-				
-				else if (method.equals("getStations")) // inclusive
-				{
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					if(twitter_handle == null)
+					else if(user.isGlobalAdmin()) // everything else requires global permissions
 					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
+						/***
+						 *     _____                                                  _   _               _                                                                            
+						 *    |  __ \                                                | | | |             | |                                                                           
+						 *    | |  \/_____ _ __   ___ _ __ _ __ ___    _ __ ___   ___| |_| |__   ___   __| |___   _ __ ___  __ _     _ __   ___    _ __   __ _ _ __ __ _ _ __ ___  ___ 
+						 *    | | _|______| '_ \ / _ \ '__| '_ ` _ \  | '_ ` _ \ / _ \ __| '_ \ / _ \ / _` / __| | '__/ _ \/ _` |   | '_ \ / _ \  | '_ \ / _` | '__/ _` | '_ ` _ \/ __|
+						 *    | |_\ \     | |_) |  __/ |  | | | | | | | | | | | |  __/ |_| | | | (_) | (_| \__ \ | | |  __/ (_| |_  | | | | (_) | | |_) | (_| | | | (_| | | | | | \__ \
+						 *     \____/     | .__/ \___|_|  |_| |_| |_| |_| |_| |_|\___|\__|_| |_|\___/ \__,_|___/ |_|  \___|\__, (_) |_| |_|\___/  | .__/ \__,_|_|  \__,_|_| |_| |_|___/
+						 *                | |                                                                                 | |                 | |                                  
+						 *                |_|                                                                                 |_|                 |_|                                  
+						 */
+						if(method.equals("getStations"))// || method.equals("") || method.equals("") || method.equals("") || method.equals(""))
 						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
+							if(method.equals("getStations"))
 							{
-								Platform p = new Platform();
-								JSONArray stations_ja = p.getStationsAsJSONArray();
+								JSONArray stations_ja = (new Platform()).getStationsAsJSONArray();
 								if(stations_ja != null)
 								{
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("stations_ja", stations_ja);
+									(new Platform()).addMessageToLog("Ep.getStations(): requested by twitter_handle=" + twitter_handle + " successful.");
 								}
 								else
 								{
 									jsonresponse.put("message", "Error getting stations as JSONArray");
 									jsonresponse.put("response_status", "error");
+									(new Platform()).addMessageToLog("Ep.getStations():requested by twitter_handle=" + twitter_handle + " unsuccessful. Unable to retrieve stations from db.");
 								}
+							}
+						
+						}
+						/***
+						 *     _____                                                  _   _               _                            _                           _       
+						 *    |  __ \                                                | | | |             | |                          | |                         | |      
+						 *    | |  \/_____ _ __   ___ _ __ _ __ ___    _ __ ___   ___| |_| |__   ___   __| |___   _ __ ___  __ _    __| | ___  ___      ___  _ __ | |_   _ 
+						 *    | | _|______| '_ \ / _ \ '__| '_ ` _ \  | '_ ` _ \ / _ \ __| '_ \ / _ \ / _` / __| | '__/ _ \/ _` |  / _` |/ _ \/ __|    / _ \| '_ \| | | | |
+						 *    | |_\ \     | |_) |  __/ |  | | | | | | | | | | | |  __/ |_| | | | (_) | (_| \__ \ | | |  __/ (_| | | (_| |  __/\__ \_  | (_) | | | | | |_| |
+						 *     \____/     | .__/ \___|_|  |_| |_| |_| |_| |_| |_|\___|\__|_| |_|\___/ \__,_|___/ |_|  \___|\__, |  \__,_|\___||___(_)  \___/|_| |_|_|\__, |
+						 *                | |                                                                                 | |                                     __/ |
+						 *                |_|                                                                                 |_|                                    |___/ 
+						 */
+						if(method.equals("getUser") || method.equals("verifyTwitterCredentials") || method.equals("verifyTopLevelFBCredentials") || method.equals("verifyPageFBCredentials"))
+						{
+							String designation = request.getParameter("designation");
+							if(designation == null)
+							{
+								jsonresponse.put("message", "This method (" + method + ") requires a designation value.");
+								jsonresponse.put("response_status", "error");
+								(new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing designation value.");
 							}
 							else
 							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				else if (method.equals("getActiveReporterDesignations"))
-				{	
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
+								if (method.equals("getUser")) // for getting a DIFFERENT user, global_admin required
 								{
-									jsonresponse.put("message", "The station value provided was not valid.");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{
+									User target_user = new User(designation, "designation");
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("reporters_ja", new JSONArray(station.getReporters()));
+									jsonresponse.put("user_jo", target_user.getJSONObject());
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				else if (method.equals("getFrameTimestamps")) // inclusive
-				{
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					String begin = request.getParameter("begin");
-					String end = request.getParameter("end");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(begin == null)
-					{
-						jsonresponse.put("message", "A begin value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(end == null)
-					{
-						jsonresponse.put("message", "A end value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station value provided was not valid.");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{
-									JSONArray timestamps_ja = station.getFrameTimestamps(new Long(begin).longValue()*1000, new Long(end).longValue()*1000);
-									jsonresponse.put("response_status", "success");
-									jsonresponse.put("timestamps_ja", timestamps_ja);
-								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				else if (method.equals("getFrames")) // inclusive
-				{
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					String begin = request.getParameter("begin");
-					String end = request.getParameter("end");
-					String get_score_data = request.getParameter("get_score_data");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(begin == null)
-					{
-						jsonresponse.put("message", "A begin value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(end == null)
-					{
-						jsonresponse.put("message", "A end value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(get_score_data == null)
-					{
-						jsonresponse.put("message", "A get_score_data value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station value provided was not valid.");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{
-									if(get_score_data.equals("true"))
-									{	
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, true));
-									}
-									else if(get_score_data.equals("false"))
-									{
-										jsonresponse.put("response_status", "success");
-										jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, false));
-									}
-									else
-									{	
-										jsonresponse.put("message", "get_score_data must be true or false.");
-										jsonresponse.put("response_status", "error");
-									}
-								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				else if (method.equals("getFramesAboveDesignationHomogeneityThreshold"))
-				{	
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					String begin = request.getParameter("begin");
-					String end = request.getParameter("end");
-					String designation = request.getParameter("designation");
-					String singlemodifier = request.getParameter("singlemodifier");
-					String delta = request.getParameter("delta");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(begin == null)
-					{
-						jsonresponse.put("message", "A begin value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(end == null)
-					{
-						jsonresponse.put("message", "A end value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "A designation value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(singlemodifier == null)
-					{
-						jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(delta == null)
-					{
-						jsonresponse.put("message", "A delta value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station parameter provided was invalid. ");
-									jsonresponse.put("response_status", "error");
-								}
-								else
+								else if (method.equals("verifyTwitterCredentials"))
 								{	
-									jsonresponse.put("response_status", "success");
-									boolean get_score_data = true;
-									jsonresponse.put("frames_ja", station.getFramesAboveDesignationHomogeneityThresholdAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, 
-											designation, new Double(singlemodifier).doubleValue(), get_score_data)); 
+									User target_user = new User(designation, "designation");
+									boolean tCredsAreValid = target_user.twitterCredentialsAreValid();
+									jsonresponse.put("valid", tCredsAreValid);
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				else if (method.equals("getAlertFrames"))
-				{
-					System.out.println("Endpoint begin getAlertFrames");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					
-					String begin = request.getParameter("begin");
-					String end = request.getParameter("end");
-					String singlemodifier = request.getParameter("singlemodifier");
-					String mamodifier = request.getParameter("mamodifier");
-					String mawindow = request.getParameter("mawindow");
-					String awp = request.getParameter("awp");
-					String nrpst = request.getParameter("nrpst"); // number required past single threshold
-					
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(begin == null)
-					{
-						jsonresponse.put("message", "A begin value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(end == null)
-					{
-						jsonresponse.put("message", "A end value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(awp == null)
-					{
-						jsonresponse.put("message", "An awp value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(singlemodifier == null)
-					{
-						jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(mamodifier == null)
-					{
-						jsonresponse.put("message", "A mamodifier value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(mawindow == null)
-					{
-						jsonresponse.put("message", "A mawindow value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(nrpst == null)
-					{
-						jsonresponse.put("message", "A nrpst value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station parameter provided was invalid. ");
-									jsonresponse.put("response_status", "error");
-								}
-								else
+								else if (method.equals("verifyTopLevelFBCredentials"))
 								{	
-									int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
-									double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
-									double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
-									int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
-									long begin_long = Long.parseLong(begin);
-									long end_long = Long.parseLong(end);
-									int nrpst_int = (new Integer(request.getParameter("nrpst"))).intValue();
-									System.out.println("Endpoint.getAlertFrames(): passed validation gauntlet, moving to getAlertFrames() function");
-									JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, awp_in_sec, nrpst_int);
+									User target_user = new User(designation, "designation");
+									boolean fbCredsAreValid = target_user.fbTopLevelTokenIsValid();
+									jsonresponse.put("valid", fbCredsAreValid);
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("alert_frames_ja", alert_frames_ja);
-								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				//***
-				// VERY DANGEROUS!!! 
-				//***
-				else if (method.equals("resetProductionAlertTimers"))
-				{
-					System.out.println("Endpoint begin resetProductionAlertTimers");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station parameter provided was invalid. ");
-									jsonresponse.put("response_status", "error");
-								}
-								else
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");	
+								} 
+								else if (method.equals("verifyPageFBCredentials"))
 								{	
-									station.resetProductionAlertTimers();
+									User target_user = new User(designation, "designation");
+									boolean fbPageCredsAreValid = target_user.fbPageTokenIsValid();
+									jsonresponse.put("valid", fbPageCredsAreValid);
 									jsonresponse.put("response_status", "success");
-								}
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");		
+								} 
+							}
+						}
+						/***
+						 *     _____                                                  _   _               _                              _        _   _             
+						 *    |  __ \                                                | | | |             | |                            | |      | | (_)            
+						 *    | |  \/_____ _ __   ___ _ __ _ __ ___    _ __ ___   ___| |_| |__   ___   __| |___   _ __ ___  __ _     ___| |_ __ _| |_ _  ___  _ __  
+						 *    | | _|______| '_ \ / _ \ '__| '_ ` _ \  | '_ ` _ \ / _ \ __| '_ \ / _ \ / _` / __| | '__/ _ \/ _` |   / __| __/ _` | __| |/ _ \| '_ \ 
+						 *    | |_\ \     | |_) |  __/ |  | | | | | | | | | | | |  __/ |_| | | | (_) | (_| \__ \ | | |  __/ (_| |_  \__ \ || (_| | |_| | (_) | | | |
+						 *     \____/     | .__/ \___|_|  |_| |_| |_| |_| |_| |_|\___|\__|_| |_|\___/ \__,_|___/ |_|  \___|\__, (_) |___/\__\__,_|\__|_|\___/|_| |_|
+						 *                | |                                                                                 | |                                   
+						 *                |_|                                                                                 |_|                                   
+						 */
+						if(method.equals("getActiveReporterDesignations") || method.equals("resetProductionAlertTimers") || method.equals("resetTestAlertTimers") || method.equals("getMostRecentAlerts") || // station only
+								method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames")) // station + begin/end
+						{
+							String station_param = request.getParameter("station");
+							if(station_param == null)
+							{
+								jsonresponse.put("message", "This method (" + method + ") requires a station value.");
+								jsonresponse.put("response_status", "error");
+								(new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing station value.");
 							}
 							else
 							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
+								 Station station = new Station(station_param);
+								 if(!station.isValid())
+								 {
+									 jsonresponse.put("message", "The station value provided was not valid.");
+									 jsonresponse.put("response_status", "error");
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected. Station value invalid.");
+								 }
+								/***
+								 *     _____                                                  _   _               _                              _        _   _               _____ _   _  _   __   __
+								 *    |  __ \                                                | | | |             | |                            | |      | | (_)             |  _  | \ | || |  \ \ / /
+								 *    | |  \/_____ _ __   ___ _ __ _ __ ___    _ __ ___   ___| |_| |__   ___   __| |___   _ __ ___  __ _     ___| |_ __ _| |_ _  ___  _ __   | | | |  \| || |   \ V / 
+								 *    | | _|______| '_ \ / _ \ '__| '_ ` _ \  | '_ ` _ \ / _ \ __| '_ \ / _ \ / _` / __| | '__/ _ \/ _` |   / __| __/ _` | __| |/ _ \| '_ \  | | | | . ` || |    \ /  
+								 *    | |_\ \     | |_) |  __/ |  | | | | | | | | | | | |  __/ |_| | | | (_) | (_| \__ \ | | |  __/ (_| |_  \__ \ || (_| | |_| | (_) | | | | \ \_/ / |\  || |____| |  
+								 *     \____/     | .__/ \___|_|  |_| |_| |_| |_| |_| |_|\___|\__|_| |_|\___/ \__,_|___/ |_|  \___|\__, (_) |___/\__\__,_|\__|_|\___/|_| |_|  \___/\_| \_/\_____/\_/  
+								 *                | |                                                                                 | |                                                             
+								 *                |_|                                                                                 |_|                                                             
+								 */
+								 else if (method.equals("getActiveReporterDesignations"))
+								 {	
+									 jsonresponse.put("response_status", "success");
+									 jsonresponse.put("reporters_ja", new JSONArray(station.getReporters()));
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+								 }
+								 else if (method.equals("resetProductionAlertTimers")) // DANGEROUS!!!!
+								 {
+									 station.resetProductionAlertTimers();
+									 jsonresponse.put("response_status", "success");
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+								 } 
+								 else if (method.equals("resetTestAlertTimers"))
+								 {
+									 station.resetTestAlertTimers();
+									 jsonresponse.put("response_status", "success");
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+								 }
+								 else if (method.equals("getMostRecentAlerts"))
+								 {	
+									 jsonresponse.put("alerts_ja",station.getMostRecentAlerts(24));
+									 jsonresponse.put("response_status", "success");
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+								 }
+								 /***
+								  *     _____                                                  _   _                                _        _   _                 _                _                          _ 
+								  *    |  __ \                                                | | | |                              | |      | | (_)               | |              (_)                        | |
+								  *    | |  \/_____ _ __   ___ _ __ _ __ ___    _ __ ___   ___| |_| |__      _ __ ___  __ _     ___| |_ __ _| |_ _  ___  _ __     | |__   ___  __ _ _ _ __       ___ _ __   __| |
+								  *    | | _|______| '_ \ / _ \ '__| '_ ` _ \  | '_ ` _ \ / _ \ __| '_ \    | '__/ _ \/ _` |   / __| __/ _` | __| |/ _ \| '_ \    | '_ \ / _ \/ _` | | '_ \     / _ \ '_ \ / _` |
+								  *    | |_\ \     | |_) |  __/ |  | | | | | | | | | | | |  __/ |_| | | |_  | | |  __/ (_| |_  \__ \ || (_| | |_| | (_) | | | |_  | |_) |  __/ (_| | | | | |_  |  __/ | | | (_| |
+								  *     \____/     | .__/ \___|_|  |_| |_| |_| |_| |_| |_|\___|\__|_| |_(_) |_|  \___|\__, (_) |___/\__\__,_|\__|_|\___/|_| |_( ) |_.__/ \___|\__, |_|_| |_( )  \___|_| |_|\__,_|
+								  *                | |                                                                   | |                                  |/               __/ |       |/                    
+								  *                |_|                                                                   |_|                                                  |___/                              
+								  */
+								 else if(method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames"))
+								 {
+									 String begin = request.getParameter("begin");
+									 String end = request.getParameter("end");
+									 if(begin == null)
+									 {
+										 jsonresponse.put("message", "A begin value must be supplied to this method.");
+										 jsonresponse.put("response_status", "error");
+										 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing begin value.");
+									 }
+									 else if(end == null)
+									 {
+										 jsonresponse.put("message", "A end value must be supplied to this method.");
+										 jsonresponse.put("response_status", "error");
+										 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing end value.");
+									 }
+									 else
+									 {
+										 if (method.equals("getFrameTimestamps")) // inclusive
+										 {
+											 JSONArray timestamps_ja = station.getFrameTimestamps(new Long(begin).longValue()*1000, new Long(end).longValue()*1000);
+											 jsonresponse.put("response_status", "success");
+											 jsonresponse.put("timestamps_ja", timestamps_ja);
+											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+										 }
+										 else if (method.equals("getFrames")) // inclusive
+										 {
+											 String get_score_data = request.getParameter("get_score_data");
+											 if(get_score_data == null)
+											 {
+												 jsonresponse.put("message", "A get_score_data value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.getFrames():requested by twitter_handle=" + twitter_handle + " unsuccessful. a get_score_data param must be provided to this method.");
+											 }
+											 else
+											 {	
+												 if(get_score_data.equals("true"))
+												 {	
+													 jsonresponse.put("response_status", "success");
+													 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, true));
+													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+												 }
+												 else if(get_score_data.equals("false"))
+												 {
+													 jsonresponse.put("response_status", "success");
+													 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, false));
+													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+												 }
+												 else
+												 {	
+													 jsonresponse.put("message", "get_score_data must be true or false.");
+													 jsonresponse.put("response_status", "error");
+													 (new Platform()).addMessageToLog("Ep.getFrames(): get_score_data param must be \"true\" or \"false\".");
+												 }
+											 }
+										 }
+										 else if (method.equals("getFramesAboveDesignationHomogeneityThreshold"))
+										 {	
+											 String designation = request.getParameter("designation");
+											 String singlemodifier = request.getParameter("singlemodifier");
+											 String delta = request.getParameter("delta");
+											 if(designation == null)
+											 {
+												 jsonresponse.put("message", "A designation value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A designation value is required.");
+											 }
+											 else if(singlemodifier == null)
+											 {
+												 jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A singlemodifier value is required.");
+											 }
+											 else if(delta == null)
+											 {
+												 jsonresponse.put("message", "A delta value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A delta value is required.");
+											 }
+											 else
+											 {	
+												 jsonresponse.put("response_status", "success");
+												 boolean get_score_data = true;
+												 jsonresponse.put("frames_ja", station.getFramesAboveDesignationHomogeneityThresholdAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, 
+														 designation, new Double(singlemodifier).doubleValue(), get_score_data)); 
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+											 }	
+										 }
+										 else if (method.equals("getAlertFrames"))
+										 {
+											 String singlemodifier = request.getParameter("singlemodifier");
+											 String mamodifier = request.getParameter("mamodifier");
+											 String mawindow = request.getParameter("mawindow");
+											 String awp = request.getParameter("awp");
+											 String nrpst = request.getParameter("nrpst"); // number required past single threshold
+											 if(awp == null)
+											 {
+												 jsonresponse.put("message", "An awp value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An awp value is required.");
+											 }
+											 else if(singlemodifier == null)
+											 {
+												 jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A singlemodifier value is required.");
+											 }
+											 else if(mamodifier == null)
+											 {
+												 jsonresponse.put("message", "A mamodifier value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A mamodifier value is required.");
+											 }
+											 else if(mawindow == null)
+											 {
+												 jsonresponse.put("message", "A mawindow value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A mawindow value is required.");
+											 }
+											 else if(nrpst == null)
+											 {
+												 jsonresponse.put("message", "A nrpst value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A nrpst value is required.");
+											 }
+											 else
+											 {	
+												 int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
+												 double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
+												 double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
+												 int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
+												 long begin_long = Long.parseLong(begin);
+												 long end_long = Long.parseLong(end);
+												 int nrpst_int = (new Integer(request.getParameter("nrpst"))).intValue();
+												 JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, awp_in_sec, nrpst_int);
+												 jsonresponse.put("response_status", "success");
+												 jsonresponse.put("alert_frames_ja", alert_frames_ja);
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+											 }		
+										 }
+									 }
+								 } // end methods requiring station, begin, end
 							}
-						}
-					}
-				} 
-				else if (method.equals("resetTestAlertTimers"))
-				{
-					System.out.println("Endpoint begin resetTestAlertTimers");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String station_param = request.getParameter("station");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(station_param == null)
-					{
-						jsonresponse.put("message", "A station value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
+						} // end methods requiring station value
+						else if (method.equals("deleteSocialItem"))
+						{	
+							String id = request.getParameter("id"); // this is the huzon.tv ID. NOT the social item ID
+							if(id == null)
 							{
-								Station station = new Station(station_param);
-								if(!station.isValid())
-								{
-									jsonresponse.put("message", "The station parameter provided was invalid. ");
-									jsonresponse.put("response_status", "error");
-								}
-								else
-								{	
-									station.resetTestAlertTimers();
-									jsonresponse.put("response_status", "success");
-								}
+								jsonresponse.put("message", "A id value must be supplied to this method.");
+								jsonresponse.put("response_status", "error");
+								(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An id value is required.");
 							}
 							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}
-				}
-				else if (method.equals("deleteSocialItem"))
-				{	
-					System.out.println("Endpoint begin deleteSocialItem");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					//String social_type = request.getParameter("social_type");
-					//String designation = request.getParameter("designation");
-					String id = request.getParameter("id"); // this is the huzon.tv ID. NOT the social item ID
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(id == null)
-					{
-						jsonresponse.put("message", "A id value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
+							{	
 								Alert alert = new Alert(Long.parseLong(id));
 								boolean deletionsuccessful = alert.deleteSocialItem();
 								if(deletionsuccessful)
 								{
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("social_response", true);
+									(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
 								else
 								{
 									jsonresponse.put("message", "Error. Could not delete from the social service.");
 									jsonresponse.put("response_status", "error");
+									(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. Could not delete from the social service.");
 								}
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
+							}	
+						} 
+						else if (method.equals("getAlertMode"))
+						{	
+							Platform p = new Platform();
+							String value = p.getAlertMode();
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("alert_mode", value);
+							(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 						}
-					}	
-				} 
-				else if (method.equals("verifyTwitterCredentials"))
-				{	
-					System.out.println("Endpoint begin verifyTwitterCredentials");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String designation = request.getParameter("designation");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "A designation value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
+					} // end methods requiring global permissions (user is global admin) block
 					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								User target_user = new User(designation, "designation");
-								boolean tCredsAreValid = target_user.twitterCredentialsAreValid();
-								jsonresponse.put("valid", tCredsAreValid);
-								jsonresponse.put("response_status", "success");
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}	
-				}
-				else if (method.equals("verifyTopLevelFBCredentials"))
-				{	
-					System.out.println("Endpoint begin verifyTopLevelFBCredentials");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String designation = request.getParameter("designation");
-					if(twitter_handle == null)
 					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
+						// user is not global admin or method unknown
+						jsonresponse.put("message", "Method unknown or global permissions required.");
 						jsonresponse.put("response_status", "error");
+						(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") method unknown or global permissions required.");
 					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "A designation value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								User target_user = new User(designation, "designation");
-								boolean fbCredsAreValid = target_user.fbTopLevelTokenIsValid();
-								jsonresponse.put("valid", fbCredsAreValid);
-								jsonresponse.put("response_status", "success");
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}	
-				} 
-				else if (method.equals("verifyPageFBCredentials"))
-				{	
-					System.out.println("Endpoint begin verifyPageFBCredentials");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					String designation = request.getParameter("designation");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(designation == null)
-					{
-						jsonresponse.put("message", "A designation value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								User target_user = new User(designation, "designation");
-								boolean fbPageCredsAreValid = target_user.fbPageTokenIsValid();
-								jsonresponse.put("valid", fbPageCredsAreValid);
-								jsonresponse.put("response_status", "success");
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}	
-				} 
-				else if (method.equals("getMostRecentAlerts"))
-				{	
-					System.out.println("Endpoint begin getMostRecentAlerts");
-					String twitter_handle = request.getParameter("twitter_handle");
-					String twitter_access_token = request.getParameter("twitter_access_token");
-					if(twitter_handle == null)
-					{
-						jsonresponse.put("message", "A twitter_handle value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else if(twitter_access_token == null)
-					{
-						jsonresponse.put("message", "A twitter_access_token value must be supplied to this method.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{	
-						// check twitter_handle and twitter_access_token for validity
-						User user = new User(twitter_handle, "twitter_handle");
-						if(!user.isValid())
-						{
-							jsonresponse.put("message", "Invalid user.");
-							jsonresponse.put("response_status", "error");
-						}
-						else if(user.getTwitterAccessToken() == null || user.getTwitterAccessToken().equals(""))
-						{
-							jsonresponse.put("message", "This twitter handle is in the database, but has no credentials. Please register.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else if(!user.getTwitterAccessToken().equals(twitter_access_token))
-						{
-							jsonresponse.put("message", "The twitter credentials provided were invalid. Can't retrieve stations.");
-							jsonresponse.put("response_status", "error");
-							jsonresponse.put("error_code", "07734");
-						}
-						else // twitter creds were OK
-						{
-							if(user.isGlobalAdmin())
-							{
-								Platform p = new Platform();
-								jsonresponse.put("alerts_ja",p.getMostRecentAlerts(24));
-								jsonresponse.put("response_status", "success");
-							}
-							else
-							{
-								jsonresponse.put("message", "You do not have the required permissions to call this method.");
-								jsonresponse.put("response_status", "error");
-							}
-						}
-					}	
-				}
-				else if (method.equals("getAlertMode"))
-				{	
-					Platform p = new Platform();
-					String value = p.getAlertMode();
-					jsonresponse.put("response_status", "success");
-					jsonresponse.put("alert_mode", value);
-				}
-			}
+				} // end twitter creds ok block
+			}// end methods requiring auth
 			tempcal = Calendar.getInstance();
 			long timestamp_at_exit = tempcal.getTimeInMillis();
 			long elapsed = timestamp_at_exit - timestamp_at_entry;

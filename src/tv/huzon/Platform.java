@@ -523,62 +523,7 @@ public class Platform {
 	
 	
 	
-	JSONArray getMostRecentAlerts(int num_to_get)
-	{
-		JSONArray alerts_ja = new JSONArray();
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			
-			con = DriverManager.getConnection(jdbcconnectionstring);
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM alerts WHERE deletion_timestamp IS NULL ORDER BY creation_timestamp DESC LIMIT 0," + num_to_get);
-			int x = 0;
-			JSONObject jo;
-			while(rs.next() && x < num_to_get)
-			{
-				jo = new JSONObject();
-				jo.put("image_url", rs.getString("image_url"));
-				jo.put("designation", rs.getString("designation"));
-				java.util.Date date = rs.getTimestamp("creation_timestamp");
-				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
-				if(rs.getString("created_by").isEmpty())
-					jo.put("created_by", rs.getString("designation"));
-				else
-					jo.put("created_by", rs.getString("created_by"));
-				jo.put("social_type", rs.getString("social_type"));
-				jo.put("station", rs.getString("station"));
-				jo.put("id", rs.getLong("id"));
-				alerts_ja.put(jo);
-				x++;
-			}
-			rs.close();
-			stmt.close();
-			con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}  	
-		return alerts_ja;
-	}
+	
 
 	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
 	{
