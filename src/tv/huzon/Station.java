@@ -238,6 +238,24 @@ public class Station implements java.lang.Comparable<Station> {
 		return alerts_ja;
 	}
 	
+	// datestring convenience method
+	public JSONArray getFrameTimestamps(String beginstring, String endstring)
+	{
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			return null;
+		}
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
+		return getFrameTimestamps(begin_in_ms, end_in_ms);
+	}
+	
 	public JSONArray getFrameTimestamps(long begin_in_ms, long end_in_ms)
 	{
 		JSONArray timestamps_ja = new JSONArray();
@@ -278,6 +296,42 @@ public class Station implements java.lang.Comparable<Station> {
 		return timestamps_ja; 
 	}
 	
+	public long convertDateTimeStringToLong(String dtstring)
+	{
+		if(dtstring.length() < 8)
+		{
+			System.out.println("Station.convertDateTimeStringToLong(): string must be at least 8 char long");
+			return -1L;
+		}
+		
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		cal.set(Calendar.YEAR, Integer.parseInt(dtstring.substring(0,4)));
+		cal.set(Calendar.MONTH, Integer.parseInt(dtstring.substring(4,6)) - 1);
+		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(dtstring.substring(6,8)));
+		if(dtstring.length() >= 11)
+			cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(dtstring.substring(9,11)));
+		else
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+		if(dtstring.length() >= 13)
+			cal.set(Calendar.MINUTE, Integer.parseInt(dtstring.substring(11,13)));
+		else
+			cal.set(Calendar.MINUTE, 0);
+		if(dtstring.length() >= 15)
+			cal.set(Calendar.SECOND, Integer.parseInt(dtstring.substring(13,15)));
+		else
+			cal.set(Calendar.SECOND, 0);
+		if(dtstring.length() ==19)
+			cal.set(Calendar.MILLISECOND, Integer.parseInt(dtstring.substring(16,19)));
+		else
+			cal.set(Calendar.MILLISECOND, 0);
+		
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z");
+		System.out.println(dateFormat.format(cal.getTime()));
+		
+		return cal.getTimeInMillis();
+	}
+	
 	public TreeSet<Frame> getFrames(String beginstring, String endstring, String designation, double single_modifier_double) // convenience method for taking datestring in the form YYYYMMDD_HHMMSS_sss
 	{
 		if(beginstring.length() < 8)
@@ -290,55 +344,8 @@ public class Station implements java.lang.Comparable<Station> {
 			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
 			return null;
 		}
-		
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
-		cal.set(Calendar.YEAR, Integer.parseInt(beginstring.substring(0,4)));
-		cal.set(Calendar.MONTH, Integer.parseInt(beginstring.substring(4,6)) - 1);
-		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(beginstring.substring(6,8)));
-		if(beginstring.length() >= 11)
-			cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(beginstring.substring(9,11)));
-		else
-			cal.set(Calendar.HOUR_OF_DAY, 0);
-		if(beginstring.length() >= 13)
-			cal.set(Calendar.MINUTE, Integer.parseInt(beginstring.substring(11,13)));
-		else
-			cal.set(Calendar.MINUTE, 0);
-		if(beginstring.length() >= 15)
-			cal.set(Calendar.SECOND, Integer.parseInt(beginstring.substring(13,15)));
-		else
-			cal.set(Calendar.SECOND, 0);
-		if(beginstring.length() ==19)
-			cal.set(Calendar.MILLISECOND, Integer.parseInt(beginstring.substring(16,19)));
-		else
-			cal.set(Calendar.MILLISECOND, 0);
-		
-		long begin_in_ms = cal.getTimeInMillis();
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z");
-		System.out.println(dateFormat.format(cal.getTime()));
-
-		cal.set(Calendar.YEAR, Integer.parseInt(endstring.substring(0,4)));
-		cal.set(Calendar.MONTH, Integer.parseInt(endstring.substring(4,6)) - 1);
-		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(endstring.substring(6,8)));
-		if(endstring.length() >= 11)
-			cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(endstring.substring(9,11)));
-		else
-			cal.set(Calendar.HOUR_OF_DAY, 0);
-		if(endstring.length() >= 13)
-			cal.set(Calendar.MINUTE, Integer.parseInt(endstring.substring(11,13)));
-		else
-			cal.set(Calendar.MINUTE, 0);
-		if(endstring.length() >= 15)
-			cal.set(Calendar.SECOND, Integer.parseInt(endstring.substring(13,15)));
-		else
-			cal.set(Calendar.SECOND, 0);
-		if(endstring.length() ==19)
-			cal.set(Calendar.MILLISECOND, Integer.parseInt(endstring.substring(16,19)));
-		else
-			cal.set(Calendar.MILLISECOND, 0);
-		
-		long end_in_ms = cal.getTimeInMillis();
-		System.out.println(dateFormat.format(cal.getTime()));
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
 		
 		return getFrames(begin_in_ms, end_in_ms, designation, single_modifier_double);
 	}
@@ -409,6 +416,34 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnset; 
 	}
 
+	// datestring convenience method
+	public JSONArray getFramesAsJSONArray(String beginstring, String endstring, boolean get_score_data)
+	{
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			return null;
+		}
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
+		JSONArray frames_ja = new JSONArray();
+		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null, 0);
+		Iterator<Frame> it = frameset.iterator();
+		Frame currentframe = null;
+		while(it.hasNext())
+		{
+			currentframe = it.next();
+			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
+			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null)); // no designation specified
+		}
+		return frames_ja;
+	}
+	
 	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
 	{
 		JSONArray frames_ja = new JSONArray();
@@ -439,61 +474,117 @@ public class Station implements java.lang.Comparable<Station> {
 		return frames_ja;
 	}
 	
-	JSONArray getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
+	// datestring convenience method.
+	JSONArray getAlertFrames(String beginstring, String endstring, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
+	{
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			return null;
+		}
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
+		return getAlertFrames(begin_in_ms, end_in_ms, ma_modifier_double, single_modifier_double, awp_int, nrpst);
+	}
+	
+	JSONArray getAlertFrames(long begin_in_ms, long end_in_ms, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
 	{
 		System.out.println("Station.getAlertFrames(): begin");
+		JSONArray return_ja = new JSONArray();
 		TreeSet<String> reporters = getReporters();
-		
 		Iterator<String> it = reporters.iterator();
 		User currentreporter = null;
-		ExecutorService executor = Executors.newFixedThreadPool(300);
 		
-		Vector<Future<JSONArray>> reportertasks = new Vector<Future<JSONArray>>();
-		Future<JSONArray> currenttask = null;
+		String querystring = "SELECT * FROM frames_" + getCallLetters() + " WHERE ((`timestamp_in_ms` <= " + end_in_ms + " AND `timestamp_in_ms` >= " + begin_in_ms + ") AND ( ";
 		while(it.hasNext()) // looping through reporters
 		{
 			currentreporter = new User(it.next(), "designation");
-			System.out.println("Station.getAlertFrames(): looping reporters and spinning off tasks to get alert frames for each " + currentreporter.getDesignation());
-			
-			// get an alert_frames_ja for each reporter
-			currenttask = executor.submit(new GAF4ReporterCallable(currentreporter, this, begin_long, end_long, ma_modifier_double, single_modifier_double, awp_int, nrpst));
-			
-			// add this Future<JSONArray> of alert frames to the vector above to be accessed below
-		    reportertasks.add(currenttask);
+			querystring = querystring + " (`" + currentreporter.getDesignation() + "_ma6` >= " + (currentreporter.getHomogeneity()*ma_modifier_double) + " AND ";
+			querystring = querystring + " `" + currentreporter.getDesignation() + "_avg` >= " + (currentreporter.getHomogeneity()*single_modifier_double) + ") OR ";
 		}
+		querystring = querystring.substring(0,querystring.length() - 4) + "))";
+		System.out.println("Station.getAlertFrames(): querystring=" + querystring);
 		
-		JSONArray master_alert_frames_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		Platform p = new Platform();
 		try
 		{
-			JSONArray current_ja = null;
-			Iterator<String> it2 = reporters.iterator();
-			int x = 0;
-			String currentdesignation = null;
-			while(it2.hasNext()) // loop through the reporters again, requesting the JSONArray from the Future task for each reporter. 
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			stmt = con.createStatement();
+			rs = stmt.executeQuery(querystring);
+			TreeSet<Frame> frames = getFramesFromResultSet(rs);
+			System.out.println("# of frames=" + frames.size());
+			Iterator<Frame> frames_it = frames.iterator();
+			Frame currentframe = null;
+			JSONObject last_alerts_jo = new JSONObject();
+			while(frames_it.hasNext())
 			{
-				currentdesignation = it2.next();
-				System.out.println("Station.getAlertFrames(): looping reporters again and asking for the spinoff results for " + currentdesignation);
-				current_ja = reportertasks.get(x).get();
-				for(int y = 0; y < current_ja.length(); y++)
+				currentframe = frames_it.next();
+				System.out.println("Station.getAlertFrames(): Analyzing frame for " + currentframe.getHighestMovingAverageDesignation() + " which had ma=" + currentframe.getMovingAverage6(currentframe.getHighestMovingAverageDesignation()));
+				if(last_alerts_jo.has(currentframe.getHighestMovingAverageDesignation()) && (currentframe.getTimestampInMillis() - last_alerts_jo.getLong(currentframe.getHighestMovingAverageDesignation()) < (awp_int * 1000)))
 				{
-					System.out.println("Station.getAlertFrames(): Adding a frame " + currentdesignation);
-					master_alert_frames_ja.put(current_ja.getJSONObject(y));
+					System.out.println("Station.getAlertFrames(): skipping timestamp " + currentframe.getTimestampInMillis() + " because it's within the awp window last alert was " + last_alerts_jo.getLong(currentframe.getHighestMovingAverageDesignation()));
 				}
-				x++;
+				else
+				{
+					TreeSet<Frame> frames_in_window_above_single_thresh = getFrames(currentframe.getTimestampInMillis() - 6000, currentframe.getTimestampInMillis(), currentframe.getHighestMovingAverageDesignation(), single_modifier_double);
+					if(frames_in_window_above_single_thresh.size() < nrpst)
+					{
+						System.out.println("Station.getAlertFrames(): skipping timestamp " + currentframe.getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
+					}
+					else
+					{	
+						System.out.println("Station.getAlertFrames(): adding timestamp " + currentframe.getTimestampInMillis());
+						JSONObject jo2add = currentframe.getAsJSONObject(true, null); // no designation specified
+						jo2add.put("designation", currentframe.getHighestMovingAverageDesignation());
+						jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage6(currentframe.getHighestMovingAverageDesignation()));
+						jo2add.put("ma_for_frame_that_passed_ma_thresh", currentframe.getMovingAverage6(currentframe.getHighestMovingAverageDesignation()));
+						jo2add.put("score_for_alert_frame", currentframe.getScore(currentframe.getHighestMovingAverageDesignation()));
+						jo2add.put("score_for_frame_that_passed_ma_thresh", currentframe.getScore(currentframe.getHighestMovingAverageDesignation()));
+						jo2add.put("image_name_for_frame_that_passed_ma_thresh", currentframe.getImageName());
+						double homogeneity = (new User(currentframe.getHighestMovingAverageDesignation(), "designation")).getHomogeneity();
+						jo2add.put("homogeneity", homogeneity);
+						jo2add.put("ma_threshold", homogeneity * ma_modifier_double);
+						jo2add.put("single_threshold", homogeneity * single_modifier_double);
+						jo2add.put("second_highest_designation",currentframe.getSecondHighestMovingAverageDesignation());
+						jo2add.put("second_highest_ma", currentframe.getSecondHighestMovingAverage());
+						jo2add.put("second_highest_score", currentframe.getDesignationScore(currentframe.getSecondHighestMovingAverageDesignation()));
+						return_ja.put(jo2add); 
+						last_alerts_jo.put(currentframe.getHighestMovingAverageDesignation(), currentframe.getTimestampInMillis());
+					}
+				}
 			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
-		catch(ExecutionException ee)
+		catch(SQLException sqle)
 		{
-			ee.printStackTrace();
-		} 
-		catch (InterruptedException e) 
-		{
-			e.printStackTrace();
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("Station.getAlertFrames(): SQLException message=" +sqle.getMessage());
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return master_alert_frames_ja;
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}  
+		return return_ja; 
 	}
 
 	// DANGEROUS!!!! This will reset all alerts for every active reporter at this station
@@ -721,7 +812,7 @@ public class Station implements java.lang.Comparable<Station> {
 		}   		
 		return returnval;
 	}
-	
+		
 	boolean unlock(String uuid, String social_type)
 	{
 		boolean returnval = false;
@@ -794,50 +885,12 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnval;
 	}
 	
-	
-	private String[] morning_greetings = {"Good morning", "Morning"};
-	private String[] afternoon_greetings = {"Good afternoon", "Afternoon"};
-	private String[] evening_greetings = {"Good evening", "Evening"};
-	private String[] generic_greetings = {"Hello", "Greetings"};
-	private String[] objects = {"Lexington", "Bluegrass", "Central Kentucky", "everyone", "folks", "viewers"};
-	
-	
 	String getMessage(String social_type, long timestamp_in_ms, long redirect_id, User reporter)
 	{
 		String returnval = "";
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 		cal.setTimeInMillis(timestamp_in_ms);
-	/*	ArrayList<String> greeting_choices = new ArrayList<String>();
-		if(cal.get(Calendar.HOUR_OF_DAY) < 12)
-		{	
-			for(int x = 0; x < morning_greetings.length; x++)
-				greeting_choices.add(morning_greetings[x]);
-			for(int x = 0; x < generic_greetings.length; x++)
-				greeting_choices.add(generic_greetings[x]);
-		}
-		else if(cal.get(Calendar.HOUR_OF_DAY) < 18)
-		{	
-			for(int x = 0; x < afternoon_greetings.length; x++)
-				greeting_choices.add(afternoon_greetings[x]);
-			for(int x = 0; x < generic_greetings.length; x++)
-				greeting_choices.add(generic_greetings[x]);
-		}
-		else if(cal.get(Calendar.HOUR_OF_DAY) < 24)
-		{	
-			for(int x = 0; x < evening_greetings.length; x++)
-				greeting_choices.add(evening_greetings[x]);
-			for(int x = 0; x < generic_greetings.length; x++)
-				greeting_choices.add(generic_greetings[x]);
-		}
-			
-		ArrayList<String> object_choices = new ArrayList<String>();
-		for(int x = 0; x < objects.length; x++)
-			object_choices.add(objects[x]);
-		
-		Random random = new Random();
-		int greetings_index = random.nextInt(greeting_choices.size());
-		int objects_index = random.nextInt(object_choices.size());*/
 		int hour = cal.get(Calendar.HOUR);
 		if(hour == 0)
 			hour = 12;
@@ -859,38 +912,8 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		else if(social_type.equals("twitter"))
 		{
-			// using display name for now while in test mode. Using @twitterhandle draws too much attention
-			//returnval = reporter.getDisplayName() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
 			returnval = "@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
 		}
-		/*int selector = random.nextInt(4);
-		
-		if(social_type.equals("facebook"))
-		{
-			if(selector == 0) 
-				returnval = getCallLetters().toUpperCase() + " is on. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;  
-			else if (selector == 1) 
-				returnval = "The time is " + ts_string + " and we're on RIGHT NOW. Fire up the TV or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
-			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;
-			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
-			else if(selector == 0) // no greeting,  "I", no "right now", "watch", timestamp last
-				returnval = "We're streaming live. Tune in! " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;  
-			else if (selector == 1) // no greeting, "we", "live", "catch" timestamp first
-				returnval = "The news is on RIGHT NOW. Catch us here: " + getLiveStreamURLAlias() + "?id=" + redirect_id;
-			else if (selector == 2) // greeting, "I", "right now", "watch", timestamp last 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I am on-air right now. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " -- " + ts_string;
-			else if (selector == 3) // greeting, "I", no "right now", "view", timestamp after greeting 
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". It is " + ts_string + " and I am on-air. Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id; 
-		}
-		else if(social_type.equals("twitter"))
-		{
-			if(selector == 0 || selector == 1)
-				returnval = "I'm on the air right now (" + ts_string + "). Tune in or watch the live stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #wkyt";  
-			else if(selector == 2 || selector == 3)
-				returnval = greeting_choices.get(greetings_index) + ", " + object_choices.get(objects_index) + ". I'm on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #wkyt";  
-		}*/
 		return returnval;
 	}
 	
@@ -1045,9 +1068,9 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public static void main(String[] args) {
 		Station s = new Station("wkyt");
-		//s.resetProductionAlertTimers();
+		s.resetProductionAlertTimers();
 		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
-		s.getFrames("20130704_1243", "20130704", null, -1);
+		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
 	}
 
 }

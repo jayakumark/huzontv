@@ -222,6 +222,7 @@ public class Frame implements Comparable<Frame> {
 	
 	double getMovingAverage6(String designation)
 	{
+		//System.out.print("Frame.getMovingAverage6(): frame=" + getTimestampInMillis() + " designation=" + designation + " ");
 		if(reporter_ma6s == null)  // reporter_ma6s was never populated
 		{
 			return -1;
@@ -232,11 +233,13 @@ public class Frame implements Comparable<Frame> {
 		{
 			if(reporter_designations[x].equals(designation))
 			{
+				//System.out.println("ma=" + reporter_ma6s[x]);
 				return reporter_ma6s[x];
 			}
 			x++;
 		}
-		return 0;
+	//	System.out.println("error");
+		return -1;
 	}
 	
 	// reporter_ma6s presumed to be set if this is called. Calling functions should be responsible for this.
@@ -499,7 +502,7 @@ public class Frame implements Comparable<Frame> {
 			{
 				double homogeneity = new User(designation,"designation").getHomogeneity();
 				double des_ma = getMovingAverage6(designation);
-				System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " (window=6) was specified by the simulator. Returning specialized information. designation=" + designation + " ma=" + des_ma);
+				//System.out.println("Frame.getAsJSONObject(): a designation=" + designation + " (window=6) was specified by the simulator. Returning specialized information. designation=" + designation + " ma=" + des_ma);
 				jo.put("designation", designation);
 				jo.put("designation_homogeneity", homogeneity);
 				jo.put("designation_moving_average", des_ma);
@@ -516,6 +519,7 @@ public class Frame implements Comparable<Frame> {
 					jo2.put("designation", reporter_designations[x]);
 					jo2.put("score_avg", reporter_avgs[x]);
 					jo2.put("num", reporter_nums[x]);
+					jo2.put("ma6", reporter_ma6s[x]);
 					reporter_jo.put(reporter_designations[x],jo2);
 					x++;
 				}

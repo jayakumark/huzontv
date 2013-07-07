@@ -724,7 +724,6 @@ public class Endpoint extends HttpServlet {
 									(new Platform()).addMessageToLog("Ep.getStations():requested by twitter_handle=" + twitter_handle + " unsuccessful. Unable to retrieve stations from db.");
 								}
 							}
-						
 						}
 						/***
 						 *     _____                                                  _   _               _                            _                           _       
@@ -870,9 +869,23 @@ public class Endpoint extends HttpServlet {
 									 }
 									 else
 									 {
+										 // the begin and end values can come in as ms timestmap or as YYYYMMDD_HHMMSS format. The underscore decides which to use.
+										 boolean use_long = false;
+										 long begin_long = 0L;
+										 long end_long = 0L;
+										 if(begin.indexOf("_") == -1 && end.indexOf("_") == -1)
+										 {
+											 begin_long = Long.parseLong(begin);
+											 end_long = Long.parseLong(end);
+											 use_long = true;
+										 }
 										 if (method.equals("getFrameTimestamps")) // inclusive
 										 {
-											 JSONArray timestamps_ja = station.getFrameTimestamps(new Long(begin).longValue()*1000, new Long(end).longValue()*1000);
+											 JSONArray timestamps_ja = null;
+											 if(use_long)
+												 timestamps_ja = station.getFrameTimestamps(begin_long, end_long);
+											 else
+												 timestamps_ja = station.getFrameTimestamps(begin, end);
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("timestamps_ja", timestamps_ja);
 											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
@@ -891,13 +904,19 @@ public class Endpoint extends HttpServlet {
 												 if(get_score_data.equals("true"))
 												 {	
 													 jsonresponse.put("response_status", "success");
-													 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, true));
+													 if(use_long)
+														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin_long, end_long, true));
+													 else
+														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin, end, true));
 													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 												 }
 												 else if(get_score_data.equals("false"))
 												 {
 													 jsonresponse.put("response_status", "success");
-													 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, false));
+													 if(use_long)
+														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin_long, end_long, false));
+													 else
+														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin, end, false));
 													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 												 }
 												 else
@@ -942,9 +961,7 @@ public class Endpoint extends HttpServlet {
 										 }
 										 else if (method.equals("getAlertFrames"))
 										 {
-											 String singlemodifier = request.getParameter("singlemodifier");
 											 String mamodifier = request.getParameter("mamodifier");
-											 String mawindow = request.getParameter("mawindow");
 											 String awp = request.getParameter("awp");
 											 String nrpst = request.getParameter("nrpst"); // number required past single threshold
 											 if(awp == null)
@@ -953,23 +970,11 @@ public class Endpoint extends HttpServlet {
 												 jsonresponse.put("response_status", "error");
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An awp value is required.");
 											 }
-											 else if(singlemodifier == null)
-											 {
-												 jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
-												 jsonresponse.put("response_status", "error");
-												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A singlemodifier value is required.");
-											 }
 											 else if(mamodifier == null)
 											 {
 												 jsonresponse.put("message", "A mamodifier value must be supplied to this method.");
 												 jsonresponse.put("response_status", "error");
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A mamodifier value is required.");
-											 }
-											 else if(mawindow == null)
-											 {
-												 jsonresponse.put("message", "A mawindow value must be supplied to this method.");
-												 jsonresponse.put("response_status", "error");
-												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A mawindow value is required.");
 											 }
 											 else if(nrpst == null)
 											 {
@@ -979,14 +984,10 @@ public class Endpoint extends HttpServlet {
 											 }
 											 else
 											 {	
-												 int moving_average_window_int = Integer.parseInt(request.getParameter("mawindow"));
 												 double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
-												 double single_modifier_double = (new Double(request.getParameter("singlemodifier"))).doubleValue();
 												 int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
-												 long begin_long = Long.parseLong(begin);
-												 long end_long = Long.parseLong(end);
 												 int nrpst_int = (new Integer(request.getParameter("nrpst"))).intValue();
-												 JSONArray alert_frames_ja = station.getAlertFrames(begin_long, end_long, moving_average_window_int, ma_modifier_double, single_modifier_double, awp_in_sec, nrpst_int);
+												 JSONArray alert_frames_ja = station.getAlertFrames(begin, end, ma_modifier_double, 1.0, awp_in_sec, nrpst_int);
 												 jsonresponse.put("response_status", "success");
 												 jsonresponse.put("alert_frames_ja", alert_frames_ja);
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
