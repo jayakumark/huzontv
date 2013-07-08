@@ -266,10 +266,11 @@ public class Endpoint extends HttpServlet {
 								Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
 								if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
 								{	
-									JSONObject jo2 = processNewFrame(newframe, simulation, 
-											(new Platform()).getSingleModifier(), 
-											(new Platform()).getMAModifier(), 
-											(new Platform()).getNRPST());
+									JSONObject jo2 = null;
+									if(simulation)
+										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), "test", "silent"); // last two are which_timers and alert_mode
+									else
+										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), "production", "test"); // last two are which_timers and alert_mode
 
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
@@ -930,19 +931,12 @@ public class Endpoint extends HttpServlet {
 										 else if (method.equals("getFramesAboveDesignationHomogeneityThreshold"))
 										 {	
 											 String designation = request.getParameter("designation");
-											 String singlemodifier = request.getParameter("singlemodifier");
 											 String delta = request.getParameter("delta");
 											 if(designation == null)
 											 {
 												 jsonresponse.put("message", "A designation value must be supplied to this method.");
 												 jsonresponse.put("response_status", "error");
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A designation value is required.");
-											 }
-											 else if(singlemodifier == null)
-											 {
-												 jsonresponse.put("message", "A singlemodifier value must be supplied to this method.");
-												 jsonresponse.put("response_status", "error");
-												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A singlemodifier value is required.");
 											 }
 											 else if(delta == null)
 											 {
@@ -955,7 +949,7 @@ public class Endpoint extends HttpServlet {
 												 jsonresponse.put("response_status", "success");
 												 boolean get_score_data = true;
 												 jsonresponse.put("frames_ja", station.getFramesAboveDesignationHomogeneityThresholdAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, 
-														 designation, new Double(singlemodifier).doubleValue(), get_score_data)); 
+														 designation, get_score_data)); 
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 											 }	
 										 }
@@ -964,6 +958,7 @@ public class Endpoint extends HttpServlet {
 											 String mamodifier = request.getParameter("mamodifier");
 											 String awp = request.getParameter("awp");
 											 String nrpst = request.getParameter("nrpst"); // number required past single threshold
+											 String delta = request.getParameter("delta");
 											 if(awp == null)
 											 {
 												 jsonresponse.put("message", "An awp value must be supplied to this method.");
@@ -982,12 +977,19 @@ public class Endpoint extends HttpServlet {
 												 jsonresponse.put("response_status", "error");
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A nrpst value is required.");
 											 }
+											 else if(delta == null)
+											 {
+												 jsonresponse.put("message", "A delta value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A delta value is required.");
+											 }
 											 else
 											 {	
 												 double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
 												 int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
 												 int nrpst_int = (new Integer(request.getParameter("nrpst"))).intValue();
-												 JSONArray alert_frames_ja = station.getAlertFrames(begin, end, ma_modifier_double, 1.0, awp_in_sec, nrpst_int);
+												 double delta_double = Double.parseDouble(request.getParameter("delta"));
+												 JSONArray alert_frames_ja = station.getAlertFrames(begin, end, ma_modifier_double, awp_in_sec, nrpst_int, delta_double);
 												 jsonresponse.put("response_status", "success");
 												 jsonresponse.put("alert_frames_ja", alert_frames_ja);
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
@@ -1056,6 +1058,7 @@ public class Endpoint extends HttpServlet {
 		return;
 	}
 	
+	/*
 	JSONObject processNewFrame(Frame newframe, boolean simulation, double singlemodifier, double mamodifier, int nrpst)
 	{
 		JSONObject return_jo = new JSONObject();
@@ -1124,7 +1127,7 @@ public class Endpoint extends HttpServlet {
 		{
 			// get all frames over the moving average window backward from this timestamp
 			Station station_object = new Station(newframe.getStation());
-			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-(6 * 1000), frame_ts, null, 0);
+			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-(6 * 1000), frame_ts, null);
 			int num_frames_in_window = window_frames.size();
 			//System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
 			
@@ -1137,7 +1140,7 @@ public class Endpoint extends HttpServlet {
 			 *    \___/           \____/\_| |_/\____/ \____/\_| \_/   |_||_|   \_|   \_| \_\_| |_/\_|  |_/\____/\____/ 
 			 *                                                                                                         
 			 *                                                                                                         
-			 */
+			 
 			boolean a_designation_passed_ma_thresh_and_was_highest = false;
 			
 			if(num_frames_in_window < 6)  // all response boolean values remain false and return
@@ -1156,7 +1159,7 @@ public class Endpoint extends HttpServlet {
 				 *    \_____/           \____/\_| |_/\_____/\____/  \_|  |_/\___/  \___/   \_| |_/\___/ \____/\____/ 
 				 *                                                                                                   
 				 *                                                                                                   
-				 */
+				 
 				String[] reporter_designations = newframe.getReporterDesignations();
 				double[] reporter_totals = new double[reporter_designations.length];
 				double[] reporter_ma6s = new double[reporter_designations.length];
@@ -1215,7 +1218,7 @@ public class Endpoint extends HttpServlet {
 				 *    \____/           \_| |_/\_| \_/ \_/   \_|   \_| |_/\____/\____/  \_|  |_/\_| |_/   \_/ \_| |_/\_| \_\____/\____/\_| |_/(_)  
 				 *                                                                                                                                
 				 *                                                                                                                                
-				 */
+				
 				
 				
 				boolean designation_passed_single_thresh = false;
@@ -1241,11 +1244,6 @@ public class Endpoint extends HttpServlet {
 						  )
 						{	
 							// twitter and facebook triggers stay false
-							/*(new Platform()).addMessageToLog("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh, but within window or inactive on both FB & TW." +
-									" inFBWindow=" +	reporter.isWithinFacebookWindow(frame_ts, simulation) +
-									" FBActive=" +	reporter.isFacebookActive() +
-									" inTWWindow=" +	reporter.isWithinTwitterWindow(frame_ts,simulation) +
-									" TWActive=" +	reporter.isTwitterActive());*/
 						}
 						else
 						{	
@@ -1260,7 +1258,7 @@ public class Endpoint extends HttpServlet {
 							 *        |_/          \_|  |_/\_| |_/ \_|   \_| |_/\____/\____/\____/|___(_)  \____/ \___/\_| \_/\____/\_____/\____/ (_)  
 							 *                                                                                                                         
 							 *                                                                                                                         
-							 */
+							
 							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-(6 * 1000), frame_ts, true);
 							num_frames_that_passed_single_thresh = 0;
 							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
@@ -1293,7 +1291,7 @@ public class Endpoint extends HttpServlet {
 								 *    \____/           \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_)   \_/ \_/\_/ |_|\__|\__\___|_| (_)  
 								 *                                                       __/ |        | |                                                                    
 								 *                                                      |___/         |_|                                                                    
-								 */
+								 
 								if(reporter.isTwitterActive() && !reporter.isWithinTwitterWindow(frame_ts,simulation))
 								{	
 									twitter_triggered = true; // <---------------
@@ -1309,7 +1307,7 @@ public class Endpoint extends HttpServlet {
 								 *    \_____/          \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_) \_| \__,_|\___\___|_.__/ \___/ \___/|_|\_(_)  
 								 *                                                       __/ |        | |                                                                              
 								 *                                                      |___/         |_|                                                                              
-								 */
+								
 								if(reporter.isFacebookActive() && !reporter.isWithinFacebookWindow(frame_ts, simulation))
 								{
 									facebook_triggered = true; // <---------------
@@ -1398,7 +1396,7 @@ public class Endpoint extends HttpServlet {
 		
 		return return_jo;
 	}
-					
+					*/
 		
 
 	public JSONObject getFacebookAccessTokenFromAuthorizationCode(String code)

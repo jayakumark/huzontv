@@ -362,7 +362,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
 	fds = fds + "						<b>Function 4:</b> Get alerts for a given timeframe (inclusive)";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
@@ -376,6 +376,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"3600\" size=4> ";
 	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\"0\" size=4> ";
+	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
@@ -383,6 +386,8 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130707_235900\" size=13><br>";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
@@ -782,7 +787,6 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 
 	$("#function4_go_button").click(
 			function () {
-				alert("function4_go_button clicked");
 				$("#results_div").html("");
 				$("#chart1").html("");
 				var rds = "";
@@ -797,6 +801,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				            mamodifier: $('#function4_mamodifier_input').val(),
 				            nrpst: $('#function4_nrpst_input').val(), // number required past single threshold
 				            awp:  $('#function4_awp_input').val(),
+				            delta: $('#function4_delta_input').val(),
 				            station: station,
 		    	            twitter_handle: twitter_handle,
 				            twitter_access_token: twitter_access_token
@@ -817,7 +822,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        				return a - b;
 				        			});
 				        			
-				        			
+				        			rds = rds + "<div style=\"border: 0px black solid;width:100%;display:inline-block;\">" + data.alert_frames_ja.length + " results</div>";
 			        				for(var x = 0; x < data.alert_frames_ja.length; x++)
 			        				{
 			        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
@@ -1532,7 +1537,7 @@ function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homo
 {
 	$("#chart1").html("");
 	var scores = []; 
-	var moving_avg = [];
+	var ma6s = [];
 	var ma = 0;
 	var sum = 0; 
 	var num = 0;
@@ -1541,27 +1546,9 @@ function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homo
 	for(var x = 0; x < frames_ja.length; x++)
 	{
 		scores.push(frames_ja[x].reporters[designation].score_avg);
-		moving_avg.push(frames_ja[x].reporters[designation].ma6);
-		/*sum = 0;
-		num = 0;
-		// loop through all the frames, looking for timestamps in the moving average window in the past
-		ts = frames_ja[x].timestamp_in_ms;
-		for(var y = 0; y < frames_ja.length; y++) 
-		{
-			// if the timestamp of this frame is within the moving average window x seconds in the past, then add this designation's score
-			// to a running total.
-			if((frames_ja[y].timestamp_in_ms > (ts - (maw_int * 1000))) && (frames_ja[y].timestamp_in_ms <= ts))
-			{
-				alert(frames_ja[y].timestamp_in_ms + " > " + (ts - (maw_int * 1000)) + " && " + frames_ja[y].timestamp_in_ms + " <= " + ts);
-				sum = sum + frames_ja[y].reporters[designation].score_avg;
-				num++;
-			}
-		}
-		//alert("pushing sum=" + sum + " / num=" + num + " = ma=" + ma);
-		ma = sum / num; // now derive the moving average for this designation. Sum / number of frames in this window.
-		moving_avg.push(ma);*/
+		ma6s.push(frames_ja[x].reporters[designation].ma6);
 	}
-	var plot1 = $.jqplot ('chart1', [scores, moving_avg],{
+	var plot1 = $.jqplot ('chart1', [scores, ma6s],{
 		axes: {
 			yaxis: {
 	            min:0,max:1

@@ -10,6 +10,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Iterator;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.mail.MessagingException;
 
@@ -27,18 +31,25 @@ public class Frame implements Comparable<Frame> {
 	String station;
 	Station station_object;
 	String[] reporter_designations;
-	double[] reporter_avgs; // FIXME this should be called reporter_scores
+	double[] reporter_scores; // FIXME this should be called reporter_scores
 	//JSONArray[] reporter_score_arrays;
 	int[] reporter_nums;
 	//double[] reporter_ma5s;
 	double[] reporter_ma6s;
 	
 	boolean max_and_second_set;
-	String max_ma_designation;
-	String second_max_ma_designation;
-	double max_ma;
-	double second_max_ma;
+
+	String highest_ma6_designation;
+	double highest_ma6;
+	String highest_score_designation;
+	double highest_score;
 	
+	String second_highest_ma6_designation;
+	double second_highest_ma6;
+	String second_highest_score_designation;
+	double second_highest_score;
+	
+	TreeSet<Frame> frames_in_window = null; // null = not yet intialized, empty = processed but no frames.
 	
 	String dbName = System.getProperty("RDS_DB_NAME"); 
 	String userName = System.getProperty("RDS_USERNAME"); 
@@ -52,7 +63,7 @@ public class Frame implements Comparable<Frame> {
 	
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
-			double[] inc_reporter_avgs, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma6s)
+			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma6s)
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
 		image_name = inc_image_name;
@@ -62,7 +73,7 @@ public class Frame implements Comparable<Frame> {
 		station = inc_station;
 		station_object = new Station(station);
 		reporter_designations = inc_reporter_designations;
-		reporter_avgs = inc_reporter_avgs;
+		reporter_scores = inc_reporter_scores;
 		//reporter_score_arrays = inc_reporter_score_arrays;
 		reporter_nums = inc_reporter_nums;
 		//reporter_ma5s = inc_reporter_ma5s;
@@ -86,7 +97,7 @@ public class Frame implements Comparable<Frame> {
 			
 			con = DriverManager.getConnection(connectionstring);
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
+			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the specified (unique) frame from the station's frame table
 			
 			// calculate the number of reporters by looping through all columns and looking for "_avg"
 			ResultSetMetaData rsmd = rs.getMetaData();
@@ -112,7 +123,7 @@ public class Frame implements Comparable<Frame> {
 				x = 1; 
 				int reporter_index = 0;
 				reporter_designations = new String[reportercount];
-				reporter_avgs = new double[reportercount];
+				reporter_scores = new double[reportercount];
 				//reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
 				while(x <= columncount)
@@ -120,7 +131,7 @@ public class Frame implements Comparable<Frame> {
 					if(rsmd.getColumnName(x).endsWith("_avg"))
 					{
 						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
-						reporter_avgs[reporter_index] = rs.getDouble(x);
+						reporter_scores[reporter_index] = rs.getDouble(x);
 					}
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
@@ -212,7 +223,7 @@ public class Frame implements Comparable<Frame> {
 		while(x < reporter_designations.length)
 		{
 			if(reporter_designations[x].equals(reporter_designation))
-				return reporter_avgs[x];
+				return reporter_scores[x];
 			x++;
 		}
 		return 0;
@@ -243,86 +254,167 @@ public class Frame implements Comparable<Frame> {
 	}
 	
 	// reporter_ma6s presumed to be set if this is called. Calling functions should be responsible for this.
+
 	private void setMaxAndSecond()
 	{
-		max_ma = 0;
-		second_max_ma = 0;
-		max_ma_designation = null;
-		second_max_ma_designation = null;
+		highest_ma6_designation = null;
+		highest_ma6 = -1;
+		highest_score_designation = null;
+		highest_score = -1;
+		
+		second_highest_ma6_designation = null;
+		second_highest_ma6 = -1;
+		second_highest_score_designation = null;
+		second_highest_score = -1;
 		
 		int x = 0;
 		
 		while(x < reporter_ma6s.length)
 		{
-			if(reporter_ma6s[x] > max_ma)
+			if(reporter_ma6s[x] > highest_ma6) // is this the highest? if so, bump highest and second highest.
 			{
-				second_max_ma = max_ma;
-				max_ma = reporter_ma6s[x];
-				second_max_ma_designation = max_ma_designation;
-				max_ma_designation = reporter_designations[x];
+				second_highest_ma6 = highest_ma6;
+				highest_ma6 = reporter_ma6s[x];
+				second_highest_ma6_designation = highest_ma6_designation;
+				highest_ma6_designation = reporter_designations[x];
+			}
+			else if(reporter_ma6s[x] > second_highest_ma6) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma6 = reporter_ma6s[x];
+				second_highest_ma6_designation = reporter_designations[x];
+			}
+			
+			if(reporter_scores[x] > highest_score)
+			{
+				second_highest_score = highest_score;
+				highest_score = reporter_scores[x];
+				second_highest_score_designation = highest_score_designation;
+				highest_score_designation = reporter_designations[x];
+			}
+			else if(reporter_scores[x] > second_highest_score)
+			{
+				second_highest_score = reporter_scores[x];
+				second_highest_score_designation = reporter_designations[x];
 			}
 			x++;
 		}
 		max_and_second_set = true;
 	}
 	
-	double getHighestMovingAverage()
+	double getHighestScore()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return -1;
+		else if (max_and_second_set == false)
+		{
+			setMaxAndSecond();
+			return highest_score;
+		}
+		else
+			return highest_score;
+	}
+	
+	double getSecondHighestScore()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return -1;
+		else if (max_and_second_set == false)
+		{
+			setMaxAndSecond();
+			return second_highest_score;
+		}
+		else
+			return second_highest_score;
+	}
+	
+	String getHighestScoreDesignation()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return null;
+		else if (max_and_second_set == false)
+		{
+			setMaxAndSecond();
+			return highest_score_designation;
+		}
+		else
+			return highest_score_designation;
+	}
+	
+	String getSecondHighestScoreDesignation()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return null;
+		else if (max_and_second_set == false)
+		{
+			setMaxAndSecond();
+			return second_highest_score_designation;
+		}
+		else
+			return second_highest_score_designation;
+	}
+	
+	double getHighestMA6()
 	{
 		if(reporter_ma6s == null)  // reporter_ma6s was never populated
 			return -1;
 		else if (max_and_second_set == false)
 		{
 			setMaxAndSecond();
-			return max_ma;
+			return highest_ma6;
 		}
 		else
-			return max_ma;
+			return highest_ma6;
 	}
 	
-	double getSecondHighestMovingAverage()
+	double getSecondHighestMA6()
 	{
 		if(reporter_ma6s == null)  // reporter_ma6s was never populated
 			return -1;
 		else if (max_and_second_set == false)
 		{
 			setMaxAndSecond();
-			return second_max_ma;
+			return second_highest_ma6;
 		}
 		else
-			return second_max_ma;
+			return second_highest_ma6;
 	}
 	
-	String getHighestMovingAverageDesignation()
+	String getHighestMA6Designation()
 	{
 		if(reporter_ma6s == null)  // reporter_ma6s was never populated
 			return null;
 		else if (max_and_second_set == false)
 		{
 			setMaxAndSecond();
-			return max_ma_designation;
+			return highest_ma6_designation;
 		}
 		else
-			return max_ma_designation;
+			return highest_ma6_designation;
 	}
 	
-	String getSecondHighestMovingAverageDesignation()
+	String getSecondHighestMA6Designation()
 	{
 		if(reporter_ma6s == null)  // reporter_ma6s was never populated
 			return null;
 		else if (max_and_second_set == false)
 		{
 			setMaxAndSecond();
-			return second_max_ma_designation;
+			return second_highest_ma6_designation;
 		}
 		else
-			return second_max_ma_designation;
+			return second_highest_ma6_designation;
+	}
+	
+	void populateFramesInWindow()
+	{
+		frames_in_window = station_object.getFrames(timestamp_in_ms - (6 * 1000), timestamp_in_ms, null); 
 	}
 	
 	int getNumFramesInWindowAboveSingleThresh(String designation, double single_thresh)
 	{
-		Station station_object = new Station(station);
-		TreeSet<Frame> frames = station_object.getFrames(timestamp_in_ms - (6 * 1000), timestamp_in_ms, designation, 1.0); // FIXME 1.0 as single modifier should not be hardcoded
-		Iterator<Frame> it = frames.iterator();
+		if(frames_in_window == null)
+			populateFramesInWindow();
+		Iterator<Frame> it = frames_in_window.iterator();
 		Frame currentframe = null;
 		int returnval = 0;
 		while(it.hasNext())
@@ -337,13 +429,13 @@ public class Frame implements Comparable<Frame> {
 	
 	double getDesignationScore(String designation)
 	{
-		// reporter_avgs[] should always be populated. No need to check here.
+		// reporter_scores[] should always be populated. No need to check here.
 		
 		int x = 0;
 		while(x < reporter_designations.length)
 		{
 			if(reporter_designations[x].equals(designation))
-				return reporter_avgs[x];
+				return reporter_scores[x];
 			x++;
 		}
 		return -1;
@@ -398,7 +490,7 @@ public class Frame implements Comparable<Frame> {
 	URL[] get2x2CompositeURLs()
 	{
 		Station station_object = new Station(station);
-		TreeSet<Frame> frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
+		TreeSet<Frame> frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null);
 		if(frames_ts.size() < 4) // this should absolutely NEVER happen as this function shouldn't be called for any reason if there are this few frames in the window.
 		{						 // at ~9.5 seconds, there should be ~18 frames available
 			System.out.println("Frame.get2x2CompositeURLs(): not enough frames in window. Returning null.");
@@ -421,7 +513,7 @@ public class Frame implements Comparable<Frame> {
 			}
 			
 			// get the frame objects in the window
-			frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null, -1);
+			frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null);
 			Frame lastframe = frames_ts.last();
 			lastframe_ts = lastframe.getTimestampInMillis();
 			//debug = "numchecks=" + numchecks + " numframes=" + frames_ts.size() + " and last=" + lastframe_ts + " target=" + (getTimestampInMillis() + 2500) + "-" + (getTimestampInMillis() + 3500 + " numchecks=" + numchecks);
@@ -517,7 +609,7 @@ public class Frame implements Comparable<Frame> {
 				{
 					jo2 = new JSONObject();
 					jo2.put("designation", reporter_designations[x]);
-					jo2.put("score_avg", reporter_avgs[x]);
+					jo2.put("score_avg", reporter_scores[x]);
 					jo2.put("num", reporter_nums[x]);
 					jo2.put("ma6", reporter_ma6s[x]);
 					reporter_jo.put(reporter_designations[x],jo2);
@@ -546,7 +638,7 @@ public class Frame implements Comparable<Frame> {
 	public static void main(String args[])
 	{
 		Station s = new Station("wkyt");
-		TreeSet<Frame> frames = s.getFrames(args[0], args[1], null, -1); // begin, end, no designation, no single thresh
+		TreeSet<Frame> frames = s.getFrames(args[0], args[1], null); // begin, end, no designation, no single thresh
 		Iterator<Frame> it = frames.iterator();
 		Frame currentframe = null;
 		while(it.hasNext())
@@ -554,11 +646,200 @@ public class Frame implements Comparable<Frame> {
 			currentframe = it.next();
 			System.out.println("Looping " + currentframe.getImageName());
 			//currentframe.setMovingAveragesForFrame(5);
-			currentframe.setMovingAverage6sForFrame();
+			//currentframe.setMovingAverage6sForFrame();
 		}
 	}
 	
-	
+	JSONObject process(double ma_modifier_double, int nrpst_int, double delta_double, 
+			String which_timers, // test or production
+			String alert_mode // live, test (to master account, silent 
+			)
+	{
+		JSONObject return_jo = new JSONObject();
+		
+		boolean alert_triggered = false;
+		String alert_triggered_failure_message = "";
+		boolean twitter_triggered = false;
+		boolean twitter_successful = false;
+		String twitter_failure_message = "";
+		boolean facebook_triggered = false;
+		boolean facebook_successful = false;
+		String facebook_failure_message = "";
+		
+		if(!max_and_second_set)
+			setMaxAndSecond();
+		try
+		{
+			System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma6_designation + " which had highest_ma6==" + highest_ma6);
+			// First, check that the highest MA designation was also the highest score designation
+			if(!highest_ma6_designation.equals(highest_score_designation))
+			{	
+				System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because highest_ma6_designation=" + highest_ma6_designation + " was not the same as highest_score_designation=" + highest_score_designation);
+				alert_triggered_failure_message = "Highest score and highest ma were different";
+			}
+			else
+			{	
+				// does the highest score pass the delta value? (i.e. is it delta_double higher than the second highest?)
+				if((highest_score - second_highest_score) < delta_double)
+				{
+					System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because highest_score=" + highest_score + " - second_highest_score=" + second_highest_score + "=" + (highest_score - second_highest_score) + " was less than the required delta=" + delta_double);
+					alert_triggered_failure_message = "Highest score - second highest score < delta";
+				}
+				else
+				{	
+					User reporter = new User(highest_ma6_designation, "designation");
+					// is the highest reporter within the waiting period for both social outlets? If so skip, if not, continue processing.
+					if(reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers) && reporter.isWithinTwitterWindow(getTimestampInMillis(), which_timers))
+					{
+						System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because it's within the last alert window of both Facebook and Twitter");
+						alert_triggered_failure_message = "Reporter is on FB and TW cooldown. (This does not mean an alert would have necessarily triggered.)";
+					}
+					else
+					{
+						if(frames_in_window == null)
+							populateFramesInWindow();
+						if(frames_in_window.size() < 6)
+						{
+							System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because there weren't enough frames in the MA window");
+							alert_triggered_failure_message = "Too few frames in the MA window.";
+						}
+						else
+						{
+							// this check comes as late as possible to avoid going to the database for frames
+							TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
+							if(getNumFramesInWindowAboveSingleThresh(highest_ma6_designation, reporter.getHomogeneity()) < nrpst_int)
+							{
+								System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
+								alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
+							}
+							else
+							{	
+								System.out.println("Station.getAlertFrames(): adding timestamp " + getTimestampInMillis());
+								return_jo = getAsJSONObject(true, null); // no designation specified
+								return_jo.put("designation", highest_ma6_designation);
+								return_jo.put("ma_for_alert_frame", getMovingAverage6(highest_ma6_designation));
+								return_jo.put("ma_for_frame_that_passed_ma_thresh", getMovingAverage6(highest_ma6_designation));
+								return_jo.put("score_for_alert_frame", getScore(highest_ma6_designation));
+								return_jo.put("score_for_frame_that_passed_ma_thresh", getScore(highest_ma6_designation));
+								return_jo.put("image_name_for_frame_that_passed_ma_thresh", getImageName());
+								double homogeneity = reporter.getHomogeneity();
+								return_jo.put("homogeneity", homogeneity);
+								return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
+								return_jo.put("single_threshold", homogeneity);
+								return_jo.put("second_highest_designation", second_highest_ma6_designation);
+								return_jo.put("second_highest_ma", second_highest_ma6);
+								return_jo.put("second_highest_score", second_highest_score);
+								
+								alert_triggered = true; // <---------------
+								ExecutorService executor = Executors.newFixedThreadPool(300);
+								Future<JSONObject> twittertask = null;
+								Future<JSONObject> facebooktask = null;
+								
+								/***
+								 *     _____           ___  ___  ___            _             _                                     _     _____        _ _   _          ___  
+								 *    |  ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |_   _|      (_) | | |        |__ \ 
+								 *    |___ \   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |     | |_      ___| |_| |_ ___ _ __ ) |
+								 *        \ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |     | \ \ /\ / / | __| __/ _ \ '__/ / 
+								 *    /\__/ /          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_    | |\ V  V /| | |_| ||  __/ | |_|  
+								 *    \____/           \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_)   \_/ \_/\_/ |_|\__|\__\___|_| (_)  
+								 *                                                       __/ |        | |                                                                    
+								 *                                                      |___/         |_|                                                                    
+								 */
+								if(reporter.isTwitterActive() && !reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers))
+								{	
+									twitter_triggered = true; // <---------------
+									reporter.setLastAlert(getTimestampInMillis(), "twitter", which_timers); // set last alert regardless of credentials or successful posting
+								} 
+								
+								/***
+								 *      ____           ___  ___  ___            _             _                                     _    ______             _                 _   ___  
+								 *     / ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |  ___|           | |               | | |__ \ 
+								 *    / /___   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |   | |_ __ _  ___ ___| |__   ___   ___ | | __ ) |
+								 *    | ___ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |   |  _/ _` |/ __/ _ \ '_ \ / _ \ / _ \| |/ // / 
+								 *    | \_/ |          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_  | || (_| | (_|  __/ |_) | (_) | (_) |   <|_|  
+								 *    \_____/          \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_) \_| \__,_|\___\___|_.__/ \___/ \___/|_|\_(_)  
+								 *                                                       __/ |        | |                                                                              
+								 *                                                      |___/         |_|                                                                              
+								 */
+								if(reporter.isFacebookActive() && !reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers))
+								{
+									facebook_triggered = true; // <---------------
+									reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials or successful posting
+								} 
+								
+								if(alert_mode.equals("live") || alert_mode.equals("test"))
+								{
+									if(twitter_triggered)
+										twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+									if(facebook_triggered)
+										facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+								}
+								// else if simulation do do not perform any actual twitter or facebook postings.
+								
+								// CHECK THE RESULTS OF THE CALLABLE THREADS
+								JSONObject twittertask_jo = null;
+								JSONObject facebooktask_jo = null;
+								if(twittertask != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+								{
+									twittertask_jo = twittertask.get();
+									twitter_successful = twittertask_jo.getBoolean("twitter_successful"); 
+									if(!twitter_successful)																// only need failure message if twitter not successful
+										twitter_failure_message = twittertask_jo.getString("twitter_failure_message");
+								}
+								if(facebooktask != null)
+								{
+									facebooktask_jo = facebooktask.get();
+									facebook_successful = facebooktask_jo.getBoolean("facebook_successful");
+									if(!facebook_successful)
+										facebook_failure_message = facebooktask_jo.getString("facebook_failure_message");
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			return_jo.put("alert_triggered", alert_triggered);
+			if(alert_triggered)
+			{
+				return_jo.put("twitter_triggered", twitter_triggered);
+				if(twitter_triggered)
+				{
+					return_jo.put("twitter_successful", twitter_successful);
+					if(!twitter_successful)
+						return_jo.put("twitter_failure_message", twitter_failure_message);
+				}
+				
+				return_jo.put("facebook_triggered", facebook_triggered);
+				if(facebook_triggered)
+				{	
+					return_jo.put("facebook_successful", facebook_successful);
+					if(!facebook_successful)
+						return_jo.put("facebook_failure_message", facebook_failure_message);
+				}
+			}
+			else
+			{
+				return_jo.put("alert_triggered_failure_message", alert_triggered_failure_message);
+				/*if(!a_designation_passed_ma_thresh_and_was_highest)
+					alert_triggered_failure_message = "None of the designations passed the ma threshold";
+				else // no alert triggered yet a designation passed the ma thresh... that means that the designation didn't pass single thresh
+					alert_triggered_failure_message = "A designation passed ma thresh and was highest, but didn't pass single thresh for any of the frames in the window.";
+				return_jo.put("alert_triggered_failure_message", alert_triggered_failure_message);*/
+			}
+		}
+		catch(JSONException jsone)
+		{
+			jsone.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return return_jo;
+	}
 	
 	
 	
@@ -581,10 +862,10 @@ public class Frame implements Comparable<Frame> {
 	// these 2 functions below  should be essentially obsolete after working through the backlog. They were built to populate _ma5 and _ma6 columns for the wkyt table from existing raw score data
 	// although I guess it could be tweaked for longer moving averages, too
 		
-		void populateMovingAverage6s()
+	/*	void populateMovingAverage6s()
 		{
 			reporter_ma6s = new double[reporter_designations.length];
-			TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null, 0);
+			TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null);
 			int num_frames_in_window = window_frames.size();
 			int x = 0;
 			if(num_frames_in_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
@@ -671,9 +952,9 @@ public class Frame implements Comparable<Frame> {
 					sqle.printStackTrace();
 				}
 			}  
-		}
+		}*/
 		
-	
+		
 	
 	
 	

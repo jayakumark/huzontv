@@ -154,17 +154,17 @@ public class User implements java.lang.Comparable<User> {
 		}  	
 	}
 	
-	public boolean isWithinFacebookWindow(long frame_millis, boolean simulation)
+	public boolean isWithinFacebookWindow(long frame_millis, String which_timers)
 	{
-		if(frame_millis - getLastFacebookAlert(simulation) < getFacebookWaitingPeriodInMillis())
+		if(frame_millis - getLastFacebookAlert(which_timers) < getFacebookWaitingPeriodInMillis())
 			return true;
 		else
 			return false;
 	}
 	
-	public boolean isWithinTwitterWindow(long frame_millis, boolean simulation)
+	public boolean isWithinTwitterWindow(long frame_millis, String which_timers)
 	{
-		if(frame_millis - getLastTwitterAlert(simulation) < getTwitterWaitingPeriodInMillis())
+		if(frame_millis - getLastTwitterAlert(which_timers) < getTwitterWaitingPeriodInMillis())
 			return true;
 		else
 			return false;
@@ -235,18 +235,30 @@ public class User implements java.lang.Comparable<User> {
 		return facebook_active;
 	}
 	
-	public long getLastTwitterAlert(boolean simulation)
+	public long getLastTwitterAlert(String which_timers)
 	{
-		if(simulation)
+		if(which_timers.equals("test"))
 			return twitter_last_alert_test;
-		return twitter_last_alert;
+		else if(which_timers.equals("production"))
+			return twitter_last_alert;
+		else
+		{
+			(new Platform()).addMessageToLog("User.getLastTwitterAlert(): Major error. This function requires which_timers= \"test\" or \"production\". Instead it got " + which_timers);
+			return -1L;
+		}
 	}
 	
-	public long getLastFacebookAlert(boolean simulation)
+	public long getLastFacebookAlert(String which_timers)
 	{
-		if(simulation)
+		if(which_timers.equals("test"))
 			return facebook_last_alert_test;
-		return facebook_last_alert;
+		else if(which_timers.equals("production"))
+			return facebook_last_alert;
+		else
+		{
+			(new Platform()).addMessageToLog("User.getLastFacebookAlert(): Major error. This function requires which_timers= \"test\" or \"production\". Instead it got " + which_timers);
+			return -1L;
+		}
 	}
 	
 	public String getDisplayName()
@@ -276,7 +288,7 @@ public class User implements java.lang.Comparable<User> {
 		return facebook_access_token_expires;
 	}
 	
-	boolean setLastAlert(long alert_ts, String social_type, boolean simulation)
+	boolean setLastAlert(long alert_ts, String social_type, String which_timers)
 	{
 		if(!(social_type.equals("facebook") || social_type.equals("twitter")))
 		{
@@ -318,7 +330,7 @@ public class User implements java.lang.Comparable<User> {
 			{
 				if(social_type.equals("facebook"))
 				{
-					if(simulation)
+					if(which_timers.equals("test"))
 					{
 						rs.updateLong("facebook_last_alert_test", alert_ts);
 						rs.updateString("facebook_last_alert_test_hr", hr_timestamp);
@@ -331,7 +343,7 @@ public class User implements java.lang.Comparable<User> {
 				}
 				else												// we can just say "else" because we checked value of social_type above
 				{
-					if(simulation)
+					if(which_timers.equals("test"))
 					{
 						rs.updateLong("twitter_last_alert_test", alert_ts);
 						rs.updateString("twitter_last_alert_test_hr", hr_timestamp);

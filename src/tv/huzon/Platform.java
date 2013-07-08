@@ -257,6 +257,47 @@ public class Platform {
 		return returnint;
 	}
 	
+	public int getDelta() // number required past single threshold
+	{
+		String returnstring = null;
+		int returnint = 0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = DriverManager.getConnection(jdbcconnectionstring);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='delta'");
+			if(rs.next())
+				returnstring = rs.getString("v");
+			else
+				addMessageToLog("Platform.getDelta: no row found for global_vars key='delta'");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.getDelta: message=" +sqle.getMessage());
+		} 
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				addMessageToLog("SQLException in Platform.getDelta: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		returnint = Integer.parseInt(returnstring);
+		return returnint;
+	}
+	
 	public void addMessageToLog(String message)
 	{
 		Connection con = null;

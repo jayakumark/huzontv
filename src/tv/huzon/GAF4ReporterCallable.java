@@ -94,7 +94,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 			//System.out.println("GAF4ReporterCallable.call() found " + rs.getRow()  + " frames over threshold (" + homogeneity + " * " + singlemodifier + "=" +  single_thresh + ") for " + designation);
 			//rs.beforeFirst();
 			//Platform p = new Platform();
-			TreeSet<Frame> frames_past_single_thresh = station_object.getFrames((begin*1000), (end*1000), designation, singlemodifier);
+			TreeSet<Frame> frames_past_single_thresh = station_object.getFrames((begin*1000), (end*1000), designation);
 			//TreeSet<Frame> frames_past_single_thresh = p.getFramesFromResultSet(rs);
 			Iterator<Frame> frames_past_single_thresh_it = frames_past_single_thresh.iterator();
 			Frame currentframe = null;
@@ -116,7 +116,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 					}
 					else
 					{
-						if(moving_average > ma_thresh && moving_average == currentframe.getHighestMovingAverage())
+						if(moving_average > ma_thresh && moving_average == currentframe.getHighestMA6())
 						{
 							//System.out.println("GAF4ReporterCallable.call() " + designation + " passed ma threshold on first shot and is the highest moving average of the frame. ma=" + moving_average);
 							frame_that_passed_ma_thresh = currentframe;
@@ -132,14 +132,14 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 							//rs2.last();
 							//System.out.println("Got " + rs2.getRow() + " subsequent frames.");
 							//rs2.beforeFirst();
-							TreeSet<Frame> subsequent_frames = station_object.getFrames(ts, (ts + 1000*mawindow), null, -1);
+							TreeSet<Frame> subsequent_frames = station_object.getFrames(ts, (ts + 1000*mawindow), null);
 							//TreeSet<Frame> subsequent_frames = p.getFramesFromResultSet(rs2);
 							Iterator<Frame> subsequent_frames_it = subsequent_frames.iterator();
 							while(subsequent_frames_it.hasNext())
 							{
 								subsequentframe = subsequent_frames_it.next();
 								moving_average = subsequentframe.getMovingAverage6(designation);
-								if(moving_average > ma_thresh && moving_average == subsequentframe.getHighestMovingAverage())
+								if(moving_average > ma_thresh && moving_average == subsequentframe.getHighestMA6())
 								{
 									frame_that_passed_ma_thresh = subsequentframe;
 									break;

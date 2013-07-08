@@ -332,7 +332,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return cal.getTimeInMillis();
 	}
 	
-	public TreeSet<Frame> getFrames(String beginstring, String endstring, String designation, double single_modifier_double) // convenience method for taking datestring in the form YYYYMMDD_HHMMSS_sss
+	public TreeSet<Frame> getFrames(String beginstring, String endstring, String designation) // convenience method for taking datestring in the form YYYYMMDD_HHMMSS_sss
 	{
 		if(beginstring.length() < 8)
 		{
@@ -347,11 +347,11 @@ public class Station implements java.lang.Comparable<Station> {
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
 		
-		return getFrames(begin_in_ms, end_in_ms, designation, single_modifier_double);
+		return getFrames(begin_in_ms, end_in_ms, designation);
 	}
 	
 	// designation can be null. If designation supplied, then get all frames above the single threshold
-	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double) // INCLUSIVE
+	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation) // INCLUSIVE
 	{
 		//System.out.println("Station.getFrames(): getting frames from " + begin_in_ms + " to " + end_in_ms);
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
@@ -373,7 +373,7 @@ public class Station implements java.lang.Comparable<Station> {
 			{	
 				User reporter = new User(designation, "designation");
 				double homogeneity_double = reporter.getHomogeneity();
-				double threshold = homogeneity_double * single_modifier_double;
+				double threshold = homogeneity_double;
 				//System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 			}
@@ -432,7 +432,7 @@ public class Station implements java.lang.Comparable<Station> {
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
 		JSONArray frames_ja = new JSONArray();
-		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null, 0);
+		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null);
 		Iterator<Frame> it = frameset.iterator();
 		Frame currentframe = null;
 		while(it.hasNext())
@@ -447,7 +447,7 @@ public class Station implements java.lang.Comparable<Station> {
 	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
 	{
 		JSONArray frames_ja = new JSONArray();
-		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null, 0);
+		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null);
 		Iterator<Frame> it = frameset.iterator();
 		Frame currentframe = null;
 		while(it.hasNext())
@@ -459,10 +459,10 @@ public class Station implements java.lang.Comparable<Station> {
 		return frames_ja;
 	}
 	
-	public JSONArray getFramesAboveDesignationHomogeneityThresholdAsJSONArray(long begin_in_ms, long end_in_ms, String designation, double single_modifier_double, boolean get_score_data)
+	public JSONArray getFramesAboveDesignationHomogeneityThresholdAsJSONArray(long begin_in_ms, long end_in_ms, String designation, boolean get_score_data)
 	{
 		JSONArray frames_ja = new JSONArray();
-		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, designation, single_modifier_double);
+		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, designation);
 		Iterator<Frame> it = frameset.iterator();
 		Frame currentframe = null;
 		while(it.hasNext())
@@ -475,7 +475,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	// datestring convenience method.
-	JSONArray getAlertFrames(String beginstring, String endstring, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
+	JSONArray getAlertFrames(String beginstring, String endstring, double ma_modifier_double, int awp_int, int nrpst, double delta_double)
 	{
 		if(beginstring.length() < 8)
 		{
@@ -489,10 +489,10 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getAlertFrames(begin_in_ms, end_in_ms, ma_modifier_double, single_modifier_double, awp_int, nrpst);
+		return getAlertFrames(begin_in_ms, end_in_ms, ma_modifier_double, awp_int, nrpst, delta_double);
 	}
 	
-	JSONArray getAlertFrames(long begin_in_ms, long end_in_ms, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
+	JSONArray getAlertFrames(long begin_in_ms, long end_in_ms, double ma_modifier_double, int awp_int, int nrpst_int, double delta_double)
 	{
 		System.out.println("Station.getAlertFrames(): begin");
 		JSONArray return_ja = new JSONArray();
@@ -505,7 +505,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			currentreporter = new User(it.next(), "designation");
 			querystring = querystring + " (`" + currentreporter.getDesignation() + "_ma6` >= " + (currentreporter.getHomogeneity()*ma_modifier_double) + " AND ";
-			querystring = querystring + " `" + currentreporter.getDesignation() + "_avg` >= " + (currentreporter.getHomogeneity()*single_modifier_double) + ") OR ";
+			querystring = querystring + " `" + currentreporter.getDesignation() + "_avg` >= " + currentreporter.getHomogeneity() + ") OR ";
 		}
 		querystring = querystring.substring(0,querystring.length() - 4) + "))";
 		System.out.println("Station.getAlertFrames(): querystring=" + querystring);
@@ -523,43 +523,14 @@ public class Station implements java.lang.Comparable<Station> {
 			System.out.println("# of frames=" + frames.size());
 			Iterator<Frame> frames_it = frames.iterator();
 			Frame currentframe = null;
-			JSONObject last_alerts_jo = new JSONObject();
+
+			JSONObject current_jo = null;
 			while(frames_it.hasNext())
 			{
 				currentframe = frames_it.next();
-				System.out.println("Station.getAlertFrames(): Analyzing frame for " + currentframe.getHighestMovingAverageDesignation() + " which had ma=" + currentframe.getMovingAverage6(currentframe.getHighestMovingAverageDesignation()));
-				if(last_alerts_jo.has(currentframe.getHighestMovingAverageDesignation()) && (currentframe.getTimestampInMillis() - last_alerts_jo.getLong(currentframe.getHighestMovingAverageDesignation()) < (awp_int * 1000)))
-				{
-					System.out.println("Station.getAlertFrames(): skipping timestamp " + currentframe.getTimestampInMillis() + " because it's within the awp window last alert was " + last_alerts_jo.getLong(currentframe.getHighestMovingAverageDesignation()));
-				}
-				else
-				{
-					TreeSet<Frame> frames_in_window_above_single_thresh = getFrames(currentframe.getTimestampInMillis() - 6000, currentframe.getTimestampInMillis(), currentframe.getHighestMovingAverageDesignation(), single_modifier_double);
-					if(frames_in_window_above_single_thresh.size() < nrpst)
-					{
-						System.out.println("Station.getAlertFrames(): skipping timestamp " + currentframe.getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
-					}
-					else
-					{	
-						System.out.println("Station.getAlertFrames(): adding timestamp " + currentframe.getTimestampInMillis());
-						JSONObject jo2add = currentframe.getAsJSONObject(true, null); // no designation specified
-						jo2add.put("designation", currentframe.getHighestMovingAverageDesignation());
-						jo2add.put("ma_for_alert_frame", currentframe.getMovingAverage6(currentframe.getHighestMovingAverageDesignation()));
-						jo2add.put("ma_for_frame_that_passed_ma_thresh", currentframe.getMovingAverage6(currentframe.getHighestMovingAverageDesignation()));
-						jo2add.put("score_for_alert_frame", currentframe.getScore(currentframe.getHighestMovingAverageDesignation()));
-						jo2add.put("score_for_frame_that_passed_ma_thresh", currentframe.getScore(currentframe.getHighestMovingAverageDesignation()));
-						jo2add.put("image_name_for_frame_that_passed_ma_thresh", currentframe.getImageName());
-						double homogeneity = (new User(currentframe.getHighestMovingAverageDesignation(), "designation")).getHomogeneity();
-						jo2add.put("homogeneity", homogeneity);
-						jo2add.put("ma_threshold", homogeneity * ma_modifier_double);
-						jo2add.put("single_threshold", homogeneity * single_modifier_double);
-						jo2add.put("second_highest_designation",currentframe.getSecondHighestMovingAverageDesignation());
-						jo2add.put("second_highest_ma", currentframe.getSecondHighestMovingAverage());
-						jo2add.put("second_highest_score", currentframe.getDesignationScore(currentframe.getSecondHighestMovingAverageDesignation()));
-						return_ja.put(jo2add); 
-						last_alerts_jo.put(currentframe.getHighestMovingAverageDesignation(), currentframe.getTimestampInMillis());
-					}
-				}
+				current_jo = currentframe.process(ma_modifier_double, nrpst_int, delta_double, "test", "silent"); // which_timers and alert_mode
+				if(current_jo != null)
+					return_ja.put(current_jo);
 			}
 			rs.close();
 			stmt.close();
@@ -569,9 +540,6 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			sqle.printStackTrace();
 			(new Platform()).addMessageToLog("Station.getAlertFrames(): SQLException message=" +sqle.getMessage());
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		finally
 		{
@@ -586,6 +554,9 @@ public class Station implements java.lang.Comparable<Station> {
 		}  
 		return return_ja; 
 	}
+	
+	
+	
 
 	// DANGEROUS!!!! This will reset all alerts for every active reporter at this station
 	boolean resetProductionAlertTimers()
