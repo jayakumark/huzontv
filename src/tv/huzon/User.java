@@ -154,20 +154,40 @@ public class User implements java.lang.Comparable<User> {
 		}  	
 	}
 	
-	public boolean isWithinFacebookWindow(long frame_millis, String which_timers)
+	public boolean isWithinFacebookWindow(long frame_millis, String which_timers, int fb_wp_override_in_sec)
 	{
-		if(frame_millis - getLastFacebookAlert(which_timers) < getFacebookWaitingPeriodInMillis())
-			return true;
-		else
-			return false;
+		if(fb_wp_override_in_sec == -1) // use the db values
+		{	
+			if(frame_millis - getLastFacebookAlert(which_timers) < getFacebookWaitingPeriodInMillis())
+				return true;
+			else
+				return false;
+		}
+		else // use the wp_override value
+		{
+			if(frame_millis - getLastFacebookAlert(which_timers) < (fb_wp_override_in_sec * 1000))
+				return true;
+			else
+				return false;
+		}
 	}
 	
-	public boolean isWithinTwitterWindow(long frame_millis, String which_timers)
+	public boolean isWithinTwitterWindow(long frame_millis, String which_timers, int tw_wp_override_in_sec)
 	{
-		if(frame_millis - getLastTwitterAlert(which_timers) < getTwitterWaitingPeriodInMillis())
-			return true;
-		else
-			return false;
+		if(tw_wp_override_in_sec == -1) // use the db values
+		{	
+			if(frame_millis - getLastTwitterAlert(which_timers) < getTwitterWaitingPeriodInMillis())
+				return true;
+			else
+				return false;
+		}
+		else // use the wp_override value
+		{
+			if(frame_millis - getLastTwitterAlert(which_timers) < (tw_wp_override_in_sec * 1000))
+				return true;
+			else
+				return false;
+		}
 	}
 	
 	public long getFacebookPageID()

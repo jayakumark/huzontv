@@ -789,6 +789,33 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 			function () {
 				$("#results_div").html("");
 				$("#chart1").html("");
+				
+				$.ajax({
+					type: 'GET',
+					url: endpoint,
+					data: {
+			            method: "resetTestAlertTimers",
+			            station: station,
+			            twitter_handle: twitter_handle,
+			            twitter_access_token: twitter_access_token
+					},
+			        dataType: 'json',
+			        async: false,
+			        success: function (data, status) {
+			        	if (data.response_status == "error")
+			        		$("#results_div").html("error: "  + data.message);
+			        	else
+			        	{
+			        		//$("#results_div").html("success resetting all last alerts");
+			        	}
+			        }
+			        ,
+			        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	$("#results_div").html("ajax error");
+			            console.log(textStatus, errorThrown);
+			        }
+				});	
+				
 				var rds = "";
 				$.ajax({
 						type: 'GET',

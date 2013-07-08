@@ -92,48 +92,7 @@ public class Platform {
 		}  	
 		return returnstring;
 	}
-	
-	public double getSingleModifier()
-	{
-		String returnstring = null;
-		double returndouble = 0.0;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection(jdbcconnectionstring);
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='singlemodifier'");
-			if(rs.next())
-				returnstring = rs.getString("v");
-			else
-				addMessageToLog("Platform.getSingleModifier: no row found for global_vars key='singlemodifier'");
-			rs.close();
-			stmt.close();
-			con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			addMessageToLog("SQLException in Platform.getSingleModifier: message=" +sqle.getMessage());
-		} 
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				addMessageToLog("SQLException in Platform.getSingleModifier: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}  	
-		returndouble = Double.parseDouble(returnstring);
-		return returndouble;
-	}
-	
+
 	public double getMAModifier()
 	{
 		String returnstring = null;
@@ -174,48 +133,7 @@ public class Platform {
 		returndouble = Double.parseDouble(returnstring);
 		return returndouble;
 	}
-	
-	public int getMAWindow()
-	{
-		String returnstring = null;
-		int returnint = 0;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection(jdbcconnectionstring);
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='mawindow'");
-			if(rs.next())
-				returnstring = rs.getString("v");
-			else
-				addMessageToLog("Platform.getMAWindow: no row found for global_vars key='mawindow'");
-			rs.close();
-			stmt.close();
-			con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			addMessageToLog("SQLException in Platform.getMAWindow: message=" +sqle.getMessage());
-		} 
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				addMessageToLog("SQLException in Platform.getMAWindow: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}  	
-		returnint = Integer.parseInt(returnstring);
-		return returnint;
-	}
-	
+		
 	public int getNRPST() // number required past single threshold
 	{
 		String returnstring = null;
@@ -257,10 +175,10 @@ public class Platform {
 		return returnint;
 	}
 	
-	public int getDelta() // number required past single threshold
+	public double getDelta() // number required past single threshold
 	{
 		String returnstring = null;
-		int returnint = 0;
+		double returndouble = 0;
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
@@ -294,8 +212,8 @@ public class Platform {
 				addMessageToLog("SQLException in Platform.getDelta: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
-		returnint = Integer.parseInt(returnstring);
-		return returnint;
+		returndouble = Double.parseDouble(returnstring);
+		return returndouble;
 	}
 	
 	public void addMessageToLog(String message)

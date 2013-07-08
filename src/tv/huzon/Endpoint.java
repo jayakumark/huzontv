@@ -266,11 +266,14 @@ public class Endpoint extends HttpServlet {
 								Frame newframe = new Frame(jsonpostbody.getLong("timestamp_in_ms"), jsonpostbody.getString("station"));
 								if(newframe.getTimestampInMillis() > 0) // 0 indicates failure to insert/retrieve
 								{	
+									newframe.calculateAndSetMA6s();
 									JSONObject jo2 = null;
 									if(simulation)
-										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), "test", "silent"); // last two are which_timers and alert_mode
+										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), 
+												"test", "silent", jsonpostbody.getInt("maw_int"), jsonpostbody.getInt("maw_int")); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 									else
-										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), "production", "test"); // last two are which_timers and alert_mode
+										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), 
+												"production", "test", -1, -1); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert

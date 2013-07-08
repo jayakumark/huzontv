@@ -528,8 +528,8 @@ public class Station implements java.lang.Comparable<Station> {
 			while(frames_it.hasNext())
 			{
 				currentframe = frames_it.next();
-				current_jo = currentframe.process(ma_modifier_double, nrpst_int, delta_double, "test", "silent"); // which_timers and alert_mode
-				if(current_jo != null)
+				current_jo = currentframe.process(ma_modifier_double, nrpst_int, delta_double, "test", "silent", awp_int, awp_int); // which_timers, alert_mode, tw_wp_override, fb_wp_override
+				if(current_jo != null && current_jo.has("alert_triggered") && current_jo.getBoolean("alert_triggered"))
 					return_ja.put(current_jo);
 			}
 			rs.close();
@@ -540,6 +540,9 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			sqle.printStackTrace();
 			(new Platform()).addMessageToLog("Station.getAlertFrames(): SQLException message=" +sqle.getMessage());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		finally
 		{
@@ -929,7 +932,6 @@ public class Station implements java.lang.Comparable<Station> {
 			double reporter_avgs[] = null;
 			JSONArray reporter_score_arrays[] = null;
 			int reporter_nums[] = null;
-			double reporter_ma5s[] = null;
 			double reporter_ma6s[] = null;
 			rs.beforeFirst();
 			//System.out.println("Starting loop through resultset of frames...");
@@ -939,11 +941,11 @@ public class Station implements java.lang.Comparable<Station> {
 				reporter_avgs = new double[reportercount];
 				reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
-				reporter_ma5s = new double[reportercount];
 				reporter_ma6s = new double[reportercount];
 				int reporter_index = 0;
 				x=1; 
 				System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
+				boolean db_has_ma6_data = true; // assume true until proven false
 				while(x <= columncount)
 				{
 					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
@@ -952,24 +954,27 @@ public class Station implements java.lang.Comparable<Station> {
 						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
 						reporter_avgs[reporter_index] = rs.getDouble(x);
 					}
-					else if(rsmd.getColumnName(x).endsWith("_scores"))
-					{
-						if(rs.getString(x) == null || rs.getString(x).isEmpty())
-							reporter_score_arrays[reporter_index] = new JSONArray();
-						else
-							reporter_score_arrays[reporter_index] = new JSONArray(rs.getString(x));
-					}
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
 					}
-					else if(rsmd.getColumnName(x).endsWith("_ma5")) // FIXME this is obsolete for the moment, in favor of ma6 by itself
-					{
-						reporter_ma5s[reporter_index] = rs.getDouble(x);
-					}
 					else if(rsmd.getColumnName(x).endsWith("_ma6"))
 					{
-						reporter_ma6s[reporter_index] = rs.getDouble(x);
+						//reporter_ma6s[reporter_index] = rs.getDouble(x);
+						//reporter_index++;
+						if(db_has_ma6_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma6s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma6s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. 
+								db_has_ma6_data = false;
+							}
+						}
+						else
+						{
+							// skip. We already know there is no ma6 data in this row
+						}
 						reporter_index++;
 					}
 					else
@@ -988,9 +993,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+		} 
 		finally
 		{
 			try

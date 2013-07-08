@@ -38,7 +38,6 @@ public class Frame implements Comparable<Frame> {
 	double[] reporter_ma6s;
 	
 	boolean max_and_second_set;
-
 	String highest_ma6_designation;
 	double highest_ma6;
 	String highest_score_designation;
@@ -124,8 +123,10 @@ public class Frame implements Comparable<Frame> {
 				int reporter_index = 0;
 				reporter_designations = new String[reportercount];
 				reporter_scores = new double[reportercount];
+				reporter_ma6s = new double[reportercount];
 				//reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
+				boolean db_has_ma6_data = true; // assume true until proven false
 				while(x <= columncount)
 				{
 					if(rsmd.getColumnName(x).endsWith("_avg"))
@@ -136,6 +137,22 @@ public class Frame implements Comparable<Frame> {
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma6"))
+					{
+						if(db_has_ma6_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma6s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma6s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma6_data = false;
+							}
+						}
+						else
+						{
+							// skip. We already know there is no ma6 data in this row
+						}
 						reporter_index++;
 					}
 					x++;
@@ -266,9 +283,8 @@ public class Frame implements Comparable<Frame> {
 		second_highest_ma6 = -1;
 		second_highest_score_designation = null;
 		second_highest_score = -1;
-		
+
 		int x = 0;
-		
 		while(x < reporter_ma6s.length)
 		{
 			if(reporter_ma6s[x] > highest_ma6) // is this the highest? if so, bump highest and second highest.
@@ -441,6 +457,7 @@ public class Frame implements Comparable<Frame> {
 		return -1;
 	}
 	
+	/*
 	void updateRowWithMovingAverage6s(String[] reporter_designations, double[] inc_reporter_ma6s)
 	{
 		// after calculating moving average, update the row with the information
@@ -484,7 +501,7 @@ public class Frame implements Comparable<Frame> {
 			}
 		}  
 		reporter_ma6s = inc_reporter_ma6s;
-	}
+	}*/
 	
 	// 
 	URL[] get2x2CompositeURLs()
@@ -650,9 +667,17 @@ public class Frame implements Comparable<Frame> {
 		}
 	}
 	
-	JSONObject process(double ma_modifier_double, int nrpst_int, double delta_double, 
+	
+	// this function assumes that all attempts to fill reporter_ma6s have been made. It checks to see if reporters_ma6s is null. If so (which means not enough frames or no data), 
+	// it just skips.
+	public JSONObject process(
+			double ma_modifier_double, 
+			int nrpst_int, 
+			double delta_double, 
 			String which_timers, // test or production
-			String alert_mode // live, test (to master account, silent 
+			String alert_mode, // live, test (to master account) or silent 
+			int tw_wp_override_in_sec, // use these to override the waiting periods for each reporter as they exist in the database.
+			int fb_wp_override_in_sec  // if -1, then use the database values
 			)
 	{
 		JSONObject return_jo = new JSONObject();
@@ -666,133 +691,130 @@ public class Frame implements Comparable<Frame> {
 		boolean facebook_successful = false;
 		String facebook_failure_message = "";
 		
-		if(!max_and_second_set)
-			setMaxAndSecond();
+		
 		try
 		{
-			System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma6_designation + " which had highest_ma6==" + highest_ma6);
-			// First, check that the highest MA designation was also the highest score designation
-			if(!highest_ma6_designation.equals(highest_score_designation))
-			{	
-				System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because highest_ma6_designation=" + highest_ma6_designation + " was not the same as highest_score_designation=" + highest_score_designation);
-				alert_triggered_failure_message = "Highest score and highest ma were different";
+			// FIRST, check that this row has analyzable data
+			if(reporter_ma6s == null)
+			{
+				System.out.println("Station.getAlertFrames(): (1) skipping timestamp " + getTimestampInMillis() + " because reporter_ma6s was null (prob not enough frames in window). May be the beginning of a recording or after a stutter. Ignoring.");
+				alert_triggered_failure_message = "Reporter_ma6s was null. No valid data to analyze. (Might just be the beginning or a recording or a temp stutter.)";
 			}
 			else
 			{	
-				// does the highest score pass the delta value? (i.e. is it delta_double higher than the second highest?)
-				if((highest_score - second_highest_score) < delta_double)
-				{
-					System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because highest_score=" + highest_score + " - second_highest_score=" + second_highest_score + "=" + (highest_score - second_highest_score) + " was less than the required delta=" + delta_double);
-					alert_triggered_failure_message = "Highest score - second highest score < delta";
+				// This row actually has data. Set highest and second info
+				if(!max_and_second_set) 
+					setMaxAndSecond();
+				
+				System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma6_designation + " which had highest_ma6==" + highest_ma6);
+				// SECOND, check to see that highest ma6 passes the smell test threshold of .5
+				if(highest_ma6 < .5)
+				{	
+					System.out.println("Station.getAlertFrames(): (2) skipping timestamp " + getTimestampInMillis() + " because the highest ma6 was less than .5 (highest_ma6=" + highest_ma6 + ")");
+					alert_triggered_failure_message = "Highest ma6 was less than smell test threshold of .5";
 				}
 				else
 				{	
-					User reporter = new User(highest_ma6_designation, "designation");
-					// is the highest reporter within the waiting period for both social outlets? If so skip, if not, continue processing.
-					if(reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers) && reporter.isWithinTwitterWindow(getTimestampInMillis(), which_timers))
-					{
-						System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because it's within the last alert window of both Facebook and Twitter");
-						alert_triggered_failure_message = "Reporter is on FB and TW cooldown. (This does not mean an alert would have necessarily triggered.)";
+					// THIRD, check that the highest MA designation was also the highest score designation
+					if(!highest_ma6_designation.equals(highest_score_designation))
+					{	
+						System.out.println("Station.getAlertFrames(): (3) skipping timestamp " + getTimestampInMillis() + " because highest_ma6_designation=" + highest_ma6_designation + " was not the same as highest_score_designation=" + highest_score_designation);
+						alert_triggered_failure_message = "Highest score and highest ma were different";
 					}
 					else
-					{
-						if(frames_in_window == null)
-							populateFramesInWindow();
-						if(frames_in_window.size() < 6)
+					{	
+						// FOURTH, does the highest score pass the delta value? (i.e. is it delta_double higher than the second highest?)
+						if((highest_score - second_highest_score) < delta_double)
 						{
-							System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because there weren't enough frames in the MA window");
-							alert_triggered_failure_message = "Too few frames in the MA window.";
+							System.out.println("Station.getAlertFrames(): (4) skipping timestamp " + getTimestampInMillis() + " because highest_score=" + highest_score + " - second_highest_score=" + second_highest_score + "=" + (highest_score - second_highest_score) + " was less than the required delta=" + delta_double);
+							alert_triggered_failure_message = "Highest score - second highest score < delta";
 						}
 						else
-						{
-							// this check comes as late as possible to avoid going to the database for frames
-							TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
-							if(getNumFramesInWindowAboveSingleThresh(highest_ma6_designation, reporter.getHomogeneity()) < nrpst_int)
+						{	
+							User reporter = new User(highest_ma6_designation, "designation");
+							// FIFTH, is the highest reporter within the waiting period for both social outlets? If so skip, if not, continue processing.
+							if(reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec) && reporter.isWithinTwitterWindow(getTimestampInMillis(), which_timers, tw_wp_override_in_sec))
 							{
-								System.out.println("Station.getAlertFrames(): skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
-								alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
+								System.out.println("Station.getAlertFrames(): (5) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma6_designation + " because it's within the last alert window of both Facebook and Twitter");
+								alert_triggered_failure_message = "Reporter is on FB and TW cooldown. (This does not mean an alert would have necessarily triggered.)";
 							}
 							else
-							{	
-								System.out.println("Station.getAlertFrames(): adding timestamp " + getTimestampInMillis());
-								return_jo = getAsJSONObject(true, null); // no designation specified
-								return_jo.put("designation", highest_ma6_designation);
-								return_jo.put("ma_for_alert_frame", getMovingAverage6(highest_ma6_designation));
-								return_jo.put("ma_for_frame_that_passed_ma_thresh", getMovingAverage6(highest_ma6_designation));
-								return_jo.put("score_for_alert_frame", getScore(highest_ma6_designation));
-								return_jo.put("score_for_frame_that_passed_ma_thresh", getScore(highest_ma6_designation));
-								return_jo.put("image_name_for_frame_that_passed_ma_thresh", getImageName());
-								double homogeneity = reporter.getHomogeneity();
-								return_jo.put("homogeneity", homogeneity);
-								return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
-								return_jo.put("single_threshold", homogeneity);
-								return_jo.put("second_highest_designation", second_highest_ma6_designation);
-								return_jo.put("second_highest_ma", second_highest_ma6);
-								return_jo.put("second_highest_score", second_highest_score);
-								
-								alert_triggered = true; // <---------------
-								ExecutorService executor = Executors.newFixedThreadPool(300);
-								Future<JSONObject> twittertask = null;
-								Future<JSONObject> facebooktask = null;
-								
-								/***
-								 *     _____           ___  ___  ___            _             _                                     _     _____        _ _   _          ___  
-								 *    |  ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |_   _|      (_) | | |        |__ \ 
-								 *    |___ \   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |     | |_      ___| |_| |_ ___ _ __ ) |
-								 *        \ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |     | \ \ /\ / / | __| __/ _ \ '__/ / 
-								 *    /\__/ /          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_    | |\ V  V /| | |_| ||  __/ | |_|  
-								 *    \____/           \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_)   \_/ \_/\_/ |_|\__|\__\___|_| (_)  
-								 *                                                       __/ |        | |                                                                    
-								 *                                                      |___/         |_|                                                                    
-								 */
-								if(reporter.isTwitterActive() && !reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers))
+							{
+								if(frames_in_window == null)
+									populateFramesInWindow();
+								// SIXTH, are there enough frames in the window above the single threshold?
+								// this check comes as late as possible to avoid going to the database for frames
+								//TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
+								if(getNumFramesInWindowAboveSingleThresh(highest_ma6_designation, reporter.getHomogeneity()) < nrpst_int)
+								{
+									System.out.println("Station.getAlertFrames(): (6) skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
+									alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
+								}
+								else
 								{	
-									twitter_triggered = true; // <---------------
-									reporter.setLastAlert(getTimestampInMillis(), "twitter", which_timers); // set last alert regardless of credentials or successful posting
-								} 
-								
-								/***
-								 *      ____           ___  ___  ___            _             _                                     _    ______             _                 _   ___  
-								 *     / ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |  ___|           | |               | | |__ \ 
-								 *    / /___   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |   | |_ __ _  ___ ___| |__   ___   ___ | | __ ) |
-								 *    | ___ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |   |  _/ _` |/ __/ _ \ '_ \ / _ \ / _ \| |/ // / 
-								 *    | \_/ |          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_  | || (_| | (_|  __/ |_) | (_) | (_) |   <|_|  
-								 *    \_____/          \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_) \_| \__,_|\___\___|_.__/ \___/ \___/|_|\_(_)  
-								 *                                                       __/ |        | |                                                                              
-								 *                                                      |___/         |_|                                                                              
-								 */
-								if(reporter.isFacebookActive() && !reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers))
-								{
-									facebook_triggered = true; // <---------------
-									reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials or successful posting
-								} 
-								
-								if(alert_mode.equals("live") || alert_mode.equals("test"))
-								{
-									if(twitter_triggered)
-										twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
-									if(facebook_triggered)
-										facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+									System.out.println("Station.getAlertFrames(): (!) adding (not skipping) timestamp " + getTimestampInMillis());
+									return_jo = getAsJSONObject(true, null); // no designation specified
+									return_jo.put("designation", highest_ma6_designation);
+									return_jo.put("ma_for_alert_frame", getMovingAverage6(highest_ma6_designation));
+									return_jo.put("ma_for_frame_that_passed_ma_thresh", getMovingAverage6(highest_ma6_designation));
+									return_jo.put("score_for_alert_frame", getScore(highest_ma6_designation));
+									return_jo.put("score_for_frame_that_passed_ma_thresh", getScore(highest_ma6_designation));
+									return_jo.put("image_name_for_frame_that_passed_ma_thresh", getImageName());
+									double homogeneity = reporter.getHomogeneity();
+									return_jo.put("homogeneity", homogeneity);
+									return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
+									return_jo.put("single_threshold", homogeneity);
+									return_jo.put("second_highest_designation", second_highest_ma6_designation);
+									return_jo.put("second_highest_ma", second_highest_ma6);
+									return_jo.put("second_highest_score", second_highest_score);
+									
+									alert_triggered = true; // <---------------
+									ExecutorService executor = Executors.newFixedThreadPool(300);
+									Future<JSONObject> twittertask = null;
+									Future<JSONObject> facebooktask = null;
+									
+									if(!reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers, tw_wp_override_in_sec))
+									{	
+										if(reporter.isTwitterActive())
+											twitter_triggered = true; // <---------------
+										reporter.setLastAlert(getTimestampInMillis(), "twitter", which_timers); // set last alert regardless of credentials, successful posting or twitter_active
+									} 
+									
+									if(!reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec))
+									{
+										if(reporter.isFacebookActive())
+											facebook_triggered = true; // <---------------
+										reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials, successful posting or facebook_active
+									} 
+									
+									if(alert_mode.equals("live") || alert_mode.equals("test"))
+									{
+										if(twitter_triggered)
+											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+										if(facebook_triggered)
+											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+									}
+									// else if simulation do do not perform any actual twitter or facebook postings.
+									
+									// CHECK THE RESULTS OF THE CALLABLE THREADS
+									JSONObject twittertask_jo = null;
+									JSONObject facebooktask_jo = null;
+									if(twittertask != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+									{
+										twittertask_jo = twittertask.get();
+										twitter_successful = twittertask_jo.getBoolean("twitter_successful"); 
+										if(!twitter_successful)																// only need failure message if twitter not successful
+											twitter_failure_message = twittertask_jo.getString("twitter_failure_message");
+									}
+									if(facebooktask != null)
+									{
+										facebooktask_jo = facebooktask.get();
+										facebook_successful = facebooktask_jo.getBoolean("facebook_successful");
+										if(!facebook_successful)
+											facebook_failure_message = facebooktask_jo.getString("facebook_failure_message");
+									}
 								}
-								// else if simulation do do not perform any actual twitter or facebook postings.
-								
-								// CHECK THE RESULTS OF THE CALLABLE THREADS
-								JSONObject twittertask_jo = null;
-								JSONObject facebooktask_jo = null;
-								if(twittertask != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
-								{
-									twittertask_jo = twittertask.get();
-									twitter_successful = twittertask_jo.getBoolean("twitter_successful"); 
-									if(!twitter_successful)																// only need failure message if twitter not successful
-										twitter_failure_message = twittertask_jo.getString("twitter_failure_message");
-								}
-								if(facebooktask != null)
-								{
-									facebooktask_jo = facebooktask.get();
-									facebook_successful = facebooktask_jo.getBoolean("facebook_successful");
-									if(!facebook_successful)
-										facebook_failure_message = facebooktask_jo.getString("facebook_failure_message");
-								}
+									
 							}
 						}
 					}
@@ -840,119 +862,106 @@ public class Frame implements Comparable<Frame> {
 		}
 		return return_jo;
 	}
+
+	// Explanation for the two functions below:
+	// When a new frame comes into the backend, it is inserted first WITHOUT moving average calculations. 
+	// As soon as the raw data has been inserted, a subsequent call to calculateAndSetMA6s() does the necessary fill-in.
+	// populateMovingAverage6s() does the actual calculations, where calculateAndSetMA6s() is really just a database update call
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	// these 2 functions below  should be essentially obsolete after working through the backlog. They were built to populate _ma5 and _ma6 columns for the wkyt table from existing raw score data
-	// although I guess it could be tweaked for longer moving averages, too
-		
-	/*	void populateMovingAverage6s()
+	private void populateMovingAverage6s()
+	{
+		reporter_ma6s = new double[reporter_designations.length];
+		TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null);
+		int num_frames_in_window = window_frames.size();
+		int x = 0;
+		if(num_frames_in_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
 		{
-			reporter_ma6s = new double[reporter_designations.length];
-			TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null);
-			int num_frames_in_window = window_frames.size();
-			int x = 0;
-			if(num_frames_in_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+			reporter_ma6s = null; // just set it to null
+			/*while(x < reporter_designations.length)
 			{
+				reporter_ma6s[x] = -1;
+				x++;
+			}*/
+		}
+		else
+		{	
+			double[] reporter_totals = new double[reporter_designations.length];
+			//System.out.println("Frame.populateMovingAverages(): looping " + num_frames_in_window + " frames for totals");
+			Iterator<Frame> it = window_frames.iterator();
+			Frame currentframe = null;
+			while(it.hasNext())
+			{
+				currentframe = it.next();
+				x = 0;
 				while(x < reporter_designations.length)
 				{
-					reporter_ma6s[x] = -1;
+					reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
 					x++;
 				}
 			}
-			else
-			{	
-				double[] reporter_totals = new double[reporter_designations.length];
-				//System.out.println("Frame.populateMovingAverages(): looping " + num_frames_in_window + " frames for totals");
-				Iterator<Frame> it = window_frames.iterator();
-				Frame currentframe = null;
-				while(it.hasNext())
-				{
-					currentframe = it.next();
-					x = 0;
-					while(x < reporter_designations.length)
-					{
-						reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
-						x++;
-					}
-				}
-				
-				// then divide the sum designation_avgs by dividing by the number of frames in the window
-				x = 0;
-				//System.out.println("Frame.populateMovingAverages(): looping reporters to get ma6s from totals");
-				while(x < reporter_totals.length)
-				{
-					reporter_ma6s[x] = reporter_totals[x] / num_frames_in_window;
-					x++;
-				}
+			
+			// then divide the sum designation_avgs by dividing by the number of frames in the window
+			x = 0;
+			//System.out.println("Frame.populateMovingAverages(): looping reporters to get ma6s from totals");
+			while(x < reporter_totals.length)
+			{
+				reporter_ma6s[x] = reporter_totals[x] / num_frames_in_window;
+				x++;
 			}
 		}
+	}
+	
+	public void calculateAndSetMA6s() // WILL OVERWRITE EXISTING DATA
+	{
+		//System.out.println("Frame.setMovingAveragesForFrame(): " + image_name);
 		
-		void setMovingAverage6sForFrame() // WILL OVERWRITE EXISTING DATA
+		populateMovingAverage6s();
+		
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;		
+		try
 		{
-			//System.out.println("Frame.setMovingAveragesForFrame(): " + image_name);
-			
-			populateMovingAverage6s();
-			
-			ResultSet rs = null;
-			Connection con = null;
-			Statement stmt = null;		
+			con = DriverManager.getConnection(connectionstring);
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
+			if(!rs.next())
+			{
+				System.out.println("Frame.setMovingAveragesForFrame(): ERROR could not find frame in table frames_" + station + " for timestamp_in_ms=" + timestamp_in_ms);
+			}
+			else
+			{
+				for(int x = 0; x < reporter_designations.length; x++)
+				{
+					if(reporter_ma6s == null)
+						rs.updateNull(reporter_designations[x] + "_ma6");
+					else
+						rs.updateDouble(reporter_designations[x] + "_ma6", reporter_ma6s[x]);
+				}
+				rs.updateRow();
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+		}
+		finally
+		{
 			try
 			{
-				con = DriverManager.getConnection(connectionstring);
-				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
-				if(!rs.next())
-				{
-					System.out.println("Frame.setMovingAveragesForFrame(): ERROR could not find frame in table frames_" + station + " for timestamp_in_ms=" + timestamp_in_ms);
-				}
-				else
-				{
-					for(int x = 0; x < reporter_ma6s.length; x++)
-					{
-						if(reporter_ma6s[x] == -1)
-							rs.updateNull(reporter_designations[x] + "_ma6");
-						else
-							rs.updateDouble(reporter_designations[x] + "_ma6", reporter_ma6s[x]);
-					}
-					rs.updateRow();
-				}
-				rs.close();
-				stmt.close();
-				con.close();
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
-			{
+			{ 
 				sqle.printStackTrace();
 			}
-			finally
-			{
-				try
-				{
-					if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-				}
-				catch(SQLException sqle)
-				{ 
-					sqle.printStackTrace();
-				}
-			}  
-		}*/
+		}  
+	}
+		
+		
 		
 		
 	
