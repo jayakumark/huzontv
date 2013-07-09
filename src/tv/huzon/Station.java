@@ -933,6 +933,9 @@ public class Station implements java.lang.Comparable<Station> {
 			JSONArray reporter_score_arrays[] = null;
 			int reporter_nums[] = null;
 			double reporter_ma6s[] = null;
+			double reporter_ma5s[] = null;
+			double reporter_ma4s[] = null;
+			double reporter_ma3s[] = null;
 			rs.beforeFirst();
 			//System.out.println("Starting loop through resultset of frames...");
 			while(rs.next())
@@ -946,6 +949,9 @@ public class Station implements java.lang.Comparable<Station> {
 				x=1; 
 				System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
 				boolean db_has_ma6_data = true; // assume true until proven false
+				boolean db_has_ma5_data = true;
+				boolean db_has_ma4_data = true;
+				boolean db_has_ma3_data = true;
 				while(x <= columncount)
 				{
 					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
@@ -957,6 +963,45 @@ public class Station implements java.lang.Comparable<Station> {
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma3"))
+					{
+						if(db_has_ma3_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma3s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma3s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma3_data = false;
+							}
+						}
+						// else skip. We already know there is no ma3 data in this row
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma4"))
+					{
+						if(db_has_ma4_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma4s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma4s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma4_data = false;
+							}
+						}
+						// else skip. We already know there is no ma4 data in this row
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma5"))
+					{
+						if(db_has_ma5_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma5s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma5s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma5_data = false;
+							}
+						}
+						// else skip. We already know there is no ma5 data in this row
 					}
 					else if(rsmd.getColumnName(x).endsWith("_ma6"))
 					{
@@ -986,7 +1031,7 @@ public class Station implements java.lang.Comparable<Station> {
 				//System.out.println("Adding Frame object to treeset and going to next...");
 				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
 						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
-						reporter_avgs, reporter_score_arrays, reporter_nums, reporter_ma6s));
+						reporter_avgs, reporter_score_arrays, reporter_nums, reporter_ma3s, reporter_ma4s, reporter_ma5s, reporter_ma6s));
 				//System.out.println("... frame added");
 			}
 		}

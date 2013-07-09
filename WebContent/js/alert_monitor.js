@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
+	var station = docCookies.getItem("administering_station");
 	if(location.protocol !== "https:")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.huzon.tv/alert_monitor.html\">https://www.huzon.tv/alert_monitor.html</a> instead.</span>");
@@ -154,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			url: endpoint,
 			data: {
 	            method: "getMostRecentAlerts",
+	            station: station,
 	            twitter_handle: twitter_handle,
 	            twitter_access_token: twitter_access_token
 			},

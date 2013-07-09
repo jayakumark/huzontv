@@ -36,15 +36,29 @@ public class Frame implements Comparable<Frame> {
 	int[] reporter_nums;
 	//double[] reporter_ma5s;
 	double[] reporter_ma6s;
+	double[] reporter_ma5s;
+	double[] reporter_ma4s;
+	double[] reporter_ma3s;
 	
-	boolean max_and_second_set;
+	boolean highest_and_second_highest_values_set;
 	String highest_ma6_designation;
 	double highest_ma6;
-	String highest_score_designation;
-	double highest_score;
-	
+	String highest_ma5_designation;
+	double highest_ma5;
+	String highest_ma4_designation;
+	double highest_ma4;
+	String highest_ma3_designation;
+	double highest_ma3;
 	String second_highest_ma6_designation;
 	double second_highest_ma6;
+	String second_highest_ma5_designation;
+	double second_highest_ma5;
+	String second_highest_ma4_designation;
+	double second_highest_ma4;
+	String second_highest_ma3_designation;
+	double second_highest_ma3;
+	String highest_score_designation;
+	double highest_score;
 	String second_highest_score_designation;
 	double second_highest_score;
 	
@@ -59,10 +73,11 @@ public class Frame implements Comparable<Frame> {
 	//String connectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + pass word;
 	String connectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
 	
-	
+	// to be used when another process has gotten a bunch of rows from the frames table 
+	// and we want to build a bunch of frame objects without calling the database a zillion times.
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
-			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma6s)
+			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma3s, double[] inc_reporter_ma4s, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
 	{
 		timestamp_in_ms = inc_timestamp_in_ms;
 		image_name = inc_image_name;
@@ -75,9 +90,11 @@ public class Frame implements Comparable<Frame> {
 		reporter_scores = inc_reporter_scores;
 		//reporter_score_arrays = inc_reporter_score_arrays;
 		reporter_nums = inc_reporter_nums;
-		//reporter_ma5s = inc_reporter_ma5s;
+		reporter_ma3s = inc_reporter_ma3s;
+		reporter_ma4s = inc_reporter_ma4s;
+		reporter_ma5s = inc_reporter_ma5s;
 		reporter_ma6s = inc_reporter_ma6s;
-		max_and_second_set = false;
+		highest_and_second_highest_values_set = false;
 	}
 	
 	
@@ -86,7 +103,7 @@ public class Frame implements Comparable<Frame> {
 		timestamp_in_ms = inc_timestamp_in_ms;
 		station = inc_station;
 		station_object = new Station(station);
-		max_and_second_set = false;
+		highest_and_second_highest_values_set = false;
 		
 		ResultSet rs = null;
 		Connection con = null;
@@ -127,6 +144,9 @@ public class Frame implements Comparable<Frame> {
 				//reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
 				boolean db_has_ma6_data = true; // assume true until proven false
+				boolean db_has_ma5_data = true;
+				boolean db_has_ma4_data = true;
+				boolean db_has_ma3_data = true;
 				while(x <= columncount)
 				{
 					if(rsmd.getColumnName(x).endsWith("_avg"))
@@ -137,6 +157,45 @@ public class Frame implements Comparable<Frame> {
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma3"))
+					{
+						if(db_has_ma3_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma3s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma3s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma3_data = false;
+							}
+						}
+						// else skip. We already know there is no ma3 data in this row
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma4"))
+					{
+						if(db_has_ma4_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma4s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma4s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma4_data = false;
+							}
+						}
+						// else skip. We already know there is no ma4 data in this row
+					}
+					else if(rsmd.getColumnName(x).endsWith("_ma5"))
+					{
+						if(db_has_ma5_data == true) // it could either be true or assumed to be true at this point
+						{	
+							reporter_ma5s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
+							if (rs.wasNull()) // if that didn't work
+							{
+								reporter_ma5s = null; // then set the reporter_ma6s array to null to signify that this row doesn't have them. Maybe this row is new and they'll be set later.
+								db_has_ma5_data = false;
+							}
+						}
+						// else skip. We already know there is no ma5 data in this row
 					}
 					else if(rsmd.getColumnName(x).endsWith("_ma6"))
 					{
@@ -149,11 +208,8 @@ public class Frame implements Comparable<Frame> {
 								db_has_ma6_data = false;
 							}
 						}
-						else
-						{
-							// skip. We already know there is no ma6 data in this row
-						}
-						reporter_index++;
+						// else skip. We already know there is no ma6 data in this row
+						reporter_index++; // this is the last column for each reporter in the database, move to next reporter
 					}
 					x++;
 				}
@@ -246,12 +302,9 @@ public class Frame implements Comparable<Frame> {
 		return 0;
 	}
 	
-	// this function needs to be rewritten to account for the new moving averages colums
-	
-	double getMovingAverage6(String designation)
+	double getMovingAverage3(String designation)
 	{
-		//System.out.print("Frame.getMovingAverage6(): frame=" + getTimestampInMillis() + " designation=" + designation + " ");
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+		if(reporter_ma3s == null)  // reporter_ma3s was never populated or was invalid
 		{
 			return -1;
 		}
@@ -261,31 +314,101 @@ public class Frame implements Comparable<Frame> {
 		{
 			if(reporter_designations[x].equals(designation))
 			{
-				//System.out.println("ma=" + reporter_ma6s[x]);
+				return reporter_ma3s[x];
+			}
+			x++;
+		}
+		return -1;
+	}
+	
+	double getMovingAverage4(String designation)
+	{
+		if(reporter_ma4s == null)  // reporter_ma4s was never populated or was invalid
+		{
+			return -1;
+		}
+		
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_designations[x].equals(designation))
+			{
+				return reporter_ma4s[x];
+			}
+			x++;
+		}
+		return -1;
+	}
+	
+	double getMovingAverage5(String designation)
+	{
+		if(reporter_ma5s == null)  // reporter_ma5s was never populated or was invalid
+		{
+			return -1;
+		}
+		
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_designations[x].equals(designation))
+			{
+				return reporter_ma5s[x];
+			}
+			x++;
+		}
+		return -1;
+	}
+	
+	double getMovingAverage6(String designation)
+	{
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated or was invalid
+		{
+			return -1;
+		}
+		
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_designations[x].equals(designation))
+			{
 				return reporter_ma6s[x];
 			}
 			x++;
 		}
-	//	System.out.println("error");
 		return -1;
 	}
 	
 	// reporter_ma6s presumed to be set if this is called. Calling functions should be responsible for this.
 
-	private void setMaxAndSecond()
+	private void setHighestAndSecondHighestValues()
 	{
 		highest_ma6_designation = null;
 		highest_ma6 = -1;
-		highest_score_designation = null;
-		highest_score = -1;
-		
 		second_highest_ma6_designation = null;
 		second_highest_ma6 = -1;
+		
+		highest_ma5_designation = null;
+		highest_ma5 = -1;
+		second_highest_ma5_designation = null;
+		second_highest_ma5 = -1;
+		
+		highest_ma4_designation = null;
+		highest_ma4 = -1;
+		second_highest_ma4_designation = null;
+		second_highest_ma4 = -1;
+		
+		highest_ma3_designation = null;
+		highest_ma3 = -1;
+		second_highest_ma3_designation = null;
+		second_highest_ma3 = -1;
+		
+		highest_score_designation = null;
+		highest_score = -1;
 		second_highest_score_designation = null;
 		second_highest_score = -1;
 
 		int x = 0;
-		while(x < reporter_ma6s.length)
+		while(x < reporter_designations.length)
 		{
 			if(reporter_ma6s[x] > highest_ma6) // is this the highest? if so, bump highest and second highest.
 			{
@@ -298,6 +421,45 @@ public class Frame implements Comparable<Frame> {
 			{
 				second_highest_ma6 = reporter_ma6s[x];
 				second_highest_ma6_designation = reporter_designations[x];
+			}
+			
+			if(reporter_ma5s[x] > highest_ma5) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma5 = highest_ma5;
+				highest_ma5 = reporter_ma5s[x];
+				second_highest_ma5_designation = highest_ma5_designation;
+				highest_ma5_designation = reporter_designations[x];
+			}
+			else if(reporter_ma5s[x] > second_highest_ma5) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma5 = reporter_ma5s[x];
+				second_highest_ma5_designation = reporter_designations[x];
+			}
+			
+			if(reporter_ma4s[x] > highest_ma4) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma4 = highest_ma4;
+				highest_ma4 = reporter_ma4s[x];
+				second_highest_ma4_designation = highest_ma4_designation;
+				highest_ma4_designation = reporter_designations[x];
+			}
+			else if(reporter_ma4s[x] > second_highest_ma4) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma4 = reporter_ma4s[x];
+				second_highest_ma4_designation = reporter_designations[x];
+			}
+			
+			if(reporter_ma3s[x] > highest_ma3) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma3 = highest_ma3;
+				highest_ma3 = reporter_ma3s[x];
+				second_highest_ma3_designation = highest_ma3_designation;
+				highest_ma3_designation = reporter_designations[x];
+			}
+			else if(reporter_ma3s[x] > second_highest_ma3) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma3 = reporter_ma3s[x];
+				second_highest_ma3_designation = reporter_designations[x];
 			}
 			
 			if(reporter_scores[x] > highest_score)
@@ -314,111 +476,7 @@ public class Frame implements Comparable<Frame> {
 			}
 			x++;
 		}
-		max_and_second_set = true;
-	}
-	
-	double getHighestScore()
-	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return -1;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return highest_score;
-		}
-		else
-			return highest_score;
-	}
-	
-	double getSecondHighestScore()
-	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return -1;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return second_highest_score;
-		}
-		else
-			return second_highest_score;
-	}
-	
-	String getHighestScoreDesignation()
-	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return null;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return highest_score_designation;
-		}
-		else
-			return highest_score_designation;
-	}
-	
-	String getSecondHighestScoreDesignation()
-	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return null;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return second_highest_score_designation;
-		}
-		else
-			return second_highest_score_designation;
-	}
-	
-	double getHighestMA6()
-	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
-			return -1;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return highest_ma6;
-		}
-		else
-			return highest_ma6;
-	}
-	
-	double getSecondHighestMA6()
-	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
-			return -1;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return second_highest_ma6;
-		}
-		else
-			return second_highest_ma6;
-	}
-	
-	String getHighestMA6Designation()
-	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
-			return null;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return highest_ma6_designation;
-		}
-		else
-			return highest_ma6_designation;
-	}
-	
-	String getSecondHighestMA6Designation()
-	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
-			return null;
-		else if (max_and_second_set == false)
-		{
-			setMaxAndSecond();
-			return second_highest_ma6_designation;
-		}
-		else
-			return second_highest_ma6_designation;
+		highest_and_second_highest_values_set = true;
 	}
 	
 	void populateFramesInWindow()
@@ -703,8 +761,8 @@ public class Frame implements Comparable<Frame> {
 			else
 			{	
 				// This row actually has data. Set highest and second info
-				if(!max_and_second_set) 
-					setMaxAndSecond();
+				if(!highest_and_second_highest_values_set) 
+					setHighestAndSecondHighestValues();
 				
 				System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma6_designation + " which had highest_ma6==" + highest_ma6);
 				// SECOND, check to see that highest ma6 passes the smell test threshold of .5
@@ -863,12 +921,160 @@ public class Frame implements Comparable<Frame> {
 		return return_jo;
 	}
 
+	private void populateMovingAverages()
+	{
+		reporter_ma6s = new double[reporter_designations.length];
+		reporter_ma5s = new double[reporter_designations.length];
+		reporter_ma4s = new double[reporter_designations.length];
+		reporter_ma3s = new double[reporter_designations.length];
+		
+		long ma6_window_begin_ts = getTimestampInMillis()-(6 * 1000);
+		long ma5_window_begin_ts = getTimestampInMillis()-(5 * 1000);
+		long ma4_window_begin_ts = getTimestampInMillis()-(4 * 1000);
+		long ma3_window_begin_ts = getTimestampInMillis()-(3 * 1000);
+		
+		TreeSet<Frame> ma6_window_frames = station_object.getFrames(ma6_window_begin_ts, getTimestampInMillis(), null);
+		TreeSet<Frame> ma5_window_frames = new TreeSet<Frame>();
+		TreeSet<Frame> ma4_window_frames = new TreeSet<Frame>();
+		TreeSet<Frame> ma3_window_frames = new TreeSet<Frame>();
+		
+		Iterator<Frame> it0 = ma6_window_frames.iterator();
+		Frame currentframe = null;
+		while(it0.hasNext())
+		{
+			currentframe = it0.next();
+			if(currentframe.getTimestampInMillis() > ma5_window_begin_ts && currentframe.getTimestampInMillis() <= getTimestampInMillis())
+				ma5_window_frames.add(currentframe);
+			if(currentframe.getTimestampInMillis() > ma4_window_begin_ts && currentframe.getTimestampInMillis() <= getTimestampInMillis())
+				ma4_window_frames.add(currentframe);
+			if(currentframe.getTimestampInMillis() > ma3_window_begin_ts && currentframe.getTimestampInMillis() <= getTimestampInMillis())
+				ma3_window_frames.add(currentframe);
+		}
+		
+		int num_frames_in_m6_window = ma6_window_frames.size();
+		int num_frames_in_m5_window = ma5_window_frames.size();
+		int num_frames_in_m4_window = ma4_window_frames.size();
+		int num_frames_in_m3_window = ma3_window_frames.size();
+		
+		int x = 0;
+		
+		if(num_frames_in_m6_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+		{
+			reporter_ma6s = null; // just set it to null
+		}
+		else
+		{	
+			double[] reporter_totals_6 = new double[reporter_designations.length];
+			Iterator<Frame> it6 = ma6_window_frames.iterator();
+			while(it6.hasNext())
+			{
+				currentframe = it6.next();
+				x = 0;
+				while(x < reporter_designations.length)
+				{
+					reporter_totals_6[x] = reporter_totals_6[x] + currentframe.getScore(reporter_designations[x]);
+					x++;
+				}
+			}
+			
+			x = 0;
+			while(x < reporter_totals_6.length)
+			{
+				reporter_ma6s[x] = reporter_totals_6[x] / num_frames_in_m6_window;
+				x++;
+			}
+		}
+		
+		if(num_frames_in_m5_window < 5) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+		{
+			reporter_ma5s = null; // just set it to null
+		}
+		else
+		{	
+			double[] reporter_totals_5 = new double[reporter_designations.length];
+			Iterator<Frame> it5 = ma5_window_frames.iterator();
+			while(it5.hasNext())
+			{
+				currentframe = it5.next();
+				x = 0;
+				while(x < reporter_designations.length)
+				{
+					reporter_totals_5[x] = reporter_totals_5[x] + currentframe.getScore(reporter_designations[x]);
+					x++;
+				}
+			}
+			
+			x = 0;
+			while(x < reporter_totals_5.length)
+			{
+				reporter_ma5s[x] = reporter_totals_5[x] / num_frames_in_m5_window;
+				x++;
+			}
+		}
+		
+		if(num_frames_in_m4_window < 4) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+		{
+			reporter_ma4s = null; // just set it to null
+		}
+		else
+		{	
+			double[] reporter_totals_4 = new double[reporter_designations.length];
+			Iterator<Frame> it4 = ma4_window_frames.iterator();
+			while(it4.hasNext())
+			{
+				currentframe = it4.next();
+				x = 0;
+				while(x < reporter_designations.length)
+				{
+					reporter_totals_4[x] = reporter_totals_4[x] + currentframe.getScore(reporter_designations[x]);
+					x++;
+				}
+			}
+			
+			x = 0;
+			while(x < reporter_totals_4.length)
+			{
+				reporter_ma4s[x] = reporter_totals_4[x] / num_frames_in_m4_window;
+				x++;
+			}
+		}
+		
+		if(num_frames_in_m3_window < 3) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+		{
+			reporter_ma3s = null; // just set it to null
+		}
+		else
+		{	
+			double[] reporter_totals_3 = new double[reporter_designations.length];
+			Iterator<Frame> it3 = ma3_window_frames.iterator();
+			while(it3.hasNext())
+			{
+				currentframe = it3.next();
+				x = 0;
+				while(x < reporter_designations.length)
+				{
+					reporter_totals_3[x] = reporter_totals_3[x] + currentframe.getScore(reporter_designations[x]);
+					x++;
+				}
+			}
+			
+			x = 0;
+			while(x < reporter_totals_3.length)
+			{
+				reporter_ma3s[x] = reporter_totals_3[x] / num_frames_in_m3_window;
+				x++;
+			}
+		}
+		
+	}
+	
+	
 	// Explanation for the two functions below:
 	// When a new frame comes into the backend, it is inserted first WITHOUT moving average calculations. 
 	// As soon as the raw data has been inserted, a subsequent call to calculateAndSetMA6s() does the necessary fill-in.
 	// populateMovingAverage6s() does the actual calculations, where calculateAndSetMA6s() is really just a database update call
 	
-	private void populateMovingAverage6s()
+/*	private void populateMovingAverage6s()
 	{
 		reporter_ma6s = new double[reporter_designations.length];
 		TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null);
@@ -877,11 +1083,6 @@ public class Frame implements Comparable<Frame> {
 		if(num_frames_in_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
 		{
 			reporter_ma6s = null; // just set it to null
-			/*while(x < reporter_designations.length)
-			{
-				reporter_ma6s[x] = -1;
-				x++;
-			}*/
 		}
 		else
 		{	
@@ -909,13 +1110,13 @@ public class Frame implements Comparable<Frame> {
 				x++;
 			}
 		}
-	}
+	}*/
 	
-	public void calculateAndSetMA6s() // WILL OVERWRITE EXISTING DATA
+	public void calculateAndSetMAs() // WILL OVERWRITE EXISTING DATA
 	{
 		//System.out.println("Frame.setMovingAveragesForFrame(): " + image_name);
 		
-		populateMovingAverage6s();
+		populateMovingAverages();
 		
 		ResultSet rs = null;
 		Connection con = null;
@@ -937,6 +1138,21 @@ public class Frame implements Comparable<Frame> {
 						rs.updateNull(reporter_designations[x] + "_ma6");
 					else
 						rs.updateDouble(reporter_designations[x] + "_ma6", reporter_ma6s[x]);
+					
+					if(reporter_ma5s == null)
+						rs.updateNull(reporter_designations[x] + "_ma5");
+					else
+						rs.updateDouble(reporter_designations[x] + "_ma5", reporter_ma5s[x]);
+					
+					if(reporter_ma4s == null)
+						rs.updateNull(reporter_designations[x] + "_ma4");
+					else
+						rs.updateDouble(reporter_designations[x] + "_ma4", reporter_ma4s[x]);
+					
+					if(reporter_ma3s == null)
+						rs.updateNull(reporter_designations[x] + "_ma3");
+					else
+						rs.updateDouble(reporter_designations[x] + "_ma3", reporter_ma3s[x]);
 				}
 				rs.updateRow();
 			}
@@ -963,7 +1179,265 @@ public class Frame implements Comparable<Frame> {
 		
 		
 		
-		
+	double getHighestScore()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_score;
+		}
+		else
+			return highest_score;
+	}
+	
+	double getSecondHighestScore()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_score;
+		}
+		else
+			return second_highest_score;
+	}
+	
+	String getHighestScoreDesignation()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_score_designation;
+		}
+		else
+			return highest_score_designation;
+	}
+	
+	String getSecondHighestScoreDesignation()
+	{
+		if(reporter_scores == null)  // reporter_scores was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_score_designation;
+		}
+		else
+			return second_highest_score_designation;
+	}
+	
+	double getHighestMA6()
+	{
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma6;
+		}
+		else
+			return highest_ma6;
+	}
+	
+	double getSecondHighestMA6()
+	{
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma6;
+		}
+		else
+			return second_highest_ma6;
+	}
+	
+	String getHighestMA6Designation()
+	{
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma6_designation;
+		}
+		else
+			return highest_ma6_designation;
+	}
+	
+	String getSecondHighestMA6Designation()
+	{
+		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma6_designation;
+		}
+		else
+			return second_highest_ma6_designation;
+	}
+	
+	double getHighestMA5()
+	{
+		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma5;
+		}
+		else
+			return highest_ma5;
+	}
+	
+	double getSecondHighestMA5()
+	{
+		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma5;
+		}
+		else
+			return second_highest_ma5;
+	}
+	
+	String getHighestMA5Designation()
+	{
+		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma5_designation;
+		}
+		else
+			return highest_ma5_designation;
+	}
+	
+	String getSecondHighestMA5Designation()
+	{
+		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma5_designation;
+		}
+		else
+			return second_highest_ma5_designation;
+	}
+	
+	double getHighestMA4()
+	{
+		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma4;
+		}
+		else
+			return highest_ma4;
+	}
+	
+	double getSecondHighestMA4()
+	{
+		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma4;
+		}
+		else
+			return second_highest_ma4;
+	}
+	
+	String getHighestMA4Designation()
+	{
+		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma4_designation;
+		}
+		else
+			return highest_ma4_designation;
+	}
+	
+	String getSecondHighestMA4Designation()
+	{
+		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma4_designation;
+		}
+		else
+			return second_highest_ma4_designation;
+	}
+	
+	double getHighestMA3()
+	{
+		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma3;
+		}
+		else
+			return highest_ma3;
+	}
+	
+	double getSecondHighestMA3()
+	{
+		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+			return -1;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma3;
+		}
+		else
+			return second_highest_ma3;
+	}
+	
+	String getHighestMA3Designation()
+	{
+		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return highest_ma3_designation;
+		}
+		else
+			return highest_ma3_designation;
+	}
+	
+	String getSecondHighestMA3Designation()
+	{
+		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+			return null;
+		else if (highest_and_second_highest_values_set == false)
+		{
+			setHighestAndSecondHighestValues();
+			return second_highest_ma3_designation;
+		}
+		else
+			return second_highest_ma3_designation;
+	}
 	
 	
 	
