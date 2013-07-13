@@ -761,6 +761,7 @@ public class Endpoint extends HttpServlet {
 								{	
 									User target_user = new User(designation, "designation");
 									boolean tCredsAreValid = target_user.twitterCredentialsAreValid();
+									jsonresponse.put("response_status", "success");
 									jsonresponse.put("valid", tCredsAreValid);
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}

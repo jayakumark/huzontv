@@ -9,7 +9,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.TimeZone;
+import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
@@ -449,6 +451,19 @@ public class User implements java.lang.Comparable<User> {
 			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
 			response_jo.put("twitter_active", twitter_active);
 			response_jo.put("twitter_last_alert", twitter_last_alert);
+			
+			TreeSet<Station> stations_ts = getStationsAsAdmin();
+			Iterator<Station> stations_it = stations_ts.iterator();
+			JSONArray stations_as_admin_ja = new JSONArray();
+			while(stations_it.hasNext())
+			{
+				stations_as_admin_ja.put(stations_it.next().getCallLetters());
+			}
+			System.out.println("User.getJSONObject(): found " + stations_as_admin_ja.length() + " stations");
+			response_jo.put("stations_as_admin_ja", stations_as_admin_ja);
+			
+			// need to add stations_as_reporter_ja like the above TODO
+			
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -975,7 +990,49 @@ public class User implements java.lang.Comparable<User> {
 		return false;
 	}
 	
-	
+	public TreeSet<Station> getStationsAsAdmin()
+	{
+		TreeSet<Station> stations = new TreeSet<Station>();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			stmt = con.createStatement();
+			System.out.println("User.getStationsAsAdmin(): SELECT * FROM `stations` WHERE `administrators` like '%" + designation + "%' ");
+			rs = stmt.executeQuery("SELECT * FROM `stations` WHERE `administrators` like '%" + designation + "%' ");
+			Station currentstation = null;
+			while(rs.next())
+			{
+				currentstation = new Station(rs.getString("call_letters"));
+				stations.add(currentstation);
+			}
+			System.out.println("User.getStationsAsAdmin(): found " + stations.size() + " stations");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Endpoint getStationsAsAdmin: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in Endpoint getStationsAsAdmin: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return stations;
+	}
 	
 	
 	public int compareTo(User o) // this sorts by designation alphabetically

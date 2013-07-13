@@ -1,0 +1,60 @@
+<html>
+<head>
+	<title>huzon.tv Alert Monitor</title>
+	<link rel="icon" type="image/png" href="images/huzon_logo_16x16.png" />
+    <script src="js/jquery-1.8.2.js"></script>
+    <script src="js/controlpanel.js"></script>
+         <style>
+        	body
+        	{ 
+         		font-family: arial, helvetica;
+        		font-size: 11px;
+         		border:0px solid;
+         	}
+         	div
+         	{
+         		padding:3px;
+         	}
+         	td
+         	{
+         		font-size:12px;
+         	}
+         	p.faqheader
+         	{
+         		font-weight:bold;
+         		font-size:14px;
+           	}
+         </style>      
+    </head>
+		
+<body>	
+	<div id="header" style="text-align:center;font-size:20px">
+		<table style="margin-left:auto;margin-right:auto">
+			<tr>
+				<td style="vertical-align:middle">
+					<img src="images/huzon_retrotv_75x75.png">
+				</td>
+				<td style="vertical-align:middle">
+					<img src="images/huzontv_logo.png">
+				</td>
+			</tr>
+		</table>
+		 Station Control Panel
+	</div>
+	<hr>
+	<div id="message_div" style="width:950px;margin-right:auto;margin-left:auto">
+	</div>
+	<div id="general_div" style="width:950px;margin-right:auto;margin-left:auto">
+	</div>
+	<div id="graph_div" style="width:950px;margin-right:auto;margin-left:auto"> <!--  number of alerts (of each type) + number of clickthroughs (of each type) per day for 2 weeks -->
+	</div>	
+	<div id="rankings_div" style="width:950px;margin-right:auto;margin-left:auto"> <!--  series of rankings of the reporters from the station (e.g. most clickthroughs per alert, clickthroughs per follower, etc) -->
+	</div>	
+	<div id="reporters_div" style="width:950px;margin-right:auto;margin-left:auto"> <!--  table of reporter data, whether accounts are linked, how many alerts, successful/failed, etc -->
+	</div>	
+	<div id="administrators_div" style="width:950px;margin-right:auto;margin-left:auto"> <!--  table of administrator data -->
+	</div>
+	<div id="alerts_div" style="width:950px;margin-right:auto;margin-left:auto"> <!--  Shows table of most recent alerts and allows the user to delete -->
+	</div>
+</body>
+</html>
