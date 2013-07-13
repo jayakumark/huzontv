@@ -140,6 +140,9 @@ public class Frame implements Comparable<Frame> {
 				int reporter_index = 0;
 				reporter_designations = new String[reportercount];
 				reporter_scores = new double[reportercount];
+				reporter_ma3s = new double[reportercount];
+				reporter_ma4s = new double[reportercount];
+				reporter_ma5s = new double[reportercount];
 				reporter_ma6s = new double[reportercount];
 				//reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
@@ -735,7 +738,8 @@ public class Frame implements Comparable<Frame> {
 			String which_timers, // test or production
 			String alert_mode, // live, test (to master account) or silent 
 			int tw_wp_override_in_sec, // use these to override the waiting periods for each reporter as they exist in the database.
-			int fb_wp_override_in_sec  // if -1, then use the database values
+			int fb_wp_override_in_sec,  // if -1, then use the database values
+			int maw_int
 			)
 	{
 		JSONObject return_jo = new JSONObject();
@@ -749,14 +753,33 @@ public class Frame implements Comparable<Frame> {
 		boolean facebook_successful = false;
 		String facebook_failure_message = "";
 		
+		 double[] reporter_mas = null;
+		 double highest_ma = 0;
+		 String highest_ma_designation = "";
+		 double second_highest_ma = 0;
+		 String second_highest_ma_designation = "";
+		 switch (maw_int) {
+		 	case 3:  
+		 		{reporter_mas = reporter_ma3s;}
+		 		break;
+			case 4: 
+				{reporter_mas = reporter_ma4s;}
+	 			break;
+			case 5:
+				{reporter_mas = reporter_ma5s;}
+	 			break;
+			case 6:  
+				{reporter_mas = reporter_ma6s;}
+	 			break;
+		 }
 		
 		try
 		{
 			// FIRST, check that this row has analyzable data
-			if(reporter_ma6s == null)
+			if(reporter_mas == null)
 			{
-				System.out.println("Station.getAlertFrames(): (1) skipping timestamp " + getTimestampInMillis() + " because reporter_ma6s was null (prob not enough frames in window). May be the beginning of a recording or after a stutter. Ignoring.");
-				alert_triggered_failure_message = "Reporter_ma6s was null. No valid data to analyze. (Might just be the beginning or a recording or a temp stutter.)";
+				System.out.println("Station.getAlertFrames(): (1) skipping timestamp " + getTimestampInMillis() + " because reporter_mas was null (prob not enough frames in window). May be the beginning of a recording or after a stutter. Ignoring.");
+				alert_triggered_failure_message = "Reporter_mas was null. No valid data to analyze. (Might just be the beginning or a recording or a temp stutter.)";
 			}
 			else
 			{	
@@ -764,20 +787,35 @@ public class Frame implements Comparable<Frame> {
 				if(!highest_and_second_highest_values_set) 
 					setHighestAndSecondHighestValues();
 				
-				System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma6_designation + " which had highest_ma6==" + highest_ma6);
+				 switch (maw_int) {
+				 	case 3:  
+				 		{highest_ma = highest_ma3; highest_ma_designation = highest_ma3_designation; second_highest_ma = second_highest_ma3; second_highest_ma_designation = second_highest_ma3_designation;}
+				 		break;
+					case 4: 
+						{highest_ma = highest_ma4; highest_ma_designation = highest_ma4_designation; second_highest_ma = second_highest_ma4; second_highest_ma_designation = second_highest_ma4_designation;}
+			 			break;
+					case 5:
+						{highest_ma = highest_ma5; highest_ma_designation = highest_ma5_designation; second_highest_ma = second_highest_ma5; second_highest_ma_designation = second_highest_ma5_designation;}
+			 			break;
+					case 6:  
+						{highest_ma = highest_ma6; highest_ma_designation = highest_ma6_designation; second_highest_ma = second_highest_ma6; second_highest_ma_designation = second_highest_ma6_designation;}
+			 			break;
+				 }
+				
+				System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma_designation + " which had highest_ma==" + highest_ma);
 				// SECOND, check to see that highest ma6 passes the smell test threshold of .5
-				if(highest_ma6 < .5)
+				if(highest_ma < .4)
 				{	
-					System.out.println("Station.getAlertFrames(): (2) skipping timestamp " + getTimestampInMillis() + " because the highest ma6 was less than .5 (highest_ma6=" + highest_ma6 + ")");
-					alert_triggered_failure_message = "Highest ma6 was less than smell test threshold of .5";
+					System.out.println("Station.getAlertFrames(): (2) skipping timestamp " + getTimestampInMillis() + " because the highest ma was less than .4 (highest_ma=" + highest_ma + ")");
+					alert_triggered_failure_message = "highest_ma was less than smell test threshold of .4";
 				}
 				else
 				{	
 					// THIRD, check that the highest MA designation was also the highest score designation
-					if(!highest_ma6_designation.equals(highest_score_designation))
+					if(!highest_ma_designation.equals(highest_score_designation))
 					{	
-						System.out.println("Station.getAlertFrames(): (3) skipping timestamp " + getTimestampInMillis() + " because highest_ma6_designation=" + highest_ma6_designation + " was not the same as highest_score_designation=" + highest_score_designation);
-						alert_triggered_failure_message = "Highest score and highest ma were different";
+						System.out.println("Station.getAlertFrames(): (3) skipping timestamp " + getTimestampInMillis() + " because highest_ma_designation=" + highest_ma_designation + " was not the same as highest_score_designation=" + highest_score_designation);
+						alert_triggered_failure_message = "highest_score and highest_ma were different";
 					}
 					else
 					{	
@@ -789,11 +827,11 @@ public class Frame implements Comparable<Frame> {
 						}
 						else
 						{	
-							User reporter = new User(highest_ma6_designation, "designation");
+							User reporter = new User(highest_ma_designation, "designation");
 							// FIFTH, is the highest reporter within the waiting period for both social outlets? If so skip, if not, continue processing.
 							if(reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec) && reporter.isWithinTwitterWindow(getTimestampInMillis(), which_timers, tw_wp_override_in_sec))
 							{
-								System.out.println("Station.getAlertFrames(): (5) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma6_designation + " because it's within the last alert window of both Facebook and Twitter");
+								System.out.println("Station.getAlertFrames(): (5) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma_designation + " because it's within the last alert window of both Facebook and Twitter");
 								alert_triggered_failure_message = "Reporter is on FB and TW cooldown. (This does not mean an alert would have necessarily triggered.)";
 							}
 							else
@@ -803,7 +841,7 @@ public class Frame implements Comparable<Frame> {
 								// SIXTH, are there enough frames in the window above the single threshold?
 								// this check comes as late as possible to avoid going to the database for frames
 								//TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
-								if(getNumFramesInWindowAboveSingleThresh(highest_ma6_designation, reporter.getHomogeneity()) < nrpst_int)
+								if(getNumFramesInWindowAboveSingleThresh(highest_ma_designation, reporter.getHomogeneity()) < nrpst_int)
 								{
 									System.out.println("Station.getAlertFrames(): (6) skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
 									alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
@@ -812,19 +850,19 @@ public class Frame implements Comparable<Frame> {
 								{	
 									System.out.println("Station.getAlertFrames(): (!) adding (not skipping) timestamp " + getTimestampInMillis());
 									return_jo = getAsJSONObject(true, null); // no designation specified
-									return_jo.put("designation", highest_ma6_designation);
-									return_jo.put("ma_for_alert_frame", getMovingAverage6(highest_ma6_designation));
-									return_jo.put("ma_for_frame_that_passed_ma_thresh", getMovingAverage6(highest_ma6_designation));
-									return_jo.put("score_for_alert_frame", getScore(highest_ma6_designation));
-									return_jo.put("score_for_frame_that_passed_ma_thresh", getScore(highest_ma6_designation));
+									return_jo.put("designation", highest_ma_designation);
+									return_jo.put("ma_for_alert_frame", getMovingAverage6(highest_ma_designation));
+									return_jo.put("ma_for_frame_that_passed_ma_thresh", getMovingAverage6(highest_ma_designation));
+									return_jo.put("score_for_alert_frame", getScore(highest_ma_designation));
+									return_jo.put("score_for_frame_that_passed_ma_thresh", getScore(highest_ma_designation));
 									return_jo.put("image_name_for_frame_that_passed_ma_thresh", getImageName());
 									double homogeneity = reporter.getHomogeneity();
 									return_jo.put("homogeneity", homogeneity);
 									return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
 									return_jo.put("single_threshold", homogeneity);
-									return_jo.put("second_highest_designation", second_highest_ma6_designation);
-									return_jo.put("second_highest_ma", second_highest_ma6);
-									return_jo.put("second_highest_score", second_highest_score);
+									return_jo.put("second_highest_designation", second_highest_ma_designation);
+									return_jo.put("second_highest_ma", second_highest_ma);
+									return_jo.put("second_highest_score", second_highest_score); // FIXME this isn't necessarily the score of the second_highest_ma_designation
 									
 									alert_triggered = true; // <---------------
 									ExecutorService executor = Executors.newFixedThreadPool(300);

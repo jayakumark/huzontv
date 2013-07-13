@@ -334,6 +334,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public TreeSet<Frame> getFrames(String beginstring, String endstring, String designation) // convenience method for taking datestring in the form YYYYMMDD_HHMMSS_sss
 	{
+		System.out.println("Station.getFrames(): datestring method begin");
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
@@ -353,7 +354,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// designation can be null. If designation supplied, then get all frames above the single threshold
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation) // INCLUSIVE
 	{
-		//System.out.println("Station.getFrames(): getting frames from " + begin_in_ms + " to " + end_in_ms);
+		System.out.println("Station.getFrames(): long method begin");
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -419,6 +420,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method
 	public JSONArray getFramesAsJSONArray(String beginstring, String endstring, boolean get_score_data)
 	{
+		System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
@@ -446,6 +448,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
 	{
+		System.out.println("Station.getFramesAsJSONArray(): long method begin");
 		JSONArray frames_ja = new JSONArray();
 		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null);
 		Iterator<Frame> it = frameset.iterator();
@@ -475,7 +478,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	// datestring convenience method.
-	JSONArray getAlertFrames(String beginstring, String endstring, double ma_modifier_double, int awp_int, int nrpst, double delta_double)
+	JSONArray getAlertFrames(String beginstring, String endstring, double ma_modifier_double, int awp_int, int nrpst, double delta_double, int maw)
 	{
 		if(beginstring.length() < 8)
 		{
@@ -489,10 +492,10 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getAlertFrames(begin_in_ms, end_in_ms, ma_modifier_double, awp_int, nrpst, delta_double);
+		return getAlertFrames(begin_in_ms, end_in_ms, ma_modifier_double, awp_int, nrpst, delta_double, maw);
 	}
 	
-	JSONArray getAlertFrames(long begin_in_ms, long end_in_ms, double ma_modifier_double, int awp_int, int nrpst_int, double delta_double)
+	JSONArray getAlertFrames(long begin_in_ms, long end_in_ms, double ma_modifier_double, int awp_int, int nrpst_int, double delta_double, int maw_int)
 	{
 		System.out.println("Station.getAlertFrames(): begin");
 		JSONArray return_ja = new JSONArray();
@@ -504,11 +507,11 @@ public class Station implements java.lang.Comparable<Station> {
 		while(it.hasNext()) // looping through reporters
 		{
 			currentreporter = new User(it.next(), "designation");
-			querystring = querystring + " (`" + currentreporter.getDesignation() + "_ma6` >= " + (currentreporter.getHomogeneity()*ma_modifier_double) + " AND ";
+			querystring = querystring + " (`" + currentreporter.getDesignation() + "_ma" + maw_int + "` >= " + (currentreporter.getHomogeneity()*ma_modifier_double) + " AND ";
 			querystring = querystring + " `" + currentreporter.getDesignation() + "_avg` >= " + currentreporter.getHomogeneity() + ") OR ";
 		}
 		querystring = querystring.substring(0,querystring.length() - 4) + "))";
-		System.out.println("Station.getAlertFrames(): querystring=" + querystring);
+		//System.out.println("Station.getAlertFrames(): querystring=" + querystring);
 		
 		ResultSet rs = null;
 		Connection con = null;
@@ -520,7 +523,7 @@ public class Station implements java.lang.Comparable<Station> {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(querystring);
 			TreeSet<Frame> frames = getFramesFromResultSet(rs);
-			System.out.println("# of frames=" + frames.size());
+			System.out.println("Station.getAlertFrames(): # of frames=" + frames.size());
 			Iterator<Frame> frames_it = frames.iterator();
 			Frame currentframe = null;
 
@@ -528,9 +531,12 @@ public class Station implements java.lang.Comparable<Station> {
 			while(frames_it.hasNext())
 			{
 				currentframe = frames_it.next();
-				current_jo = currentframe.process(ma_modifier_double, nrpst_int, delta_double, "test", "silent", awp_int, awp_int); // which_timers, alert_mode, tw_wp_override, fb_wp_override
+				current_jo = currentframe.process(ma_modifier_double, nrpst_int, delta_double, "test", "silent", awp_int, awp_int, maw_int); // which_timers, alert_mode, tw_wp_override, fb_wp_override
 				if(current_jo != null && current_jo.has("alert_triggered") && current_jo.getBoolean("alert_triggered"))
+				{
+					System.out.println("Station.getAlertFrames(): Alert triggered. putting current_jo onto return_ja");
 					return_ja.put(current_jo);
+				}
 			}
 			rs.close();
 			stmt.close();
@@ -557,9 +563,6 @@ public class Station implements java.lang.Comparable<Station> {
 		}  
 		return return_ja; 
 	}
-	
-	
-	
 
 	// DANGEROUS!!!! This will reset all alerts for every active reporter at this station
 	boolean resetProductionAlertTimers()
@@ -945,9 +948,12 @@ public class Station implements java.lang.Comparable<Station> {
 				reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
 				reporter_ma6s = new double[reportercount];
+				reporter_ma5s = new double[reportercount];
+				reporter_ma4s = new double[reportercount];
+				reporter_ma3s = new double[reportercount];
 				int reporter_index = 0;
 				x=1; 
-				System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
+				//System.out.println("On frame " + rs.getString("image_name") + ", starting loop through " + columncount + " columns to fill reporter arrays...");
 				boolean db_has_ma6_data = true; // assume true until proven false
 				boolean db_has_ma5_data = true;
 				boolean db_has_ma4_data = true;

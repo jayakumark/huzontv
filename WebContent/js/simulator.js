@@ -150,7 +150,7 @@ var reporters_ja;
 
 document.addEventListener('DOMContentLoaded', function () {
 		
-	//docCookies.setItem("twitter_access_token", "11Rm", 3000000);
+	//docCookies.setItem("twitter_access_token", "", 3000000);
 	//docCookies.setItem("twitter_handle", "huzontv", 3000000);
 	//docCookies.setItem("pass", "", 3000000);
 	
@@ -252,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function displayAvailableFunctions() // user should have twitter_handle, twitter_access_token and administering_station cookies
 {
 	var twitter_handle = docCookies.getItem("twitter_handle");
+	
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = docCookies.getItem("administering_station");
 	var fds = "";
@@ -371,10 +372,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function4_mamodifier_input\" value=\".8\" size=4>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						NRPST: <input type=\"text\" id=\"function4_nrpst_input\" value=\"2\" size=1>";
+	fds = fds + "						MAW: <input type=\"text\" id=\"function4_maw_input\" value=\"6\" size=3><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"3600\" size=4> ";
+	fds = fds + "						NRPST: <input type=\"text\" id=\"function4_nrpst_input\" value=\"2\" size=1>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						Delta: <input type=\"text\" id=\"function4_delta_input\" value=\"0\" size=4> ";
@@ -382,14 +383,16 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130707_040000\"><br>";
+	fds = fds + "						Begin: <input type=\"text\" id=\"function4_begin_input\" size=13 value=\"20130709_040000\"><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130707_235900\" size=13><br>";
+	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130709_235900\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"3600\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Group by: <input type=\"text\" id=\"function4_grouping_input\" value=\"3600\" size=5> ";
 	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
@@ -417,65 +420,27 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
 	fds = fds + "		</td>";
-
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=5>";
-	fds = fds + "						<b>Function 6:</b> Simulate Alerts (inclusive)";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
+	fds = fds + "						<b>Function 6:</b> Test reporter tokens";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Single Thresh Modifier: <input type=\"text\" id=\"function6_singlemodifier_input\" value=\"1.0\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						MA Thresh Modifier: <input type=\"text\" id=\"function6_mamodifier_input\" value=\".8\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Moving Avg Window: <input type=\"text\" id=\"function6_mawindow_input\" value=\"5\" size=4>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						NRPST: <input type=\"text\" id=\"function6_nrpst_input\" value=\"2\" size=1>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Designation: <select id=\"function6_designation_select\">";
-	fds = fds + "							<option value=\"none\">none</option>";
-	for(var a = 0; a < reporters_ja.length; a++)
-	{
-		fds = fds + "							<option value=\"" + reporters_ja[a] + "\">" + reporters_ja[a] + "</option>";
-	}	
-	fds = fds + "	</select> ";
-	fds = fds + "					</td>";
-	
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"3600\" size=4> ";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Begin: <input type=\"text\" id=\"function6_begin_input\" size=13 value=\"20130707_040000\"><br>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						End: <input type=\"text\" id=\"function6_end_input\" value=\"20130707_235900\" size=13><br>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
 	fds = fds + "   					<input id=\"function6_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
 	fds = fds + "		</td>";
 	fds = fds + "	</tr>";
-	
 	fds = fds + "	<tr>";
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
-	fds = fds + "						<b>Function 7:</b> Test reporter tokens";
+	fds = fds + "						<b>Function 7:</b> Reset PRODUCTION alert timers";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
@@ -488,59 +453,13 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
-	fds = fds + "						<b>Function 8:</b> Delete an alert";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
+	fds = fds + "						<b>Function 8:</b> Reset TEST alert timers";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Designation: <select id=\"function8_designation_select\">";
-	for(var a = 0; a < reporters_ja.length; a++)
-	{
-		fds = fds + "							<option value=\"" + reporters_ja[a] + "\">" + reporters_ja[a] + "</option>";
-	}	
-	fds = fds + "							</select>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Type: <input type=\"text\" id=\"function8_social_type_input\" size=13 value=\"twitter\">";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Item ID: <input type=\"text\" id=\"function8_id_input\" value=\"\" size=13>";
-	fds = fds + "					</td>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
 	fds = fds + "   					<input id=\"function8_go_button\" type=button value=\"GO\">";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "			</table>";
-	fds = fds + "		</td>";
-	fds = fds + "		</td>";
-	fds = fds + "	</tr>";
-	
-	fds = fds + "	<tr>";
-	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	fds = fds + "			<table style=\"border-spacing:3px\">";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
-	fds = fds + "						<b>Function 9:</b> Reset PRODUCTION alert timers";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
-	fds = fds + "   					<input id=\"function9_go_button\" type=button value=\"GO\">";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "			</table>";
-	fds = fds + "		</td>";
-	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
-	fds = fds + "			<table style=\"border-spacing:3px\">";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=1>";
-	fds = fds + "						<b>Function 10:</b> Reset TEST alert timers";
-	fds = fds + "					</td>";
-	fds = fds + "				</tr>";
-	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:center\">";
-	fds = fds + "   					<input id=\"function10_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
 	fds = fds + "			</table>";
@@ -614,11 +533,8 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				$("#chart1").html("");
 				var rds = "";
 				var datestring = $('#function2_begin_input').val();
-				
 				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				
 				var begin = d.getTime()/1000;
-				
 				datestring = $('#function2_end_input').val();
 				d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var end = d.getTime()/1000;
@@ -816,90 +732,45 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 			        }
 				});	
 				
+				var datestring = $('#function4_begin_input').val();
+				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var begin_in_ms = d.getTime();
+				datestring = $('#function4_end_input').val();
+				d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
+				var end_in_ms = d.getTime();
+				var grouping_interval = $('#function4_grouping_input').val() * 1000;
+				var num_rows = Math.ceil((end_in_ms - begin_in_ms) / grouping_interval);			
+
 				var rds = "";
-				$.ajax({
-						type: 'GET',
-						url: endpoint,
-						timeout: 600000,
-						data: {
-				            method: "getAlertFrames",
-				            begin: $('#function4_begin_input').val(),             
-				            end: $('#function4_end_input').val(),
-				            mamodifier: $('#function4_mamodifier_input').val(),
-				            nrpst: $('#function4_nrpst_input').val(), // number required past single threshold
-				            awp:  $('#function4_awp_input').val(),
-				            delta: $('#function4_delta_input').val(),
-				            station: station,
-		    	            twitter_handle: twitter_handle,
-				            twitter_access_token: twitter_access_token
-						},
-				        dataType: 'json',
-				        async: false,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error message=" + data.message);
-				        	else
-				        	{
-				        		//alert("response_status=success");
-				        		if(data.alert_frames_ja)
-			        			{	
-				        			data.alert_frames_ja.sort(function(a,b){
-				        				a = a.timestamp_in_ms;
-				        				b = b.timestamp_in_ms;
-				        				return a - b;
-				        			});
-				        			
-				        			rds = rds + "<div style=\"border: 0px black solid;width:100%;display:inline-block;\">" + data.alert_frames_ja.length + " results</div>";
-			        				for(var x = 0; x < data.alert_frames_ja.length; x++)
-			        				{
-			        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
-				        				//rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\"><tr><td style=\"text-align:right;vertical-align:middle\"><img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\"></td><td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td></tr></table>";
-				        				//rds = rds + "<br>";
-				        				rds = rds + "<img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
-				        				rds = rds + "<br>image_name:" + data.alert_frames_ja[x].image_name;
-				        				rds = rds + "<br>designation:" + data.alert_frames_ja[x].designation;
-				        				rds = rds + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
-				        				rds = rds + "<br>score_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].score_for_frame_that_passed_ma_thresh;
-				        				rds = rds + "<br>ma_for_alert_frame:" + data.alert_frames_ja[x].ma_for_alert_frame;
-				        				rds = rds + "<br>ma_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].ma_for_frame_that_passed_ma_thresh;
-				        				rds = rds + "<br>image_name_for_frame_that_passed_ma_thresh:<br>" + data.alert_frames_ja[x].image_name_for_frame_that_passed_ma_thresh;
-				        				rds = rds + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity;
-				        				rds = rds + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
-				        				rds = rds + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
-				        				//jo2add.put("second_highest_designation",currentframe.getSecondHighestMovingAverageDesignation());
-										//jo2add.put("second_highest_ma", currentframe.getSecondHighestMovingAverage());
-										//jo2add.put("second_highest_score", currentframe.getDesignationScore(currentframe.getSecondHighestMovingAverageDesignation()));
-				        				rds = rds + "<br>2nd highest des:" + data.alert_frames_ja[x].second_highest_designation;
-				        				rds = rds + "<br>2nd highest ma:" + data.alert_frames_ja[x].second_highest_ma;
-				        				rds = rds + "<br>2nd highest score:" + data.alert_frames_ja[x].second_highest_score;
-				        				rds = rds + "<br><a href=\"#\" id=\"" + data.alert_frames_ja[x].timestamp_in_ms + "_graphthis_link\">Graph this</a>";
-				        				rds = rds + "</div>";
-			        				}
-			        				$("#results_div").html(rds);
-			        				for(var x = 0; x < data.alert_frames_ja.length; x++)
-			        				{
-			        					$("#" + data.alert_frames_ja[x].timestamp_in_ms + "_graphthis_link").click({value: x},
-			        							function (event) {
-			        								$("#function3_designation_select").val(data.alert_frames_ja[event.data.value].designation);
-			        								$("#function3_mamodifier_input").val($('#function4_mamodifier_input').val());
-			        								$("#function3_begin_input").val(data.alert_frames_ja[event.data.value].timestamp_in_ms - 120000);
-			        								$("#function3_end_input").val(data.alert_frames_ja[event.data.value].timestamp_in_ms + 120000);
-			        								$("#function3_go_button").trigger("click");
-			        							});
-			        				}
-			        			}
-				        
-			        			
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
+				rds = rds + "<div id=\"gAF_results_count\"></div>";
+				rds = rds + "<table style=\"width:100%\">";
+				for(var x = 0; x < num_rows; x++)
+				{
+					
+					rds = rds + "	<tr>";
+					rds = rds + "		<td id=\"gAF_results_td_" + x + "\" style=\"width=100%;background-color:#dddddd\"></td>";
+					rds = rds + "		</td>";
+					rds = rds + "	</tr>";
+				}	
+				rds = rds + "</table>";
+				$("#results_div").html(rds);
+				for(var x = 0; x < num_rows; x++)
+				{
+					getAlertFramesClosure((begin_in_ms + (x * grouping_interval)),  //begin
+							(begin_in_ms + (x * grouping_interval) + grouping_interval), // end
+							$('#function4_mamodifier_input').val(), 
+							$('#function4_nrpst_input').val(), 
+							$('#function4_awp_input').val(),
+							$('#function4_delta_input').val(),
+							$('#function4_maw_input').val(),
+							station, twitter_handle, twitter_access_token, 
+							"gAF_results_td_" + x // row_id -- tells the ajax function which ID to paint when returning
+					);
+					
+				}	
+				
+			return;
+		});
 	
 	$("#function5_go_button").click(
 			function () {
@@ -997,144 +868,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				return;
 			});
 	
-	$("#function6_go_button").click(
-			function () {
-				$("#results_div").html("");
-				$("#chart1").html("");
-				var rds = "";
-				var datestring = $('#function6_begin_input').val();
-				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var begin = d.getTime()/1000;
-				datestring = $('#function6_end_input').val();
-			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
-				var timestamps_ja = null;
-				var designation = $('#function6_designation_select').val();
-				var singlemodifier = $('#function6_singlemodifier_input').val() * 1;
-				var mamodifier = $('#function6_mamodifier_input').val() * 1;
-				var mawindow = $('#function6_mawindow_input').val() * 1;
-				var nrpst = $('#function6_nrpst_input').val() * 1;
-				
-				//fds = fds + "						Waiting period: <input type=\"text\" id=\"function6_awp_input\" value=\"3600\" size=4> ";
-				
-				var dograph = false;
-				var reporter_homogeneity = 0;
-				if(designation !== "none")
-				{
-					dograph = true;
-					$.ajax({
-						type: 'GET',
-						url: endpoint,
-						data: {
-				            method: "getUser",
-				            designation: designation,
-				            twitter_handle: twitter_handle,
-				            twitter_access_token: twitter_access_token
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error: " + data.message);
-				        	else
-				        	{
-				        		reporter_homogeneity = data.user_jo.homogeneity;
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				}
-				$.ajax({
-					type: 'GET',
-					url: endpoint,
-					data: {
-			            method: "resetTestAlertTimers",
-			            station: station,
-			            twitter_handle: twitter_handle,
-			            twitter_access_token: twitter_access_token
-					},
-			        dataType: 'json',
-			        async: false,
-			        success: function (data, status) {
-			        	if (data.response_status == "error")
-			        		$("#results_div").html("error: "  + data.message);
-			        	else
-			        	{
-			        		//$("#results_div").html("success resetting all last alerts");
-			        	}
-			        }
-			        ,
-			        error: function (XMLHttpRequest, textStatus, errorThrown) {
-			        	$("#results_div").html("ajax error");
-			            console.log(textStatus, errorThrown);
-			        }
-				});	
-				
-				$.ajax({
-						type: 'GET',
-						url: endpoint,
-						data: {
-				            method: "getFrameTimestamps",
-				            begin: begin,             
-				            end: end,
-				            station: station,
-		    	            twitter_handle: twitter_handle,
-				            twitter_access_token: twitter_access_token
-						},
-				        dataType: 'json',
-				        async: true,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error message=" + data.message);
-				        	else
-				        	{
-				        		if(data.timestamps_ja.length > 600) // ~ 5 minutes
-				        		{
-				        			alert("too many frames. Try a smaller window.");
-				        		}	
-				        		else
-				        		{
-				        			timestamps_ja = data.timestamps_ja;
-				        			timestamps_ja.sort();
-				        			$("#results_div").append("<div>" + data.timestamps_ja.length + " frames in range</div>");
-					        		
-				        			var frames_ja = [];
-				        			var length = data.timestamps_ja.length;
-				        			var index = 0;
-				        			var currentframe = null;
-					        		var doFrame = function(){
-					        			if(index < length)
-					        			{
-					        				if(designation)
-					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, designation, mawindow);
-					        				else
-					        					currentframe = simulateNewFrame(data.timestamps_ja[index], station, null, -1);
-					        				//alert(JSON.stringify(currentframe));
-					        				frames_ja.push(currentframe);
-					        				//alert(JSON.stringify(frames_ja));
-					        				if(dograph)
-					        					graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, singlemodifier, mamodifier, mawindow);
-					        			}
-					        			index++;
-					        		};
-					        		// 264 copies.
-					        		setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();setTimeout(function(){doFrame();},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);},500);
-				        		}
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#message_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-			});
 	
-	$("#function7_go_button").click(
+
+	
+	$("#function6_go_button").click(
 			function () {
 				$("#results_div").html("");
 				$("#chart1").html("");
@@ -1182,43 +919,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				return;
 			});
 	
-	$("#function8_go_button").click(
-			function () {
-				$("#results_div").html("");
-				$("#chart1").html("");
-				var rds = "";
-				$.ajax({
-						type: 'GET',
-						url: endpoint,
-						data: {
-				            method: "deleteAlert",
-				            designation: $('#function8_designation_select').val(),
-				            social_type: $('#function8_social_type_input').val(),             
-				            id: $('#function8_id_input').val(),
-				            twitter_handle: twitter_handle,
-				            twitter_access_token: twitter_access_token
-						},
-				        dataType: 'json',
-				        async: false,
-				        success: function (data, status) {
-				        	if (data.response_status == "error")
-				        		$("#results_div").html("error message=" + data.message);
-				        	else
-				        	{
-				        		rds = JSON.stringify(data);
-				        		$("#results_div").html(rds);
-				        	}
-				        }
-				        ,
-				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#results_div").html("ajax error");
-				            console.log(textStatus, errorThrown);
-				        }
-					});
-				return;
-			});
-	
-	$("#function9_go_button").click(
+	$("#function7_go_button").click(
 			function () {
 				$("#results_div").html("");
 				$("#chart1").html("");
@@ -1252,7 +953,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				return;
 			});
 	
-	$("#function10_go_button").click(
+	$("#function8_go_button").click(
 			function () {
 				$("#results_div").html("");
 				$("#chart1").html("");
@@ -1390,175 +1091,7 @@ function verifyPageFBCredentials(designation)
 	});
 }
 
-function simulateNewFrame(timestamp_in_ms, station, designation, maw_int){
-//function simulateNewFrame(timestamp_in_ms, station) {
-	var rds = "";
-	var frame_to_display = null;
-	var jsonpostbody;
-	var pass = docCookies.getItem("pass");
-	if(typeof designation === undefined || designation === null)
-	{	
-		jsonpostbody = { 
-				timestamp_in_ms: timestamp_in_ms,
-				station: station,
-	            simulation: "true",
-	            password: pass
-			};
-	}
-	else
-	{
-		jsonpostbody = { 
-				timestamp_in_ms: timestamp_in_ms,
-				station: station,
-	            simulation: "true",
-	            designation: designation,
-	            maw_int: maw_int,
-	            password: pass
-			};
-	}
-	
-	$.ajax({
-		type: 'POST',
-		url: endpoint,
-		data: {
-			method: "commitFrameDataAndAlert",
-            jsonpostbody: JSON.stringify(jsonpostbody)
-		},
-        dataType: 'json',
-        async: false,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#results_div").html("error message=" + data.message);
-        	else
-        	{
-        		rds = "<div style=\"border: 1px black solid;display:inline-block\">";
-        		
-        		if(data.alert_triggered && (data.twitter_fired || data.facebook_fired))
-        		{
-    				rds = rds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:3px\">";
-    				rds = rds + "<tr>";
-    				rds = rds + "		<td style=\"text-align:right;vertical-align:middle\">";
-    				if(data.twitter_fired == true)
-    					rds = rds + "			<img src=\"images/twitter_logo_30x26.jpg\" style=\"width:30px;height26px;\">";
-    				if(data.facebook_fired == true)
-    					rds = rds + "			<img src=\"images/facebook_logo_small1.jpg\" style=\"width:30px;height26px;\">";
-    				rds = rds + "		</td>";
-    				rds = rds + "		<td style=\"text-align:left;vertical-align:middle;font-size:20px;font-weight:bold\">Alert fired!</td>";
-    				rds = rds + "	</tr>";
-    				rds = rds + "</table>";
-    			//	rds = rds + "<br><img src=\"" + data.url + "\" style=\"width:426px;height:240px\">";
-    			//	rds = rds + "<br>image_name: " + data.image_name;
-    			//	rds = rds + "<br>(passing) image_name: " + data.image_name_of_frame_in_window_that_passed_single_thresh;
-    			//	rds = rds + "<br>designation: " + data.designation;
-    				/*
-    				var index_of_fired_alert = 0;
-    				for(var x = 0; x < data.frames_ja.length; x++)
-    				{
-    					if(data.frames_ja[x].image_name === data.image_name)
-    					{
-    						index_of_fired_alert = x;
-    						break;
-    					}
-    				}	
-    				frame_to_display = data.frames_ja[index_of_fired_alert];*/
-    				// 4
-    				/*var first_index = 0;
-    				var second_index = Math.floor(data.frames_ja.length / 3);
-    				var third_index = Math.floor(data.frames_ja.length * 2 / 3);
-    				var fourth_index = data.frames_ja.length-1;
-    				rds = rds + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
-    				rds = rds + "	<tr>";
-    				rds = rds + "		<td>";
-    				rds = rds + "			<img src=\"" + data.frames_ja[first_index].url + "\" style=\"width:213px;height:120px\">";
-    				rds = rds + "		</td>";
-    				rds = rds + "		<td>";
-    				rds = rds + "			<img src=\"" + data.frames_ja[second_index].url + "\" style=\"width:213px;height:120px\">";
-    				rds = rds + "		</td>";
-    				rds = rds + "	</tr>";
-    				rds = rds + "	<tr>";
-    				rds = rds + "		<td>";
-    				rds = rds + "			<img src=\"" + data.frames_ja[third_index].url + "\" style=\"width:213px;height:120px\">";
-    				rds = rds + "		</td>";
-    				rds = rds + "		<td>";
-    				rds = rds + "			<img src=\"" + data.frames_ja[fourth_index].url + "\" style=\"width:213px;height:120px\">";
-    				rds = rds + "		</td>";
-    				rds = rds + "	</tr>";
-        			rds = rds + "</table>";
-    				
-    				// 9
-    				
-    				rds = rds + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
-        			for(var x = 0; x < data.frames_ja.length && x < 18; x = x + 2)
-        			{	
-        				if(((x + 6) % 6) == 0)
-        					rds = rds + "	<tr>";
-        				rds = rds + "		<td>";
-        				rds = rds + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:142px;height:80px\">";
-        				rds = rds + "		</td>";
-        				if(((x + 1) % 6) == 0)
-        					rds = rds + "	</tr>";
-        			}
-        			if(((x + 1) % 6) != 0)
-    					rds = rds + "	</tr>";
-        			rds = rds + "</table>";
-    				
-    				
-    				// 16
-    				rds = rds + "<br><table style=\"border-spacing:0px;border-collapse:collapse\">";
-        			for(var x = 0; x < data.frames_ja.length && x < 16; x++)
-        			{	
-        				if(((x + 4) % 4) == 0)
-        					rds = rds + "	<tr>";
-        				rds = rds + "		<td>";
-        				rds = rds + "			<img src=\"" + data.frames_ja[x].url + "\" style=\"width:107px;height:60px\">";
-        				rds = rds + "		</td>";
-        				if(((x + 1) % 4) == 0)
-        					rds = rds + "	</tr>";
-        			}
-        			if(((x + 1) % 4) != 0)
-    					rds = rds + "	</tr>";
-        			rds = rds + "</table>";
-        			
-        			rds = rds + "</div>";*/
-        		}
-        		
-        		// alert or not, display frame
-        		frame_to_display = data.frame_jo;
-        		rds = rds + "<img src=\"" + frame_to_display.url + "\" style=\"width:250px;height:141px\">";
-        		
-				rds = rds + "<br>" + frame_to_display.image_name;
-				if(frame_to_display.designation)
-					rds = rds + "<br>des: " + frame_to_display.designation;
-				if(frame_to_display.designation_homogeneity)
-					rds = rds + "<br>des homogeneity: " + frame_to_display.designation_homogeneity;
-				if(frame_to_display.designation_moving_average)
-					rds = rds + "<br>des ma: " + frame_to_display.designation_moving_average;
-				//rds = rds + "<br>avg4des:"+ data.frames_ja[x].reporters[designation].score_avg;
-				//rds = rds + "<br>homogeneity:" + reporter_homogeneity;
-				//rds = rds + "<br>threshold:" + (reporter_homogeneity * $('#function2_singlemodifier_input').val());
-				//rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
-				//rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
-				//rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
-				data.frame_jo = "suppressed for readability";
-				var stringified_data = JSON.stringify(data);
-				var regex = new RegExp(',', 'g');
-				stringified_data = stringified_data.replace(regex, ',<br>');
-				rds = rds + "<br>frame processing response:" + stringified_data;
-				rds = rds + "</div>";
-        		$("#results_div").append(rds);
-        		//alert('f2d=' + JSON.stringify(frame_to_display));
-        		//return frame_to_display;
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#message_div").html("ajax error");
-            console.log(textStatus, errorThrown);
-        }
-	});
-	//alert("reached end of simulateNewFrame()... shouldn't happen");
-	return frame_to_display;
-}
+
 	
 function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, mamodifier, maw_int)
 {
@@ -1609,4 +1142,91 @@ function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homo
 	    });
 }
 
+function getAlertFramesClosure(begin_in_ms, end_in_ms, mamodifier, nrpst, awp, delta, maw, station, twitter_handle, twitter_access_token, row_id)
+{
+	//alert("calling getAlertFrames with begin=" + begin_in_ms + " end=" + end_in_ms);
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		timeout: 600000,
+		data: {
+            method: "getAlertFrames",
+            begin: begin_in_ms,             
+            end: end_in_ms,
+            mamodifier: mamodifier,
+            nrpst: nrpst, // number required past single threshold
+            awp:  awp,
+            delta: delta,
+            maw: maw,
+            station: station,
+            twitter_handle: twitter_handle,
+            twitter_access_token: twitter_access_token
+		},
+        dataType: 'json',
+        async: true,
+        success: function (data, status) {
+        	//alert("returning to paint " + row_id);
+        	if (data.response_status == "error")
+        	{
+        		$("#results_div").html("error message=" + data.message);
+        	}
+        	else
+        	{
+        		var rowstring = "";
+        		if(data.alert_frames_ja)
+    			{	
+        			data.alert_frames_ja.sort(function(a,b){
+        				a = a.timestamp_in_ms;
+        				b = b.timestamp_in_ms;
+        				return a - b;
+        			});
+        			
+    				for(var x = 0; x < data.alert_frames_ja.length; x++)
+    				{
+    					rowstring = rowstring + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
+        				rowstring = rowstring + "<img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
+        				rowstring = rowstring + "<br>image_name:" + data.alert_frames_ja[x].image_name;
+        				rowstring = rowstring + "<br>designation:" + data.alert_frames_ja[x].designation;
+        				rowstring = rowstring + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
+        				rowstring = rowstring + "<br>score_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].score_for_frame_that_passed_ma_thresh;
+        				rowstring = rowstring + "<br>ma_for_alert_frame:" + data.alert_frames_ja[x].ma_for_alert_frame;
+        				rowstring = rowstring + "<br>ma_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].ma_for_frame_that_passed_ma_thresh;
+        				rowstring = rowstring + "<br>image_name_for_frame_that_passed_ma_thresh:<br>" + data.alert_frames_ja[x].image_name_for_frame_that_passed_ma_thresh;
+        				rowstring = rowstring + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity;
+        				rowstring = rowstring + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
+        				rowstring = rowstring + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
+        				rowstring = rowstring + "<br>2nd highest des:" + data.alert_frames_ja[x].second_highest_designation;
+        				rowstring = rowstring + "<br>2nd highest ma:" + data.alert_frames_ja[x].second_highest_ma;
+        				rowstring = rowstring + "<br>2nd highest score:" + data.alert_frames_ja[x].second_highest_score;
+        				//rowstring = rowstring + "<br><a href=\"#\" id=\"" + data.alert_frames_ja[x].timestamp_in_ms + "_graphthis_link\">Graph this</a>";
+        				rowstring = rowstring + "</div>";
+    				}
+    				
+    				$("#" + row_id).html(rowstring);
+    			
+    			/*	for(var x = 0; x < data.alert_frames_ja.length; x++)
+    				{
+    					$("#" + data.alert_frames_ja[x].timestamp_in_ms + "_graphthis_link").click({value: x},
+    							function (event) {
+    								$("#function3_designation_select").val(data.alert_frames_ja[event.data.value].designation);
+    								$("#function3_mamodifier_input").val($('#function4_mamodifier_input').val());
+    								$("#function3_begin_input").val(data.alert_frames_ja[event.data.value].timestamp_in_ms - 120000);
+    								$("#function3_end_input").val(data.alert_frames_ja[event.data.value].timestamp_in_ms + 120000);
+    								$("#function3_go_button").trigger("click");
+    							});
+    				}*/
+    			}
+        		else
+        		{
+        			alert("no alerts for " + row_id );
+        		}
+        	}
+        }
+        ,
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	$("#results_div").html("ajax error");
+            console.log(textStatus, errorThrown);
+        }
+	});
+}
 

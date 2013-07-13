@@ -270,10 +270,10 @@ public class Endpoint extends HttpServlet {
 									JSONObject jo2 = null;
 									if(simulation)
 										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), 
-												"test", "silent", jsonpostbody.getInt("maw_int"), jsonpostbody.getInt("maw_int")); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
+												"test", "silent", jsonpostbody.getInt("awp_int"), jsonpostbody.getInt("awp_int"), jsonpostbody.getInt("maw_int")); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 									else
 										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), 
-												"production", (new Platform()).getAlertMode(), -1, -1); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
+												"production", (new Platform()).getAlertMode(), -1, -1, (new Platform()).getMAWindow()); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
@@ -962,6 +962,7 @@ public class Endpoint extends HttpServlet {
 											 String awp = request.getParameter("awp");
 											 String nrpst = request.getParameter("nrpst"); // number required past single threshold
 											 String delta = request.getParameter("delta");
+											 String maw = request.getParameter("maw");
 											 if(awp == null)
 											 {
 												 jsonresponse.put("message", "An awp value must be supplied to this method.");
@@ -986,13 +987,31 @@ public class Endpoint extends HttpServlet {
 												 jsonresponse.put("response_status", "error");
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A delta value is required.");
 											 }
+											 else if(maw == null)
+											 {
+												 jsonresponse.put("message", "A maw value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. A maw value is required.");
+											 }
 											 else
 											 {	
 												 double ma_modifier_double = (new Double(request.getParameter("mamodifier"))).doubleValue();
 												 int awp_in_sec = (new Integer(request.getParameter("awp"))).intValue();
 												 int nrpst_int = (new Integer(request.getParameter("nrpst"))).intValue();
+												 int maw_int = (new Integer(request.getParameter("maw"))).intValue();
 												 double delta_double = Double.parseDouble(request.getParameter("delta"));
-												 JSONArray alert_frames_ja = station.getAlertFrames(begin, end, ma_modifier_double, awp_in_sec, nrpst_int, delta_double);
+												 
+												 JSONArray alert_frames_ja = null;
+												 if(!use_long)
+												 {
+													 System.out.println("Endpoint.getAlertFrames(): calling Station.getAlertFrames with begin and end STRINGS");
+													 alert_frames_ja = station.getAlertFrames(begin, end, ma_modifier_double, awp_in_sec, nrpst_int, delta_double, maw_int);
+												 }
+												 else
+												 {
+													 System.out.println("Endpoint.getAlertFrames(): calling Station.getAlertFrames with begin and end LONGS");
+													 alert_frames_ja = station.getAlertFrames(begin_long, end_long, ma_modifier_double, awp_in_sec, nrpst_int, delta_double, maw_int);
+												 }
 												 jsonresponse.put("response_status", "success");
 												 jsonresponse.put("alert_frames_ja", alert_frames_ja);
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
