@@ -1222,7 +1222,7 @@ public class Twitter {
 
 		Twitter twitter = new Twitter();
 		Station station_object = new Station("wkyt");
-		TreeSet<String> reporters = station_object.getReporters();
+		TreeSet<String> reporters = station_object.getReporterDesignations();
 		Iterator<String> it = reporters.iterator();
 		User currentreporter = null;
 		while(it.hasNext())

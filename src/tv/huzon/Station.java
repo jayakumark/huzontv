@@ -44,6 +44,11 @@ public class Station implements java.lang.Comparable<Station> {
 	private String s3_bucket_public_hostname;
 	private String livestream_url;
 	private String livestream_url_alias;
+	private String alert_mode;
+	private int nrpst;
+	private int maw;
+	private double mamodifier;
+	private double delta;
 	
 	String dbName = System.getProperty("RDS_DB_NAME"); 
 	String userName = System.getProperty("RDS_USERNAME"); 
@@ -79,6 +84,13 @@ public class Station implements java.lang.Comparable<Station> {
 				frame_rate = rs.getInt("frame_rate");
 				livestream_url = rs.getString("livestream_url");
 				livestream_url_alias = rs.getString("livestream_url_alias");
+				
+				alert_mode = rs.getString("alert_mode");
+				nrpst = rs.getInt("nrpst");
+				maw = rs.getInt("maw");
+				mamodifier = rs.getDouble("mamodifier");
+				delta = rs.getDouble("delta");
+				
 				reporters = new TreeSet<String>();
 				StringTokenizer st = new StringTokenizer(rs.getString("reporters")," ");
 				while(st.hasMoreTokens())
@@ -121,6 +133,31 @@ public class Station implements java.lang.Comparable<Station> {
 		
 	}
 	
+	public String getAlertMode()
+	{
+		return alert_mode;
+	}
+	
+	public double getMAModifier()
+	{
+		return mamodifier;
+	}
+		
+	public int getNRPST() // number required past single threshold
+	{
+		return nrpst;
+	}
+	
+	public int getMAWindow() // number required past single threshold
+	{
+		return maw;
+	}
+	
+	public double getDelta() // number required past single threshold
+	{
+		return delta;
+	}
+	
 	public String getLiveStreamURL()
 	{
 		return livestream_url;
@@ -146,9 +183,23 @@ public class Station implements java.lang.Comparable<Station> {
 		return administrators;
 	}
 	
-	public TreeSet<String> getReporters()
+	public TreeSet<String> getReporterDesignations()
 	{
 		return reporters;
+	}
+	
+	public JSONArray getReportersAsJSONArray()
+	{
+		JSONArray return_ja = new JSONArray();
+		TreeSet<String> localset = reporters;
+		Iterator<String> reporter_it = localset.iterator();
+		User currentreporter = null;
+		while(reporter_it.hasNext())
+		{
+			currentreporter = new User(reporter_it.next(), "designation");
+			return_ja.put(currentreporter.getAsJSONObject());
+		}
+		return return_ja;
 	}
 
 	public boolean isActive()
@@ -499,7 +550,7 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		System.out.println("Station.getAlertFrames(): begin");
 		JSONArray return_ja = new JSONArray();
-		TreeSet<String> reporters = getReporters();
+		TreeSet<String> reporters = getReporterDesignations();
 		Iterator<String> it = reporters.iterator();
 		User currentreporter = null;
 		
@@ -1071,8 +1122,13 @@ public class Station implements java.lang.Comparable<Station> {
 			return_jo.put("frame_rate", getFrameRate());
 			return_jo.put("dma2013", getDMA());
 			return_jo.put("active", isActive());
-			return_jo.put("reporters", new JSONArray(getReporters()).toString());
+			return_jo.put("reporters", new JSONArray(getReporterDesignations()).toString());
 			return_jo.put("administrators", new JSONArray(getAdministrators()).toString());
+			return_jo.put("maw", maw);
+			return_jo.put("mamodifier", mamodifier);
+			return_jo.put("delta", delta);
+			return_jo.put("alert_mode", alert_mode);
+			return_jo.put("nrpst", nrpst);
 		}	
 		catch (JSONException e) {
 			return_jo = null;

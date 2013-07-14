@@ -115,8 +115,14 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("message", "password was missing or incorrect");
 							jsonresponse.put("response_status", "error");
 						}
+						else if(!jsonpostbody.has("station"))
+						{
+							jsonresponse.put("message", "method requires a station value");
+							jsonresponse.put("response_status", "error");
+						}
 						else // postbody exists and password is correct
 						{	
+							Station station_object = new Station(jsonpostbody.getString("station"));
 							boolean process = true;
 							if(jsonpostbody.has("simulation") && (jsonpostbody.getString("simulation").equals("yes") || jsonpostbody.getString("simulation").equals("true")))
 							{ 
@@ -196,7 +202,6 @@ public class Endpoint extends HttpServlet {
 
 									double currentavgscore = 0.0;
 									double reporter_total = 0.0;
-									Station station = new Station(jsonpostbody.getString("station"));
 									JSONArray all_scores_ja = new JSONArray();
 									JSONArray ja = jsonpostbody.getJSONArray("reporter_scores");
 									String fieldsstring = " (";
@@ -204,9 +209,9 @@ public class Endpoint extends HttpServlet {
 									fieldsstring = fieldsstring + "`" + "image_name" + "`, ";
 									valuesstring = valuesstring + "'" + jsonpostbody.getString("image_name") + "', ";
 									fieldsstring = fieldsstring + "`" + "s3_location" + "`, ";
-									valuesstring = valuesstring + "'s3://huzon-frames-" + station.getCallLetters() + "/" + jsonpostbody.getString("image_name") + "', ";
+									valuesstring = valuesstring + "'s3://huzon-frames-" + station_object.getCallLetters() + "/" + jsonpostbody.getString("image_name") + "', ";
 									fieldsstring = fieldsstring + "`" + "url" + "`, ";
-									valuesstring = valuesstring + "'http://" + station.getS3BucketPublicHostname() + "/" + jsonpostbody.getString("image_name") + "', ";
+									valuesstring = valuesstring + "'http://" + station_object.getS3BucketPublicHostname() + "/" + jsonpostbody.getString("image_name") + "', ";
 									fieldsstring = fieldsstring + "`" + "timestamp_in_ms" + "`, ";
 									valuesstring = valuesstring + "'" + jsonpostbody.getLong("timestamp_in_ms") + "', ";
 									fieldsstring = fieldsstring + "`" + "frame_rate" + "`, ";
@@ -233,8 +238,8 @@ public class Endpoint extends HttpServlet {
 									fieldsstring = fieldsstring.substring(0,fieldsstring.length() - 2) + ")";
 									valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";
 									//System.out.println("Attempting to execute query: INSERT IGNORE INTO `frames_" + jo.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
-									con.createStatement().execute("INSERT IGNORE INTO `frames_" + jsonpostbody.getString("station") + "` " + fieldsstring + " VALUES " + valuesstring);
-									con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + jsonpostbody.getString("station") + "'");	
+									con.createStatement().execute("INSERT IGNORE INTO `frames_" + station_object.getCallLetters() + "` " + fieldsstring + " VALUES " + valuesstring);
+									con.createStatement().execute("UPDATE `stations` SET `frame_rate`='" + jsonpostbody.getInt("frame_rate") + "' WHERE call_letters='" + station_object.getCallLetters() + "'");	
 
 									rs.close();
 									stmt.close();
@@ -269,11 +274,11 @@ public class Endpoint extends HttpServlet {
 									newframe.calculateAndSetMAs();
 									JSONObject jo2 = null;
 									if(simulation)
-										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), 
+										jo2 = newframe.process(station_object.getMAModifier(), station_object.getNRPST(), station_object.getDelta(), 
 												"test", "silent", jsonpostbody.getInt("awp_int"), jsonpostbody.getInt("awp_int"), jsonpostbody.getInt("maw_int")); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 									else
-										jo2 = newframe.process((new Platform()).getMAModifier(), (new Platform()).getNRPST(), (new Platform()).getDelta(), 
-												"production", (new Platform()).getAlertMode(), -1, -1, (new Platform()).getMAWindow()); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
+										jo2 = newframe.process(station_object.getMAModifier(), station_object.getNRPST(), station_object.getDelta(), 
+												"production", station_object.getAlertMode(), -1, -1, station_object.getMAWindow()); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
@@ -511,7 +516,7 @@ public class Endpoint extends HttpServlet {
 					if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
 					{
 						jsonresponse.put("response_status", "success");
-						jsonresponse.put("user_jo", user.getJSONObject());
+						jsonresponse.put("user_jo", user.getAsJSONObject());
 						(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
 					else if(method.equals("getFacebookAccessTokenFromAuthorizationCode"))
@@ -754,7 +759,7 @@ public class Endpoint extends HttpServlet {
 								{
 									User target_user = new User(designation, "designation");
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("user_jo", target_user.getJSONObject());
+									jsonresponse.put("user_jo", target_user.getAsJSONObject());
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
 								else if (method.equals("verifyTwitterCredentials"))
@@ -794,7 +799,8 @@ public class Endpoint extends HttpServlet {
 						 *                |_|                                                                                 |_|                                   
 						 */
 						if(method.equals("getActiveReporterDesignations") || method.equals("resetProductionAlertTimers") || method.equals("resetTestAlertTimers") || method.equals("getMostRecentAlerts") || // station only
-								method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames")) // station + begin/end
+								method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames") 
+								|| method.equals("getStation") || method.equals("getActiveReporters")) // station + begin/end
 						{
 							String station_param = request.getParameter("station");
 							if(station_param == null)
@@ -805,8 +811,8 @@ public class Endpoint extends HttpServlet {
 							}
 							else
 							{
-								 Station station = new Station(station_param);
-								 if(!station.isValid())
+								 Station station_object = new Station(station_param);
+								 if(!station_object.isValid())
 								 {
 									 jsonresponse.put("message", "The station value provided was not valid.");
 									 jsonresponse.put("response_status", "error");
@@ -825,26 +831,48 @@ public class Endpoint extends HttpServlet {
 								 else if (method.equals("getActiveReporterDesignations"))
 								 {	
 									 jsonresponse.put("response_status", "success");
-									 jsonresponse.put("reporters_ja", new JSONArray(station.getReporters()));
+									 jsonresponse.put("reporters_ja", new JSONArray(station_object.getReporterDesignations()));
+									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+								 }
+								 else if (method.equals("getActiveReporters"))
+								 {	
+									 jsonresponse.put("response_status", "success");
+									 jsonresponse.put("reporters_ja", station_object.getReportersAsJSONArray());
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 }
 								 else if (method.equals("resetProductionAlertTimers")) // DANGEROUS!!!!
 								 {
-									 station.resetProductionAlertTimers();
+									 station_object.resetProductionAlertTimers();
 									 jsonresponse.put("response_status", "success");
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 } 
 								 else if (method.equals("resetTestAlertTimers"))
 								 {
-									 station.resetTestAlertTimers();
+									 station_object.resetTestAlertTimers();
 									 jsonresponse.put("response_status", "success");
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 }
 								 else if (method.equals("getMostRecentAlerts"))
 								 {	
-									 jsonresponse.put("alerts_ja",station.getMostRecentAlerts(24));
+									 jsonresponse.put("alerts_ja",station_object.getMostRecentAlerts(24));
 									 jsonresponse.put("response_status", "success");
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+								 }
+								 else if(method.equals("getStation"))
+								 {
+										JSONObject station_jo = station_object.getAsJSONObject();
+										if(station_jo != null)
+										{
+											jsonresponse.put("response_status", "success");
+											jsonresponse.put("station_jo", station_jo);
+											(new Platform()).addMessageToLog("Ep.getStations(): requested by twitter_handle=" + twitter_handle + " successful.");
+										}
+										else
+										{
+											jsonresponse.put("message", "Error getting station as JSONObject");
+											jsonresponse.put("response_status", "error");
+											(new Platform()).addMessageToLog("Ep.getStations():requested by twitter_handle=" + twitter_handle + " unsuccessful. Unable to return station as JSON object.");
+										}
 								 }
 								 /***
 								  *     _____                                                  _   _                                _        _   _                 _                _                          _ 
@@ -888,9 +916,9 @@ public class Endpoint extends HttpServlet {
 										 {
 											 JSONArray timestamps_ja = null;
 											 if(use_long)
-												 timestamps_ja = station.getFrameTimestamps(begin_long, end_long);
+												 timestamps_ja = station_object.getFrameTimestamps(begin_long, end_long);
 											 else
-												 timestamps_ja = station.getFrameTimestamps(begin, end);
+												 timestamps_ja = station_object.getFrameTimestamps(begin, end);
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("timestamps_ja", timestamps_ja);
 											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
@@ -910,18 +938,18 @@ public class Endpoint extends HttpServlet {
 												 {	
 													 jsonresponse.put("response_status", "success");
 													 if(use_long)
-														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin_long, end_long, true));
+														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin_long, end_long, true));
 													 else
-														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin, end, true));
+														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin, end, true));
 													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 												 }
 												 else if(get_score_data.equals("false"))
 												 {
 													 jsonresponse.put("response_status", "success");
 													 if(use_long)
-														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin_long, end_long, false));
+														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin_long, end_long, false));
 													 else
-														 jsonresponse.put("frames_ja", station.getFramesAsJSONArray(begin, end, false));
+														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin, end, false));
 													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 												 }
 												 else
@@ -952,7 +980,7 @@ public class Endpoint extends HttpServlet {
 											 {	
 												 jsonresponse.put("response_status", "success");
 												 boolean get_score_data = true;
-												 jsonresponse.put("frames_ja", station.getFramesAboveDesignationHomogeneityThresholdAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, 
+												 jsonresponse.put("frames_ja", station_object.getFramesAboveDesignationHomogeneityThresholdAsJSONArray(new Long(begin).longValue()*1000, new Long(end).longValue()*1000, 
 														 designation, get_score_data)); 
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 											 }	
@@ -1006,12 +1034,12 @@ public class Endpoint extends HttpServlet {
 												 if(!use_long)
 												 {
 													 System.out.println("Endpoint.getAlertFrames(): calling Station.getAlertFrames with begin and end STRINGS");
-													 alert_frames_ja = station.getAlertFrames(begin, end, ma_modifier_double, awp_in_sec, nrpst_int, delta_double, maw_int);
+													 alert_frames_ja = station_object.getAlertFrames(begin, end, ma_modifier_double, awp_in_sec, nrpst_int, delta_double, maw_int);
 												 }
 												 else
 												 {
 													 System.out.println("Endpoint.getAlertFrames(): calling Station.getAlertFrames with begin and end LONGS");
-													 alert_frames_ja = station.getAlertFrames(begin_long, end_long, ma_modifier_double, awp_in_sec, nrpst_int, delta_double, maw_int);
+													 alert_frames_ja = station_object.getAlertFrames(begin_long, end_long, ma_modifier_double, awp_in_sec, nrpst_int, delta_double, maw_int);
 												 }
 												 jsonresponse.put("response_status", "success");
 												 jsonresponse.put("alert_frames_ja", alert_frames_ja);

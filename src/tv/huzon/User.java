@@ -414,7 +414,7 @@ public class User implements java.lang.Comparable<User> {
 		return twitter_alert_waiting_period*1000;
 	}
 	
-	public JSONObject getJSONObject() // for now, returns EVERYTHING. Even secret tokens and stuff.
+	public JSONObject getAsJSONObject() // for now, returns EVERYTHING. Even secret tokens and stuff.
 	{
 		JSONObject response_jo = new JSONObject();
 		try {
@@ -459,7 +459,7 @@ public class User implements java.lang.Comparable<User> {
 			{
 				stations_as_admin_ja.put(stations_it.next().getCallLetters());
 			}
-			System.out.println("User.getJSONObject(): found " + stations_as_admin_ja.length() + " stations");
+			System.out.println("User.getAsJSONObject(): found " + stations_as_admin_ja.length() + " stations");
 			response_jo.put("stations_as_admin_ja", stations_as_admin_ja);
 			
 			// need to add stations_as_reporter_ja like the above TODO

@@ -121,84 +121,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	        			else
 	        				station = data.user_jo.stations_as_admin_ja[0];
 	        			
-	        			$.ajax({
-		        			type: 'GET',
-		        			url: endpoint,
-		        			data: {
-		        	            method: "getActiveReporterDesignations",
-		        	            station: station,
-		        	            twitter_handle: twitter_handle,
-		    		            twitter_access_token: twitter_access_token
-		        			},
-		        	        dataType: 'json',
-		        	        async: false,
-		        	        success: function (data, status) {
-		        	        	if (data.response_status == "error")
-		        	        		mds = mds + "<div style=\"font-size:16;color:red\">getActiveReporterDesignations error: " + data.message + "</div>";
-		        	        	else
-		        	        	{
-		        	        		$("#general_div").html("getSelf successful, this is the general_div");
-		        	        		$("#graph_div").html("getSelf successful, this is the graph_div");
-		        	        		$("#rankings_div").html("getSelf successful, this is the rankings_div");
-		        	        		
-		        	        		var reporters_ja = data.reporters_ja;
-		        	        		var reporters_string = "";
-		        					reporters_string = reporters_string + "<table style=\"width:100%\">";
-		        					reporters_string = reporters_string + "	<tr>";
-		        					reporters_string = reporters_string + "		<td>";
-		        					reporters_string = reporters_string + "			Reporter";
-		        					reporters_string = reporters_string + "		</td>";
-		        					reporters_string = reporters_string + "		<td>";
-		        					reporters_string = reporters_string + "			Twitter token";
-		        					reporters_string = reporters_string + "		</td>";
-		        					reporters_string = reporters_string + "		<td>";
-		        					reporters_string = reporters_string + "			TL FB token";
-		        					reporters_string = reporters_string + "		</td>";
-		        					reporters_string = reporters_string + "		<td>";
-		        					reporters_string = reporters_string + "			Page FB token";
-		        					reporters_string = reporters_string + "		</td>";
-		        					reporters_string = reporters_string + "	</tr>";
-		        					
-		        					for(var x=0; x < reporters_ja.length; x++)
-		        					{
-		        						reporters_string = reporters_string + "	<tr>";
-		        						reporters_string = reporters_string + "		<td>";
-		        						reporters_string = reporters_string + "			" + reporters_ja[x];
-		        						reporters_string = reporters_string + "		</td>";
-		        						reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_valid_td\">";
-		        						reporters_string = reporters_string + "		</td>";
-		        						reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_fb_valid_td\">";
-		        						reporters_string = reporters_string + "			";
-		        						reporters_string = reporters_string + "		</td>";
-		        						reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_fbpage_valid_td\">";
-		        						reporters_string = reporters_string + "			";
-		        						reporters_string = reporters_string + "		</td>";
-		        						reporters_string = reporters_string + "	</tr>";
-		        					}
-		        					reporters_string = reporters_string + "</table>";
-		        					$("#reporters_div").html(reporters_string);
-		        					
-		        					for(var x=0; x < reporters_ja.length; x++)
-		        					{
-		        						verifyTwitterCredentials(reporters_ja[x]);
-		        						verifyTopLevelFBCredentials(reporters_ja[x]);
-		        						verifyPageFBCredentials(reporters_ja[x]);
-		        					}
-		        	        		
-		        	        		$("#administrators_div").html("getSelf successful, this is the administrators_div");
-		        	        		$("#alerts_div").html("getSelf successful, this is the alerts_div");
-		        	        	}
-		        	        }
-		        	        ,
-		        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-		        	        	$("#results_div").html("ajax error");
-		        	            console.log(textStatus, errorThrown);
-		        	        }
-		        		});
+	        			getStationInformation(twitter_handle, twitter_access_token, station);
+    	        		
+	        			$("#graph_div").html("getSelf successful, this is the graph_div");
+    	        		$("#rankings_div").html("getSelf successful, this is the rankings_div");
+	        			
+    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
+	        			
+	        			$("#administrators_div").html("getSelf successful, this is the administrators_div");
+    	        		$("#alerts_div").html("getSelf successful, this is the alerts_div");
 	        		}
-	        		
-	        		
-	        		
 	        	}
 	        },
 	        error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -209,6 +141,210 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 });
 
+function getStationInformation(twitter_handle, twitter_access_token, station)
+{
+	var general_string = "";
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+	        method: "getStation",
+	        station: station,
+	        twitter_handle: twitter_handle,
+	        twitter_access_token: twitter_access_token
+		},
+	    dataType: 'json',
+	    async: false,
+	    success: function (data, status) {
+	    	if (data.response_status == "error")
+	    		general_string = general_string + "<div style=\"font-size:16;color:red\">getActiveReporterDesignations error: " + data.message + "</div>";
+	    	else
+	    	{
+	    		general_string = JSON.stringify(data);
+	    		$("#general_div").html(general_string);
+	    	}
+	    }
+	    ,
+	    error: function (XMLHttpRequest, textStatus, errorThrown) {
+	    	$("#results_div").html("ajax error");
+	        console.log(textStatus, errorThrown);
+	    }
+	});
+}
+
+function getActiveReporterDesignations(twitter_handle, twitter_access_token, station)
+{
+	var reporters_string = "";
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+	        method: "getActiveReporters",
+	        station: station,
+	        twitter_handle: twitter_handle,
+	        twitter_access_token: twitter_access_token
+		},
+	    dataType: 'json',
+	    async: false,
+	    success: function (data, status) {
+	    	if (data.response_status == "error")
+	    		reporters_string = reporters_string + "<div style=\"font-size:16;color:red\">getActiveReporterDesignations error: " + data.message + "</div>";
+	    	else
+	    	{
+	    		var reporters_ja = data.reporters_ja;
+	    		
+				reporters_string = reporters_string + "<table style=\"width:100%\">";
+				reporters_string = reporters_string + "	<tr>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Designation";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Display name";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Role";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			TW handle";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			TW alerts on";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			TW status";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			TW cooldown";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			TW followers";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Tweets 30 days";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Tweets 10 days";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Tweets 3 days";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Tweets 24 hr";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			Top-level FB";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB alerts on";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB status";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB cooldown";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB likes";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB 30 days";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB 10 days";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB 3 days";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "			FB 24 hr";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "	</tr>";
+				
+				for(var x=0; x < reporters_ja.length; x++)
+				{
+					reporters_string = reporters_string + "	<tr>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].designation;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].display_name;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			Role";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_handle;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_active;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_valid_td\">";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_alert_waiting_period;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			TW followers";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			Tweets 30 days";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			Tweets 10 days";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			Tweets 3 days";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			Tweets 24 hr";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_fb_valid_td\">";
+					reporters_string = reporters_string + "			";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_active;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_fbpage_valid_td\">";
+					reporters_string = reporters_string + "			";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_alert_waiting_period;
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			FB likes";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			FB 30 days";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			FB 10 days";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			FB 3 days";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "		<td>";
+					reporters_string = reporters_string + "			FB 24 hr";
+					reporters_string = reporters_string + "		</td>";
+					reporters_string = reporters_string + "	</tr>";
+				}
+				reporters_string = reporters_string + "</table>";
+				$("#reporters_div").html(reporters_string);
+				
+				for(var x=0; x < reporters_ja.length; x++)
+				{
+					verifyTwitterCredentials(reporters_ja[x].designation);
+					verifyTopLevelFBCredentials(reporters_ja[x].designation);
+					verifyPageFBCredentials(reporters_ja[x].designation);
+				}
+	    	}
+	    }
+	    ,
+	    error: function (XMLHttpRequest, textStatus, errorThrown) {
+	    	$("#results_div").html("ajax error");
+	        console.log(textStatus, errorThrown);
+	    }
+	});
+}
 
 function verifyTwitterCredentials(designation)
 {
