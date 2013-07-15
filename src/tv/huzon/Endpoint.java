@@ -171,7 +171,7 @@ public class Endpoint extends HttpServlet {
 												int x = 0;
 												while(!((inc_ts - rs.getLong("timestamp_in_ms")) < 800 && (inc_ts - rs.getLong("timestamp_in_ms")) > 0) && x < 5) // if it's not in the sweet zone, wait
 												{
-													System.out.println("Endpoint.commit(): Frame is too new. Waiting x=" + x);
+													//System.out.println("Endpoint.commit(): Frame is too new. Waiting x=" + x);
 													try { Thread.sleep(300);} catch (InterruptedException e) { e.printStackTrace(); }
 													rs.close();
 													rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
@@ -181,19 +181,19 @@ public class Endpoint extends HttpServlet {
 
 												if(x==5)
 												{
-													System.out.println("Endpoint.commit(): Frame was too new and waiting failed. Discarding");
+													System.out.println("Endpoint.commit(): Frame was too new and waiting failed. Inserting, but not processing.");
 													jsonresponse.put("message", "Frame was too new, waited unsuccessful, will be inserted, but not processed.");
 													jsonresponse.put("response_status", "error");
 													process = false;
 												}
 												else if(x == 0)
 												{
-													System.out.println("Endpoint.commit(): Frame was perfect on first try.");
+													//System.out.println("Endpoint.commit(): Frame was perfect on first try.");
 													process = true;
 												}
 												else
 												{
-													System.out.println("Endpoint.commit(): Frame is good now. Had to wait x=" + x);
+													//System.out.println("Endpoint.commit(): Frame is good now. Had to wait x=" + x);
 													process = true;
 												}
 											}
@@ -330,7 +330,7 @@ public class Endpoint extends HttpServlet {
 			long timestamp_at_exit = tempcal.getTimeInMillis();
 			long elapsed = timestamp_at_exit - timestamp_at_entry;
 			jsonresponse.put("elapsed", elapsed);
-			System.out.println("Endpoint.doGet(): final jsonresponse=" + jsonresponse);	// respond with object, success response, or error
+			//System.out.println("Endpoint.doGet(): final jsonresponse=" + jsonresponse);	// respond with object, success response, or error
 			out.println(jsonresponse);
 		}
 		catch(JSONException jsone)
@@ -1077,14 +1077,6 @@ public class Endpoint extends HttpServlet {
 								}
 							}	
 						} 
-						else if (method.equals("getAlertMode"))
-						{	
-							Platform p = new Platform();
-							String value = p.getAlertMode();
-							jsonresponse.put("response_status", "success");
-							jsonresponse.put("alert_mode", value);
-							(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
-						}
 					} // end methods requiring global permissions (user is global admin) block
 					else
 					{
@@ -1108,347 +1100,6 @@ public class Endpoint extends HttpServlet {
 		} 
 		return;
 	}
-	
-	/*
-	JSONObject processNewFrame(Frame newframe, boolean simulation, double singlemodifier, double mamodifier, int nrpst)
-	{
-		JSONObject return_jo = new JSONObject();
-		// return_jo form:
-		// {
-		// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
-		//		(if alert_triggered==true)
-		//      	twitter_triggered: true or false,
-		//			twitter_successful: true or false,					// means alert posted and returned an id (or failed)
-		//			(if !twitter_successful, then)
-		//				twitter_failure_message: some message about why twitter failed,	
-		//
-		//      	facebook_triggered: true or false,
-		//			facebook_successful: true or false,					// means alert posted and returned an id (or failed)
-		//			(if !facebook_successful, then)
-		//				facebook_failure_message: some message about why facebook failed,	
-		//		(else if alert_triggered== false)
-		//			alert_triggered_failure_message: reason,			// means triggered + the actual alert was attempted bc user had credentials and was outside waiting period
-		// }
-		
-		boolean alert_triggered = false;
-		String alert_triggered_failure_message = "";
-		boolean twitter_triggered = false;
-		boolean twitter_successful = false;
-		String twitter_failure_message = "";
-		boolean facebook_triggered = false;
-		boolean facebook_successful = false;
-		String facebook_failure_message = "";
-		// 1. Check to make sure there are enough frames in the moving average window to draw a conclusion
-		// 2. calculate the moving averages for each reporter from the frames
-		// 3. If a designation passes the moving avg threshold AND that moving average is the highest among all others
-		// 	  {
-		//			--- quick check to make sure designation is outside either fb or twitter, no sense in testing anything else if not -- 
-		//    4. If the designation that passed ma thresh also passes single thresh for one of the frames
-		//		 {
-		//		 5.	If reporter not in twitter waiting period 
-		//			{
-		//				if user has twitter credentials on file
-		//				{
-		//					try to create tweet
-		//					if tweet is not successful
-		//					{
-		//						send email to reporter and notify admin
-		//					}
-		//				}
-		//			}
-		// 		6.  if reporter not in facebook waiting period
-		//			{
-		//				if user has facebook credentials on file
-		//				{
-		//					try to create facebook post
-		//					if facebook post not successful
-		//					{
-		//						send email to reporter and notify admin
-		//					}
-		//				}
-		//			}
-		//		  }
-		//	   }
-		
-		
-		long frame_ts = newframe.getTimestampInMillis();
-		User admin_user = new User("huzon_master", "designation");
-		//System.out.println("Endpoint.processNewFrame(): Entering processNewFrame(Frame)...");
-		try
-		{
-			// get all frames over the moving average window backward from this timestamp
-			Station station_object = new Station(newframe.getStation());
-			TreeSet<Frame> window_frames = station_object.getFrames(frame_ts-(6 * 1000), frame_ts, null);
-			int num_frames_in_window = window_frames.size();
-			//System.out.println("Endpoint.processNewFrame(): Found " + num_frames_in_window + " frames in the specified window. Examining...");
-			
-			/***
-			 *     __             _____  _   _  _____ _____  _   __    _  _    ____________  ___  ___  ___ _____ _____ 
-			 *    /  |           /  __ \| | | ||  ___/  __ \| | / /  _| || |_  |  ___| ___ \/ _ \ |  \/  ||  ___/  ___|
-			 *    `| |   ______  | /  \/| |_| || |__ | /  \/| |/ /  |_  __  _| | |_  | |_/ / /_\ \| .  . || |__ \ `--. 
-			 *     | |  |______| | |    |  _  ||  __|| |    |    \   _| || |_  |  _| |    /|  _  || |\/| ||  __| `--. \
-			 *    _| |_          | \__/\| | | || |___| \__/\| |\  \ |_  __  _| | |   | |\ \| | | || |  | || |___/\__/ /
-			 *    \___/           \____/\_| |_/\____/ \____/\_| \_/   |_||_|   \_|   \_| \_\_| |_/\_|  |_/\____/\____/ 
-			 *                                                                                                         
-			 *                                                                                                         
-			 
-			boolean a_designation_passed_ma_thresh_and_was_highest = false;
-			
-			if(num_frames_in_window < 6)  // all response boolean values remain false and return
-			{
-				alert_triggered_failure_message = "not enough frames in window";
-				//System.out.println("Endpoint.processNewFrame(): Warning! Not enough frames in this window. Could be beginning of a recording, though. If so, that's ok.");
-			}
-			else
-			{
-				/***
-				 *     _____            _____   ___   _     _____   ___  ________  _   _     ___  _   _ _____  _____ 
-				 *    / __  \          /  __ \ / _ \ | |   /  __ \  |  \/  |  _  || | | |   / _ \| | | |  __ \/  ___|
-				 *    `' / /'  ______  | /  \// /_\ \| |   | /  \/  | .  . | | | || | | |  / /_\ \ | | | |  \/\ `--. 
-				 *      / /   |______| | |    |  _  || |   | |      | |\/| | | | || | | |  |  _  | | | | | __  `--. \
-				 *    ./ /___          | \__/\| | | || |___| \__/\  | |  | \ \_/ /\ \_/ /  | | | \ \_/ / |_\ \/\__/ /
-				 *    \_____/           \____/\_| |_/\_____/\____/  \_|  |_/\___/  \___/   \_| |_/\___/ \____/\____/ 
-				 *                                                                                                   
-				 *                                                                                                   
-				 
-				String[] reporter_designations = newframe.getReporterDesignations();
-				double[] reporter_totals = new double[reporter_designations.length];
-				double[] reporter_ma6s = new double[reporter_designations.length];
-				double[] reporter_moving_average_thresholds = new double[reporter_designations.length];
-				double[] reporter_single_thresholds = new double[reporter_designations.length];
-				
-				//System.out.println("Endpoint.processNewFrame(): looping frames for totals");
-				Iterator<Frame> it = window_frames.iterator();
-				Frame currentframe = null;
-				while(it.hasNext())
-				{
-					currentframe = it.next();
-					int x = 0;
-					while(x < reporter_designations.length)
-					{
-						reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
-						x++;
-					}
-				}
-				
-				// then divide the sum designation_avgs by dividing by the number of frames in the window
-				int x = 0;
-				double reporter_homogeneity = 0;
-				double max_moving_average = 0;
-				
-				//System.out.println("Endpoint.processNewFrame(): looping reporters to get avgs from totals");
-				while(x < reporter_totals.length)
-				{
-					reporter_ma6s[x] = reporter_totals[x] / num_frames_in_window;
-					if(reporter_ma6s[x] > max_moving_average)
-					{
-						max_moving_average = reporter_ma6s[x];
-					}
-					if(reporter_ma6s[x] > 0.5) // moving average has to be AT LEAST .5 to even be considered (which is approx .67 * .75) i.e. no reporter homogeneity should ever be below .75
-					{	
-						reporter_homogeneity = (new User(reporter_designations[x],"designation")).getHomogeneity();
-						reporter_moving_average_thresholds[x] = mamodifier * reporter_homogeneity;
-						reporter_single_thresholds[x] = singlemodifier * reporter_homogeneity;
-					}
-					else
-					{
-						reporter_moving_average_thresholds[x] = 100;
-						reporter_single_thresholds[x] = 100;
-					}
-					x++;
-				}
-				
-				newframe.updateRowWithMovingAverage6s(reporter_designations, reporter_ma6s);
-				
-				/***
-				 *     _____             ___   _   ___   __ ______  ___   _____ _____  ___  ___  ___    _____ _   _ ______ _____ _____ _   _ ___  
-				 *    |____ |           / _ \ | \ | \ \ / / | ___ \/ _ \ /  ___/  ___| |  \/  | / _ \  |_   _| | | || ___ \  ___/  ___| | | |__ \ 
-				 *        / /  ______  / /_\ \|  \| |\ V /  | |_/ / /_\ \\ `--.\ `--.  | .  . |/ /_\ \   | | | |_| || |_/ / |__ \ `--.| |_| |  ) |
-				 *        \ \ |______| |  _  || . ` | \ /   |  __/|  _  | `--. \`--. \ | |\/| ||  _  |   | | |  _  ||    /|  __| `--. \  _  | / / 
-				 *    .___/ /          | | | || |\  | | |   | |   | | | |/\__/ /\__/ / | |  | || | | |   | | | | | || |\ \| |___/\__/ / | | ||_|  
-				 *    \____/           \_| |_/\_| \_/ \_/   \_|   \_| |_/\____/\____/  \_|  |_/\_| |_/   \_/ \_| |_/\_| \_\____/\____/\_| |_/(_)  
-				 *                                                                                                                                
-				 *                                                                                                                                
-				
-				
-				
-				boolean designation_passed_single_thresh = false;
-				int num_frames_that_passed_single_thresh = 0;
-				String designation_that_passed_ma_thresh = "";
-				//String image_name_of_frame_in_window_that_passed_single_thresh = "";
-				x = 0;
-				//System.out.println("Endpoint.processNewFrame(): looping reporters to determine if any pass ma thresh");
-				while(x < reporter_designations.length)
-				{
-					designation_passed_single_thresh = false;
-					
-					if(reporter_ma6s[x] > reporter_moving_average_thresholds[x] && reporter_ma6s[x] == max_moving_average) 
-					{
-						a_designation_passed_ma_thresh_and_was_highest = true;
-						designation_that_passed_ma_thresh = reporter_designations[x];
-						User reporter = new User(designation_that_passed_ma_thresh, "designation");
-						
-						// prelim check: If reporter within (FB window or FB inactive) && (within TW window or TW inactive), then skip everything. Saves CPU avoiding single check
-						if(
-								(reporter.isWithinFacebookWindow(frame_ts, simulation) || !reporter.isFacebookActive()) && 
-								(reporter.isWithinTwitterWindow(frame_ts,simulation) || !reporter.isTwitterActive())
-						  )
-						{	
-							// twitter and facebook triggers stay false
-						}
-						else
-						{	
-							//System.out.println("Endpoint.processNewFrame(): " + designation_that_passed_ma_thresh + " passed ma thresh... does it pass single?");
-							
-							/***
-							 *       ___           ___  ___  ___   ______  ___   _____ _____ ___________    _____ _____ _   _ _____  _      _____ ___  
-							 *      /   |          |  \/  | / _ \  | ___ \/ _ \ /  ___/  ___|  ___|  _  \  /  ___|_   _| \ | |  __ \| |    |  ___|__ \ 
-							 *     / /| |  ______  | .  . |/ /_\ \ | |_/ / /_\ \\ `--.\ `--.| |__ | | | |  \ `--.  | | |  \| | |  \/| |    | |__    ) |
-							 *    / /_| | |______| | |\/| ||  _  | |  __/|  _  | `--. \`--. \  __|| | | |   `--. \ | | | . ` | | __ | |    |  __|  / / 
-							 *    \___  |          | |  | || | | | | |   | | | |/\__/ /\__/ / |___| |/ /   /\__/ /_| |_| |\  | |_\ \| |____| |___ |_|  
-							 *        |_/          \_|  |_/\_| |_/ \_|   \_| |_/\____/\____/\____/|___(_)  \____/ \___/\_| \_/\____/\_____/\____/ (_)  
-							 *                                                                                                                         
-							 *                                                                                                                         
-							
-							JSONArray frames_ja = station_object.getFramesAsJSONArray(frame_ts-(6 * 1000), frame_ts, true);
-							num_frames_that_passed_single_thresh = 0;
-							for(int y = 0; y < frames_ja.length() && !designation_passed_single_thresh; y++)
-							{
-								//System.out.println("Looking at " + frames_ja.getJSONObject(y).getString("image_name"));
-								if(frames_ja.getJSONObject(y).getJSONObject("reporters").getJSONObject(designation_that_passed_ma_thresh).getDouble("score_avg") > reporter.getHomogeneity())
-								{
-									num_frames_that_passed_single_thresh++;
-									if(num_frames_that_passed_single_thresh >= nrpst)
-									{
-										designation_passed_single_thresh = true;
-									}
-									//image_name_of_frame_in_window_that_passed_single_thresh  = frames_ja.getJSONObject(y).getString("image_name");
-								}
-							}
-							
-							if(designation_passed_single_thresh)
-							{
-								alert_triggered = true; // <---------------
-								ExecutorService executor = Executors.newFixedThreadPool(300);
-								Future<JSONObject> twittertask = null;
-								Future<JSONObject> facebooktask = null;
-								
-								/***
-								 *     _____           ___  ___  ___            _             _                                     _     _____        _ _   _          ___  
-								 *    |  ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |_   _|      (_) | | |        |__ \ 
-								 *    |___ \   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |     | |_      ___| |_| |_ ___ _ __ ) |
-								 *        \ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |     | \ \ /\ / / | __| __/ _ \ '__/ / 
-								 *    /\__/ /          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_    | |\ V  V /| | |_| ||  __/ | |_|  
-								 *    \____/           \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_)   \_/ \_/\_/ |_|\__|\__\___|_| (_)  
-								 *                                                       __/ |        | |                                                                    
-								 *                                                      |___/         |_|                                                                    
-								 
-								if(reporter.isTwitterActive() && !reporter.isWithinTwitterWindow(frame_ts,simulation))
-								{	
-									twitter_triggered = true; // <---------------
-									reporter.setLastAlert(frame_ts, "twitter", simulation); // set last alert regardless of credentials or successful posting
-								} 
-								
-								/***
-								 *      ____           ___  ___  ___            _             _                                     _    ______             _                 _   ___  
-								 *     / ___|          |  \/  | / _ \   _      (_)           | |                                   | |   |  ___|           | |               | | |__ \ 
-								 *    / /___   ______  | .  . |/ /_\ \_| |_ ___ _ _ __   __ _| | ___   _ __   __ _ ___ ___  ___  __| |   | |_ __ _  ___ ___| |__   ___   ___ | | __ ) |
-								 *    | ___ \ |______| | |\/| ||  _  |_   _/ __| | '_ \ / _` | |/ _ \ | '_ \ / _` / __/ __|/ _ \/ _` |   |  _/ _` |/ __/ _ \ '_ \ / _ \ / _ \| |/ // / 
-								 *    | \_/ |          | |  | || | | | |_| \__ \ | | | | (_| | |  __/ | |_) | (_| \__ \__ \  __/ (_| |_  | || (_| | (_|  __/ |_) | (_) | (_) |   <|_|  
-								 *    \_____/          \_|  |_/\_| |_/     |___/_|_| |_|\__, |_|\___| | .__/ \__,_|___/___/\___|\__,_(_) \_| \__,_|\___\___|_.__/ \___/ \___/|_|\_(_)  
-								 *                                                       __/ |        | |                                                                              
-								 *                                                      |___/         |_|                                                                              
-								
-								if(reporter.isFacebookActive() && !reporter.isWithinFacebookWindow(frame_ts, simulation))
-								{
-									facebook_triggered = true; // <---------------
-									reporter.setLastAlert(frame_ts, "facebook", simulation); // set last alert regardless of credentials or successful posting
-								} 
-								
-								if(!simulation)
-								{
-									if(twitter_triggered)
-										twittertask = executor.submit(new TwitterUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
-									if(facebook_triggered)
-										facebooktask = executor.submit(new FacebookUploaderCallable(newframe, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
-								}
-								// else if simulation do do not perform any actual twitter or facebook postings.
-								
-								// CHECK THE RESULTS OF THE CALLABLE THREADS
-								JSONObject twittertask_jo = null;
-								JSONObject facebooktask_jo = null;
-								if(twittertask != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
-								{
-									twittertask_jo = twittertask.get();
-									twitter_successful = twittertask_jo.getBoolean("twitter_successful"); 
-									if(!twitter_successful)																// only need failure message if twitter not successful
-										twitter_failure_message = twittertask_jo.getString("twitter_failure_message");
-								}
-								if(facebooktask != null)
-								{
-									facebooktask_jo = facebooktask.get();
-									facebook_successful = facebooktask_jo.getBoolean("facebook_successful");
-									if(!facebook_successful)
-										facebook_failure_message = facebooktask_jo.getString("facebook_failure_message");
-								}
-							}
-							else
-							{
-								// user did not pass single thresh
-							}
-						}
-					}
-					else
-					{
-						// user did not pass ma thresh
-					}
-					x++;
-				} // loop reporters
-			}
-			return_jo.put("alert_triggered", alert_triggered);
-			if(alert_triggered)
-			{
-				return_jo.put("twitter_triggered", twitter_triggered);
-				if(twitter_triggered)
-				{
-					return_jo.put("twitter_successful", twitter_successful);
-					if(!twitter_successful)
-						return_jo.put("twitter_failure_message", twitter_failure_message);
-				}
-				
-				return_jo.put("facebook_triggered", facebook_triggered);
-				if(facebook_triggered)
-				{	
-					return_jo.put("facebook_successful", facebook_successful);
-					if(!facebook_successful)
-						return_jo.put("facebook_failure_message", facebook_failure_message);
-				}
-			}
-			else
-			{
-				if(!a_designation_passed_ma_thresh_and_was_highest)
-					alert_triggered_failure_message = "None of the designations passed the ma threshold";
-				else // no alert triggered yet a designation passed the ma thresh... that means that the designation didn't pass single thresh
-					alert_triggered_failure_message = "A designation passed ma thresh and was highest, but didn't pass single thresh for any of the frames in the window.";
-				return_jo.put("alert_triggered_failure_message", alert_triggered_failure_message);
-			}
-			
-		}
-		catch(JSONException jsone)
-		{
-			jsone.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
-		
-		return return_jo;
-	}
-					*/
-		
 
 	public JSONObject getFacebookAccessTokenFromAuthorizationCode(String code)
 	{

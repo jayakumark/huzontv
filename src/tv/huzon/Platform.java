@@ -53,48 +53,6 @@ public class Platform {
 		return jdbcconnectionstring;
 	}
 	
-
-	public String getAlertMode()
-	{
-		String returnstring = null;
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = DriverManager.getConnection(jdbcconnectionstring);
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM global_vars WHERE `k`='alert_mode'");
-			if(rs.next())
-				returnstring = rs.getString("v");
-			else
-				addMessageToLog("Platform.getAlertMode: no row found for global_vars key='alert_mode'");
-			rs.close();
-			stmt.close();
-			con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			addMessageToLog("SQLException in Platform.getAlertMode: message=" +sqle.getMessage());
-		} 
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				addMessageToLog("SQLException in Platform.getAlertMode: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}  	
-		return returnstring;
-	}
-
-	
-	
 	public void addMessageToLog(String message)
 	{
 		Connection con = null;
@@ -121,11 +79,11 @@ public class Platform {
 			if(ms.length() == 2) { ms = "0" + ms;} 
 			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute + ":" + second + " " + ms;			
 			
-			System.out.println(jdbcconnectionstring);
+			//System.out.println(jdbcconnectionstring);
 			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
-	                    + " VALUES('" + hr_timestamp + "','" + message + "')");
+			//System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
+	           //         + " VALUES('" + hr_timestamp + "','" + message + "')");
 			stmt.executeUpdate("INSERT INTO messages (`timestamp_hr`,`message`) "
                     	+ " VALUES('" + hr_timestamp + "','" + message + "')");
 		    stmt.close();

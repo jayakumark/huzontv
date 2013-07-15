@@ -405,7 +405,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// designation can be null. If designation supplied, then get all frames above the single threshold
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation) // INCLUSIVE
 	{
-		System.out.println("Station.getFrames(): long method begin");
+		//System.out.println("Station.getFrames(): long method begin");
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -471,7 +471,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method
 	public JSONArray getFramesAsJSONArray(String beginstring, String endstring, boolean get_score_data)
 	{
-		System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
+		//System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");

@@ -26,16 +26,12 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 	Frame frame2upload;
 	User reporter;
 	Station station_object;
-	String mode; // "live" = post to reporter's account, if possible
-	 // "test" = post to test account, if possible
-	 // "silent" = don't post anything
 	
-	public TwitterUploaderCallable(Frame inc_frame2upload, User inc_reporter, Station inc_station_object, String inc_mode)
+	public TwitterUploaderCallable(Frame inc_frame2upload, User inc_reporter, Station inc_station_object)
 	{
 		frame2upload = inc_frame2upload;
 		station_object = inc_station_object;
 		reporter = inc_reporter;
-		mode = inc_mode;
 	}
 	
 	public String getMissingCredentialsEmailMessage()
@@ -58,18 +54,18 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 		JSONObject return_jo = new JSONObject();
 		try
 		{
-			(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " mode=" + mode);
+			(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " mode=" + station_object.getAlertMode());
 			
-			if(mode.equals("silent"))
+			if(station_object.getAlertMode().equals("silent"))
 			{
 				return_jo.put("twitter_successful", false);
 				return_jo.put("twitter_failure_message", "silent");
 				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
 			}
-			else if(mode.equals("test") || mode.equals("live"))
+			else if(station_object.getAlertMode().equals("test") || station_object.getAlertMode().equals("live"))
 			{
 				User postinguser = null;
-				if(mode.equals("test"))
+				if(station_object.getAlertMode().equals("test"))
 					postinguser = new User("huzon_master", "designation");
 				else
 					postinguser = reporter;
@@ -78,8 +74,8 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 				{
 					return_jo.put("twitter_successful", false);
 					return_jo.put("twitter_failure_message", "user " + postinguser.getDesignation() + " has no twitter credentials");
-					(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " but failed due to lack of tw credentials. user=" + postinguser.getDesignation() + ". mode=" + mode);
-					if(mode.equals("live"))
+					(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " but failed due to lack of tw credentials. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
+					if(station_object.getAlertMode().equals("live"))
 					{
 						String emailmessage = getMissingCredentialsEmailMessage();
 						se.sendMail("Action required: huzon.tv TW alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
@@ -88,12 +84,13 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 				}
 				else // postinguser appears to have twitter credentials
 				{
-					URL[] image_urls = frame2upload.get2x2CompositeURLs();
+					boolean faces_only = true;
+					URL[] image_urls = frame2upload.get2x2CompositeURLs(faces_only, reporter.getDesignation());
 					if(image_urls == null)
 					{
 						return_jo.put("twitter_successful", false);
 						return_jo.put("twitter_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
-						(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " with cred. but 2x2 failed. user=" + postinguser.getDesignation() + ". mode=" + mode);
+						(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " with cred. but 2x2 failed. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 					}
 					else
 					{
@@ -196,7 +193,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 
 										if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
 										{
-											if(mode.equals("live"))
+											if(station_object.getAlertMode().equals("live"))
 											{
 												reporter.resetTwitterCredentialsInDB(); // the user's credentials are no good anymore. Delete them to allow the user to start over. (Link is in email below)
 												String emailmessage = getMissingCredentialsEmailMessage();
@@ -205,42 +202,42 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 											}
 											else
 											{
-												(new Platform()).addMessageToLog("test account TW creds invalid trying to fire for " + reporter.getDesignation() + ". user=" + postinguser.getDesignation() + ". mode=" + mode);
+												(new Platform()).addMessageToLog("test account TW creds invalid trying to fire for " + reporter.getDesignation() + ". user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 											}
 										}
 										else if(twit_jo.has("twitter_code"))
 										{
-											(new Platform()).addMessageToLog(reporter.getDesignation() + " unknown twitter error. There was an unknown error trying to tweet. twit_jo=" + twit_jo + "user=" + postinguser.getDesignation() + ". mode=" + mode);
+											(new Platform()).addMessageToLog(reporter.getDesignation() + " unknown twitter error. There was an unknown error trying to tweet. twit_jo=" + twit_jo + "user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 										}
 										else
 										{
-											(new Platform()).addMessageToLog(reporter.getDesignation() + " some other twitter error. There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+											(new Platform()).addMessageToLog(reporter.getDesignation() + " some other twitter error. There was some other error trying to tweet which DID NOT produce a twitter_code. twit_jo=" + twit_jo + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 										}
 									}
 									else
 									{
 										return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
-										(new Platform()).addMessageToLog("TW successful for " + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+										(new Platform()).addMessageToLog("TW successful for " + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 										// if either of these fail, alert the admin within the functions themselves
 										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 										boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
-										se.sendMail("TW successful for " + reporter.getDesignation(), "user=" + postinguser.getDesignation() + ". mode=" + mode + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("TW successful for " + reporter.getDesignation(), "user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
 									}
 									station_object.unlock(uuid, "twitter");		
 								}
 								else
 								{
-									(new Platform()).addMessageToLog("Skipped TW post for " + reporter.getDesignation() + ". Tried to set lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". mode=" + mode);
+									(new Platform()).addMessageToLog("Skipped TW post for " + reporter.getDesignation() + ". Tried to set lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 								}
 							}
 							else
 							{
-								(new Platform()).addMessageToLog("Skipped TW post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+								(new Platform()).addMessageToLog("Skipped TW post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 							}
 							composite_file.delete();
 							
 						} catch (IOException e) {
-							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter for " + reporter.getDesignation() + ". " + e.getMessage() + " user=" + postinguser.getDesignation() + ". mode=" + mode);
+							(new Platform()).addMessageToLog("IOException trying to create composite image and post to twitter for " + reporter.getDesignation() + ". " + e.getMessage() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 						}
 					}
 				}

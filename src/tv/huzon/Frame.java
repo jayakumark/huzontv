@@ -40,7 +40,8 @@ public class Frame implements Comparable<Frame> {
 	double[] reporter_ma4s;
 	double[] reporter_ma3s;
 	
-	boolean highest_and_second_highest_values_set;
+	//boolean highest_and_second_highest_values_set;
+	boolean has_moving_averages = false;
 	String highest_ma6_designation;
 	double highest_ma6;
 	String highest_ma5_designation;
@@ -94,7 +95,30 @@ public class Frame implements Comparable<Frame> {
 		reporter_ma4s = inc_reporter_ma4s;
 		reporter_ma5s = inc_reporter_ma5s;
 		reporter_ma6s = inc_reporter_ma6s;
-		highest_and_second_highest_values_set = false;
+		if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0 && reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
+		{
+			has_moving_averages = true;
+			setHighestAndSecondHighestValues();
+		}
+		
+		// set highest and second highest SCORES (does not require moving averages)
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_scores[x] > highest_score)
+			{
+				second_highest_score = highest_score;
+				highest_score = reporter_scores[x];
+				second_highest_score_designation = highest_score_designation;
+				highest_score_designation = reporter_designations[x];
+			}
+			else if(reporter_scores[x] > second_highest_score)
+			{
+				second_highest_score = reporter_scores[x];
+				second_highest_score_designation = reporter_designations[x];
+			}
+			x++;
+		}
 	}
 	
 	
@@ -103,7 +127,6 @@ public class Frame implements Comparable<Frame> {
 		timestamp_in_ms = inc_timestamp_in_ms;
 		station = inc_station;
 		station_object = new Station(station);
-		highest_and_second_highest_values_set = false;
 		
 		ResultSet rs = null;
 		Connection con = null;
@@ -216,6 +239,32 @@ public class Frame implements Comparable<Frame> {
 					}
 					x++;
 				}
+				
+				// if there was moving average data, set the flag and set highest and second highest data
+				if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0 && reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
+				{
+					has_moving_averages = true;
+					setHighestAndSecondHighestValues();
+				}
+				
+				// set highest and second highest SCORES (does not require moving averages)
+				x = 0;
+				while(x < reporter_designations.length)
+				{
+					if(reporter_scores[x] > highest_score)
+					{
+						second_highest_score = highest_score;
+						highest_score = reporter_scores[x];
+						second_highest_score_designation = highest_score_designation;
+						highest_score_designation = reporter_designations[x];
+					}
+					else if(reporter_scores[x] > second_highest_score)
+					{
+						second_highest_score = reporter_scores[x];
+						second_highest_score_designation = reporter_designations[x];
+					}
+					x++;
+				}
 			}
 			else
 			{
@@ -241,6 +290,88 @@ public class Frame implements Comparable<Frame> {
 			}
 		}   		
 	}
+	
+	private void setHighestAndSecondHighestValues() // IS ALWAYS called by Frame constructor and by populateMovingAverages(). That way, we know these are always set properly for subsequent calls. 
+	// This function is not very processor or DB intensive
+	{
+		highest_ma6_designation = null;
+		highest_ma6 = -1;
+		second_highest_ma6_designation = null;
+		second_highest_ma6 = -1;
+		
+		highest_ma5_designation = null;
+		highest_ma5 = -1;
+		second_highest_ma5_designation = null;
+		second_highest_ma5 = -1;
+		
+		highest_ma4_designation = null;
+		highest_ma4 = -1;
+		second_highest_ma4_designation = null;
+		second_highest_ma4 = -1;
+		
+		highest_ma3_designation = null;
+		highest_ma3 = -1;
+		second_highest_ma3_designation = null;
+		second_highest_ma3 = -1;
+		
+		int x = 0;
+		while(x < reporter_designations.length)
+		{
+			if(reporter_ma6s[x] > highest_ma6) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma6 = highest_ma6;
+				highest_ma6 = reporter_ma6s[x];
+				second_highest_ma6_designation = highest_ma6_designation;
+				highest_ma6_designation = reporter_designations[x];
+			}
+			else if(reporter_ma6s[x] > second_highest_ma6) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma6 = reporter_ma6s[x];
+				second_highest_ma6_designation = reporter_designations[x];
+			}
+			
+			if(reporter_ma5s[x] > highest_ma5) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma5 = highest_ma5;
+				highest_ma5 = reporter_ma5s[x];
+				second_highest_ma5_designation = highest_ma5_designation;
+				highest_ma5_designation = reporter_designations[x];
+			}
+			else if(reporter_ma5s[x] > second_highest_ma5) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma5 = reporter_ma5s[x];
+				second_highest_ma5_designation = reporter_designations[x];
+			}
+			
+			if(reporter_ma4s[x] > highest_ma4) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma4 = highest_ma4;
+				highest_ma4 = reporter_ma4s[x];
+				second_highest_ma4_designation = highest_ma4_designation;
+				highest_ma4_designation = reporter_designations[x];
+			}
+			else if(reporter_ma4s[x] > second_highest_ma4) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma4 = reporter_ma4s[x];
+				second_highest_ma4_designation = reporter_designations[x];
+			}
+			
+			if(reporter_ma3s[x] > highest_ma3) // is this the highest? if so, bump highest and second highest.
+			{
+				second_highest_ma3 = highest_ma3;
+				highest_ma3 = reporter_ma3s[x];
+				second_highest_ma3_designation = highest_ma3_designation;
+				highest_ma3_designation = reporter_designations[x];
+			}
+			else if(reporter_ma3s[x] > second_highest_ma3) // it wasn't the highest, but might be second. If, so, bump the second highest
+			{
+				second_highest_ma3 = reporter_ma3s[x];
+				second_highest_ma3_designation = reporter_designations[x];
+			}
+			x++;
+		}
+	}
+	
 	
 	long getTimestampInMillis()
 	{
@@ -381,106 +512,7 @@ public class Frame implements Comparable<Frame> {
 		return -1;
 	}
 	
-	// reporter_ma6s presumed to be set if this is called. Calling functions should be responsible for this.
-
-	private void setHighestAndSecondHighestValues()
-	{
-		highest_ma6_designation = null;
-		highest_ma6 = -1;
-		second_highest_ma6_designation = null;
-		second_highest_ma6 = -1;
-		
-		highest_ma5_designation = null;
-		highest_ma5 = -1;
-		second_highest_ma5_designation = null;
-		second_highest_ma5 = -1;
-		
-		highest_ma4_designation = null;
-		highest_ma4 = -1;
-		second_highest_ma4_designation = null;
-		second_highest_ma4 = -1;
-		
-		highest_ma3_designation = null;
-		highest_ma3 = -1;
-		second_highest_ma3_designation = null;
-		second_highest_ma3 = -1;
-		
-		highest_score_designation = null;
-		highest_score = -1;
-		second_highest_score_designation = null;
-		second_highest_score = -1;
-
-		int x = 0;
-		while(x < reporter_designations.length)
-		{
-			if(reporter_ma6s[x] > highest_ma6) // is this the highest? if so, bump highest and second highest.
-			{
-				second_highest_ma6 = highest_ma6;
-				highest_ma6 = reporter_ma6s[x];
-				second_highest_ma6_designation = highest_ma6_designation;
-				highest_ma6_designation = reporter_designations[x];
-			}
-			else if(reporter_ma6s[x] > second_highest_ma6) // it wasn't the highest, but might be second. If, so, bump the second highest
-			{
-				second_highest_ma6 = reporter_ma6s[x];
-				second_highest_ma6_designation = reporter_designations[x];
-			}
-			
-			if(reporter_ma5s[x] > highest_ma5) // is this the highest? if so, bump highest and second highest.
-			{
-				second_highest_ma5 = highest_ma5;
-				highest_ma5 = reporter_ma5s[x];
-				second_highest_ma5_designation = highest_ma5_designation;
-				highest_ma5_designation = reporter_designations[x];
-			}
-			else if(reporter_ma5s[x] > second_highest_ma5) // it wasn't the highest, but might be second. If, so, bump the second highest
-			{
-				second_highest_ma5 = reporter_ma5s[x];
-				second_highest_ma5_designation = reporter_designations[x];
-			}
-			
-			if(reporter_ma4s[x] > highest_ma4) // is this the highest? if so, bump highest and second highest.
-			{
-				second_highest_ma4 = highest_ma4;
-				highest_ma4 = reporter_ma4s[x];
-				second_highest_ma4_designation = highest_ma4_designation;
-				highest_ma4_designation = reporter_designations[x];
-			}
-			else if(reporter_ma4s[x] > second_highest_ma4) // it wasn't the highest, but might be second. If, so, bump the second highest
-			{
-				second_highest_ma4 = reporter_ma4s[x];
-				second_highest_ma4_designation = reporter_designations[x];
-			}
-			
-			if(reporter_ma3s[x] > highest_ma3) // is this the highest? if so, bump highest and second highest.
-			{
-				second_highest_ma3 = highest_ma3;
-				highest_ma3 = reporter_ma3s[x];
-				second_highest_ma3_designation = highest_ma3_designation;
-				highest_ma3_designation = reporter_designations[x];
-			}
-			else if(reporter_ma3s[x] > second_highest_ma3) // it wasn't the highest, but might be second. If, so, bump the second highest
-			{
-				second_highest_ma3 = reporter_ma3s[x];
-				second_highest_ma3_designation = reporter_designations[x];
-			}
-			
-			if(reporter_scores[x] > highest_score)
-			{
-				second_highest_score = highest_score;
-				highest_score = reporter_scores[x];
-				second_highest_score_designation = highest_score_designation;
-				highest_score_designation = reporter_designations[x];
-			}
-			else if(reporter_scores[x] > second_highest_score)
-			{
-				second_highest_score = reporter_scores[x];
-				second_highest_score_designation = reporter_designations[x];
-			}
-			x++;
-		}
-		highest_and_second_highest_values_set = true;
-	}
+	
 	
 	void populateFramesInWindow()
 	{
@@ -565,7 +597,7 @@ public class Frame implements Comparable<Frame> {
 	}*/
 	
 	// 
-	URL[] get2x2CompositeURLs()
+	URL[] get2x2CompositeURLs(boolean faces_only, String designation)
 	{
 		Station station_object = new Station(station);
 		TreeSet<Frame> frames_ts = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis() + 3500, null);
@@ -618,18 +650,61 @@ public class Frame implements Comparable<Frame> {
 				frames_array[x] = currentframe;
 				x++;
 			}
-			return_urls[0] = frames_array[0].getURL();							// get first image
-			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[0] + " from index 0");
-			return_urls[1] = frames_array[frames_array.length / 3].getURL();      // get second image approx 1/3 through the array
-			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[1] + " from index " + frames_array.length/3);
-			return_urls[2] = frames_array[frames_array.length * 2 / 3].getURL();  // get third image approx 2/3 through the array
-			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[2] + " from index " + frames_array.length*2/3);
-			return_urls[3] = frames_array[frames_array.length - 1].getURL();   // get last image
-			System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[3] + " from index " + (frames_array.length-1));
+			if(faces_only)
+			{
+				User reporter = new User(designation, "designation");
+				 // get first image that contains the reporter's face
+				int first_image_index = 0;
+				int last_image_index = 0;
+				x=0;
+				while(x < frames_array.length)
+				{
+					if(frames_array[x].getHighestScoreDesignation().equals(designation) && frames_array[x].getHighestScore() > (.9 * reporter.getHomogeneity()))
+					{
+						return_urls[0] = frames_array[x].getURL();
+						first_image_index = x;
+						break;
+					}
+					x++;
+				}
+				
+				// get the last image that contains the reporter's face
+				x=frames_array.length - 1;
+				while(x >= 0)
+				{
+					if(frames_array[x].getHighestScoreDesignation().equals(designation) && frames_array[x].getHighestScore() > (.9 * reporter.getHomogeneity()))
+					{
+						return_urls[3] = frames_array[x].getURL();
+						last_image_index = x;
+						break;
+					}
+					x--;
+				}
+				
+				int num_frames_between_first_and_last = last_image_index - first_image_index;
+				int one_third = num_frames_between_first_and_last / 3;
+				
+				// now make an assumption that all images inbetween are also faces of the reporter and space the images approximately evenly.
+				return_urls[1] = frames_array[first_image_index + one_third].getURL();                                                       // get second image approx 1/3 through the array
+				System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[1] + " from index " + (first_image_index + one_third));
+				return_urls[2] = frames_array[first_image_index + one_third*2].getURL();                                                   // get third image approx 2/3 through the array
+				System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[2] + " from index " + first_image_index + one_third*2);
+			}
+			else
+			{
+				return_urls[0] = frames_array[0].getURL();							                                                   // get first image
+				System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[0] + " from index 0");
+				return_urls[1] = frames_array[frames_array.length / 3].getURL();                                                       // get second image approx 1/3 through the array
+				System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[1] + " from index " + frames_array.length/3);
+				return_urls[2] = frames_array[frames_array.length * 2 / 3].getURL();                                                   // get third image approx 2/3 through the array
+				System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[2] + " from index " + frames_array.length*2/3);
+				return_urls[3] = frames_array[frames_array.length - 1].getURL();                                                       // get last image
+				System.out.println("Frame.get2x2CompositeURLs(): adding" + return_urls[3] + " from index " + (frames_array.length-1));
+			}
 		}
 		return return_urls;
 	}
-	
+		
 	/* return object as:
 	 * 
 	 * {
@@ -743,7 +818,6 @@ public class Frame implements Comparable<Frame> {
 			)
 	{
 		JSONObject return_jo = new JSONObject();
-		
 		boolean alert_triggered = false;
 		String alert_triggered_failure_message = "";
 		boolean twitter_triggered = false;
@@ -760,16 +834,20 @@ public class Frame implements Comparable<Frame> {
 		 String second_highest_ma_designation = "";
 		 switch (maw_int) {
 		 	case 3:  
-		 		{reporter_mas = reporter_ma3s;}
+		 		reporter_mas = reporter_ma3s;
 		 		break;
 			case 4: 
-				{reporter_mas = reporter_ma4s;}
+				reporter_mas = reporter_ma4s;
 	 			break;
 			case 5:
-				{reporter_mas = reporter_ma5s;}
+				reporter_mas = reporter_ma5s;
 	 			break;
 			case 6:  
-				{reporter_mas = reporter_ma6s;}
+				reporter_mas = reporter_ma6s;
+	 			break;
+			default: 
+				System.out.println("Frame.process():error: maw_int has to be 3,4,5 or 6. It is " + maw_int);
+				reporter_mas = reporter_ma6s;
 	 			break;
 		 }
 		
@@ -783,22 +861,21 @@ public class Frame implements Comparable<Frame> {
 			}
 			else
 			{	
-				// This row actually has data. Set highest and second info
-				if(!highest_and_second_highest_values_set) 
-					setHighestAndSecondHighestValues();
-				
 				 switch (maw_int) {
 				 	case 3:  
-				 		{highest_ma = highest_ma3; highest_ma_designation = highest_ma3_designation; second_highest_ma = second_highest_ma3; second_highest_ma_designation = second_highest_ma3_designation;}
+				 		highest_ma = highest_ma3; highest_ma_designation = highest_ma3_designation; second_highest_ma = second_highest_ma3; second_highest_ma_designation = second_highest_ma3_designation;
 				 		break;
 					case 4: 
-						{highest_ma = highest_ma4; highest_ma_designation = highest_ma4_designation; second_highest_ma = second_highest_ma4; second_highest_ma_designation = second_highest_ma4_designation;}
+						highest_ma = highest_ma4; highest_ma_designation = highest_ma4_designation; second_highest_ma = second_highest_ma4; second_highest_ma_designation = second_highest_ma4_designation;
 			 			break;
 					case 5:
-						{highest_ma = highest_ma5; highest_ma_designation = highest_ma5_designation; second_highest_ma = second_highest_ma5; second_highest_ma_designation = second_highest_ma5_designation;}
+						highest_ma = highest_ma5; highest_ma_designation = highest_ma5_designation; second_highest_ma = second_highest_ma5; second_highest_ma_designation = second_highest_ma5_designation;
 			 			break;
 					case 6:  
-						{highest_ma = highest_ma6; highest_ma_designation = highest_ma6_designation; second_highest_ma = second_highest_ma6; second_highest_ma_designation = second_highest_ma6_designation;}
+						highest_ma = highest_ma6; highest_ma_designation = highest_ma6_designation; second_highest_ma = second_highest_ma6; second_highest_ma_designation = second_highest_ma6_designation;
+			 			break;
+			 		default:
+			 			System.out.println("Frame.process(): error: maw_int has to be 3,4,5 or 6. It is " + maw_int);
 			 			break;
 				 }
 				
@@ -886,9 +963,9 @@ public class Frame implements Comparable<Frame> {
 									if(alert_mode.equals("live") || alert_mode.equals("test"))
 									{
 										if(twitter_triggered)
-											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object)); // live, test or silent
 										if(facebook_triggered)
-											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object, (new Platform()).getAlertMode())); // live, test or silent
+											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object)); // live, test or silent
 									}
 									// else if simulation do do not perform any actual twitter or facebook postings.
 									
@@ -1104,6 +1181,13 @@ public class Frame implements Comparable<Frame> {
 			}
 		}
 		
+		// now that this object has moving average data, set the highest and second_highest ma values and designations
+		if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0 && reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
+		{
+			has_moving_averages = true;
+			setHighestAndSecondHighestValues();
+		}
+		
 	}
 	
 	
@@ -1194,6 +1278,9 @@ public class Frame implements Comparable<Frame> {
 				}
 				rs.updateRow();
 			}
+			
+			
+			
 			rs.close();
 			stmt.close();
 			con.close();
@@ -1219,260 +1306,148 @@ public class Frame implements Comparable<Frame> {
 		
 	double getHighestScore()
 	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_score;
-		}
-		else
-			return highest_score;
+		return highest_score;
 	}
 	
 	double getSecondHighestScore()
 	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_score;
-		}
-		else
-			return second_highest_score;
+		return second_highest_score;
 	}
 	
 	String getHighestScoreDesignation()
 	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_score_designation;
-		}
-		else
-			return highest_score_designation;
+		return highest_score_designation;
 	}
 	
 	String getSecondHighestScoreDesignation()
 	{
-		if(reporter_scores == null)  // reporter_scores was never populated
-			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_score_designation;
-		}
-		else
-			return second_highest_score_designation;
+		return second_highest_score_designation;
 	}
 	
 	double getHighestMA6()
 	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma6;
-		}
 		else
 			return highest_ma6;
 	}
 	
 	double getSecondHighestMA6()
 	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma6;
-		}
 		else
 			return second_highest_ma6;
 	}
 	
 	String getHighestMA6Designation()
 	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma6_designation;
-		}
 		else
 			return highest_ma6_designation;
 	}
 	
 	String getSecondHighestMA6Designation()
 	{
-		if(reporter_ma6s == null)  // reporter_ma6s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma6_designation;
-		}
 		else
 			return second_highest_ma6_designation;
 	}
 	
 	double getHighestMA5()
 	{
-		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma5;
-		}
 		else
 			return highest_ma5;
 	}
 	
 	double getSecondHighestMA5()
 	{
-		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma5;
-		}
 		else
 			return second_highest_ma5;
 	}
 	
 	String getHighestMA5Designation()
 	{
-		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma5_designation;
-		}
 		else
 			return highest_ma5_designation;
 	}
 	
 	String getSecondHighestMA5Designation()
 	{
-		if(reporter_ma5s == null)  // reporter_ma5s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma5_designation;
-		}
 		else
 			return second_highest_ma5_designation;
 	}
 	
 	double getHighestMA4()
 	{
-		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma4;
-		}
 		else
 			return highest_ma4;
 	}
 	
 	double getSecondHighestMA4()
 	{
-		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma4;
-		}
 		else
 			return second_highest_ma4;
 	}
 	
 	String getHighestMA4Designation()
 	{
-		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma4_designation;
-		}
 		else
 			return highest_ma4_designation;
 	}
 	
 	String getSecondHighestMA4Designation()
 	{
-		if(reporter_ma4s == null)  // reporter_ma4s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma4_designation;
-		}
 		else
 			return second_highest_ma4_designation;
 	}
 	
 	double getHighestMA3()
 	{
-		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma3;
-		}
 		else
 			return highest_ma3;
 	}
 	
 	double getSecondHighestMA3()
 	{
-		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+		if(!has_moving_averages)
 			return -1;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma3;
-		}
 		else
 			return second_highest_ma3;
 	}
 	
 	String getHighestMA3Designation()
 	{
-		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return highest_ma3_designation;
-		}
 		else
 			return highest_ma3_designation;
 	}
 	
 	String getSecondHighestMA3Designation()
 	{
-		if(reporter_ma3s == null)  // reporter_ma3s was never populated
+		if(!has_moving_averages)
 			return null;
-		else if (highest_and_second_highest_values_set == false)
-		{
-			setHighestAndSecondHighestValues();
-			return second_highest_ma3_designation;
-		}
 		else
 			return second_highest_ma3_designation;
 	}

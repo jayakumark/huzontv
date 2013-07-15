@@ -1221,7 +1221,10 @@ public class Twitter {
 	public static void main(String[] args) {
 
 		Twitter twitter = new Twitter();
-		Station station_object = new Station("wkyt");
+		User user = new User("huzon_master", "designation");
+		System.out.println(twitter.verifyCredentials(user.getTwitterAccessToken(), user.getTwitterAccessTokenSecret()));
+		
+		/*Station station_object = new Station("wkyt");
 		TreeSet<String> reporters = station_object.getReporterDesignations();
 		Iterator<String> it = reporters.iterator();
 		User currentreporter = null;
@@ -1235,7 +1238,7 @@ public class Twitter {
 			} catch (JSONException e) {
 				System.out.println(" none on record");
 			}
-		}
+		}*/
 		
 		System.out.println();
 	}
