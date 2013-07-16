@@ -72,7 +72,7 @@ public class Frame implements Comparable<Frame> {
 	String port = System.getProperty("RDS_PORT");
 	
 	//String connectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + pass word;
-	String connectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
+	//String connectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
 	
 	// to be used when another process has gotten a bunch of rows from the frames table 
 	// and we want to build a bunch of frame objects without calling the database a zillion times.
@@ -133,8 +133,8 @@ public class Frame implements Comparable<Frame> {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection(connectionstring);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the specified (unique) frame from the station's frame table
 			
@@ -1245,7 +1245,8 @@ public class Frame implements Comparable<Frame> {
 		Statement stmt = null;		
 		try
 		{
-			con = DriverManager.getConnection(connectionstring);
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
 			if(!rs.next())

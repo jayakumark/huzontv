@@ -34,8 +34,7 @@ public class Platform {
 	String hostname = System.getProperty("RDS_HOSTNAME");
 	String port = System.getProperty("RDS_PORT");
 	
-	//String connectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userN ame + "&password=" + pass word;
-	String jdbcconnectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
+	String jdbcconnectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password;
 	
 	public Platform()
 	{

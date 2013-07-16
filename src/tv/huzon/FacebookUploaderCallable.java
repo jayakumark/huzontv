@@ -57,15 +57,18 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 	
 	public JSONObject call() {
 		SimpleEmailer se = new SimpleEmailer();
-		JSONObject return_jo = new JSONObject();
+		boolean facebook_successful = false;
+		String facebook_failure_message = "Message not set.";
 		try
 		{
 			(new Platform()).addMessageToLog("FB triggered for " + reporter.getDesignation() + " mode=" + station_object.getAlertMode());
 			
 			if(station_object.getAlertMode().equals("silent"))
 			{
-				return_jo.put("facebook_successful", false);
-				return_jo.put("facebook_failure_message", "silent");
+				facebook_successful = false;
+				facebook_failure_message = "Station alert_mode is set to silent";
+				//return_jo.put("facebook_successful", false);
+				//return_jo.put("facebook_failure_message", "silent");
 				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
 			}
 			else if(station_object.getAlertMode().equals("test") || station_object.getAlertMode().equals("live"))
@@ -78,8 +81,10 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 				
 				if(postinguser.getFacebookPageAccessToken() == null || postinguser.getFacebookPageAccessToken().equals(""))
 				{
-					return_jo.put("facebook_successful", false);
-					return_jo.put("facebook_failure_message", "user " + postinguser.getDesignation() + " has no twitter credentials");
+					facebook_successful = false;
+					facebook_failure_message = "user " + postinguser.getDesignation() + " has no facebook credentials";
+					//return_jo.put("facebook_successful", false);
+					//return_jo.put("facebook_failure_message", "user " + postinguser.getDesignation() + " has no facebook credentials");
 					(new Platform()).addMessageToLog("FB triggered for " + reporter.getDesignation() + " but failed due to lack of tw credentials. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 					if(station_object.getAlertMode().equals("live"))
 					{
@@ -94,8 +99,10 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					URL[] image_urls = frame2upload.get2x2CompositeURLs(faces_only, reporter.getDesignation());
 					if(image_urls == null)
 					{
-						return_jo.put("facebook_successful", false);
-						return_jo.put("facebook_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
+						facebook_successful = false;
+						facebook_failure_message = "image_urls was null coming back from Frame.get2x2CompositeURLs()";
+						//return_jo.put("facebook_successful", false);
+						//return_jo.put("facebook_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
 						(new Platform()).addMessageToLog("FB triggered for " + reporter.getDesignation() + " + creds, but get2x2 failed.  user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 					}
 					else
@@ -195,8 +202,9 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 									String facebookresponse = "";
 									try {
 										facebookresponse = facebook.postPhoto(new Long(postinguser.getFacebookPageID()).toString(), new Media(composite_file), message, "33684860765", false); // FIXME hardcode to wkyt station
-
-										return_jo.put("facebook_successful", true); // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
+										
+										facebook_successful = true;
+										//return_jo.put("facebook_successful", true); // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below
 										(new Platform()).addMessageToLog("FB successful for " + reporter.getDesignation() + ". Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 										// if either of these fail, notify admin from within functions themselves
 										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
@@ -205,8 +213,10 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 									} 
 									catch (FacebookException e) 
 									{
-										return_jo.put("facebook_successful", false);
-										return_jo.put("facebook_failure_message", e.getErrorMessage());
+										facebook_successful = false;
+										facebook_failure_message = "facebook produced an error: " + e.getErrorMessage();
+										//return_jo.put("facebook_successful", false);
+										//return_jo.put("facebook_failure_message", e.getErrorMessage());
 										
 										if((e.getErrorCode() == 190) || (e.getErrorCode() == 100)) // if one of these errors was generated...
 										{
@@ -250,16 +260,42 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 		}
 		catch(MalformedURLException murle)
 		{
+			facebook_successful = false;
+			facebook_failure_message = "MalformedURLException " + murle.getMessage();
 			murle.printStackTrace();
-		} catch (FileNotFoundException e) {
+		}
+		catch (FileNotFoundException e) 
+		{
+			facebook_successful = false;
+			facebook_failure_message = "FileNotFoundException " + e.getMessage();
 			e.printStackTrace();
-		} catch (IOException e) {
+		} 
+		catch (IOException e) 
+		{
+			facebook_successful = false;
+			facebook_failure_message = "IOException " + e.getMessage();
 			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
+		} 
+		catch (MessagingException e) 
+		{
+			facebook_successful = false;
+			facebook_failure_message = "MessagingException " + e.getMessage();
 			e.printStackTrace();
 		}
+		
+		JSONObject return_jo = new JSONObject();
+		try
+		{
+			return_jo.put("facebook_successful", facebook_successful);
+			if(!facebook_successful)
+				return_jo.put("facebook_failure_message", facebook_failure_message);
+		} 
+		catch (JSONException e) 
+		{
+			facebook_successful = false;
+			facebook_failure_message = "JSONException (in construction of final return_jo block) " + e.getMessage();
+			e.printStackTrace();
+		} 
 		return return_jo;
 	}
 }

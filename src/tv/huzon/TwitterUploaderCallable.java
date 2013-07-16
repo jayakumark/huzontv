@@ -51,15 +51,18 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 	
 	public JSONObject call() {
 		SimpleEmailer se = new SimpleEmailer();
-		JSONObject return_jo = new JSONObject();
+		//JSONObject return_jo = new JSONObject();
+		boolean twitter_successful = false;
+		String twitter_failure_message = "Message not set.";
 		try
 		{
 			(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " mode=" + station_object.getAlertMode());
-			
 			if(station_object.getAlertMode().equals("silent"))
 			{
-				return_jo.put("twitter_successful", false);
-				return_jo.put("twitter_failure_message", "silent");
+				twitter_successful = false;
+				twitter_failure_message = "Station alert_mode is set to silent";
+				//return_jo.put("twitter_successful", false);
+				//return_jo.put("twitter_failure_message", "silent");
 				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
 			}
 			else if(station_object.getAlertMode().equals("test") || station_object.getAlertMode().equals("live"))
@@ -72,8 +75,10 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 				
 				if(postinguser.getTwitterAccessToken() == null || postinguser.getTwitterAccessToken().equals("") || postinguser.getTwitterAccessTokenSecret() == null || postinguser.getTwitterAccessTokenSecret().equals(""))
 				{
-					return_jo.put("twitter_successful", false);
-					return_jo.put("twitter_failure_message", "user " + postinguser.getDesignation() + " has no twitter credentials");
+					twitter_successful = false;
+					twitter_failure_message = "user " + postinguser.getDesignation() + " has no twitter credentials";
+					//return_jo.put("twitter_successful", false);
+					//return_jo.put("twitter_failure_message", "user " + postinguser.getDesignation() + " has no twitter credentials");
 					(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " but failed due to lack of tw credentials. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 					if(station_object.getAlertMode().equals("live"))
 					{
@@ -88,8 +93,10 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 					URL[] image_urls = frame2upload.get2x2CompositeURLs(faces_only, reporter.getDesignation());
 					if(image_urls == null)
 					{
-						return_jo.put("twitter_successful", false);
-						return_jo.put("twitter_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
+						twitter_successful = false;
+						twitter_failure_message = "image_urls was null coming back from Frame.get2x2CompositeURLs()";
+						//return_jo.put("twitter_successful", false);
+						//return_jo.put("twitter_failure_message", "image_urls was null coming back from Frame.get2x2CompositeURLs()");
 						(new Platform()).addMessageToLog("TW triggered for " + reporter.getDesignation() + " with cred. but 2x2 failed. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 					}
 					else
@@ -172,7 +179,6 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							{
 								String uuid = UUID.randomUUID().toString();
 								boolean successfullylocked = station_object.lock(uuid, "twitter");
-								
 								if(successfullylocked)
 								{	
 									Twitter twitter = new Twitter();
@@ -188,8 +194,10 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 									
 									if(twit_jo.has("response_status") && twit_jo.getString("response_status").equals("error")) // if an error was produced
 									{
-										return_jo.put("twitter_successful", false);
-										return_jo.put("twitter_failure_message", twit_jo.getString("message"));
+										twitter_successful = false;
+										twitter_failure_message = "Twitter produced an error: " + twit_jo.getString("message");
+										//return_jo.put("twitter_successful", false);
+										//return_jo.put("twitter_failure_message", twit_jo.getString("message"));
 
 										if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
 										{
@@ -216,7 +224,8 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 									}
 									else
 									{
-										return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
+										twitter_successful = true;
+										//return_jo.put("twitter_successful", true); // the twitter post was successful, regardless of the two following db updates.
 										(new Platform()).addMessageToLog("TW successful for " + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 										// if either of these fail, alert the admin within the functions themselves
 										boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
@@ -227,11 +236,15 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 								}
 								else
 								{
+									twitter_successful = false;
+									twitter_failure_message = "Failed to set TW lock for this station. It seems to be in use already.";
 									(new Platform()).addMessageToLog("Skipped TW post for " + reporter.getDesignation() + ". Tried to set lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 								}
 							}
 							else
 							{
+								twitter_successful = false;
+								twitter_failure_message = "TW lock for this station already set.";
 								(new Platform()).addMessageToLog("Skipped TW post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 							}
 							composite_file.delete();
@@ -245,16 +258,48 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 		}
 		catch(MalformedURLException murle)
 		{
+			twitter_successful = false;
+			twitter_failure_message = "MalformedURLException " + murle.getMessage();
 			murle.printStackTrace();
-		} catch (FileNotFoundException e) {
+		}
+		catch (FileNotFoundException e) 
+		{
+			twitter_successful = false;
+			twitter_failure_message = "FileNotFoundException " + e.getMessage();
 			e.printStackTrace();
-		} catch (IOException e) {
+		} 
+		catch (IOException e) 
+		{
+			twitter_successful = false;
+			twitter_failure_message = "IOException " + e.getMessage();
 			e.printStackTrace();
-		} catch (JSONException e) {
+		} 
+		catch (JSONException e) 
+		{
+			twitter_successful = false;
+			twitter_failure_message = "JSONException " + e.getMessage();
 			e.printStackTrace();
-		} catch (MessagingException e) {
+		} 
+		catch (MessagingException e) 
+		{
+			twitter_successful = false;
+			twitter_failure_message = "MessagingException " + e.getMessage();
 			e.printStackTrace();
 		}
+		
+		JSONObject return_jo = new JSONObject();
+		try
+		{
+			return_jo.put("twitter_successful", twitter_successful);
+			if(!twitter_successful)
+				return_jo.put("twitter_failure_message", twitter_failure_message);
+		} 
+		catch (JSONException e) 
+		{
+			twitter_successful = false;
+			twitter_failure_message = "JSONException (in construction of final return_jo block) " + e.getMessage();
+			e.printStackTrace();
+		} 
 		return return_jo;
 	}
 }
