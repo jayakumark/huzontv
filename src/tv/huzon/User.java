@@ -414,63 +414,7 @@ public class User implements java.lang.Comparable<User> {
 		return twitter_alert_waiting_period*1000;
 	}
 	
-	public JSONObject getAsJSONObject() // for now, returns EVERYTHING. Even secret tokens and stuff.
-	{
-		JSONObject response_jo = new JSONObject();
-		try {
-			response_jo.put("designation", getDesignation());
-			response_jo.put("display_name", getDisplayName());
-			response_jo.put("anchor", isAnchor());
-			response_jo.put("weather", isWeather());
-			response_jo.put("sports", isSports());
-			response_jo.put("reporter", isReporter());
-			response_jo.put("homogeneity", homogeneity);
-			response_jo.put("weekend_expected_begin", weekend_expected_begin_string);
-			response_jo.put("weekend_expected_end", weekend_expected_end_string);
-			response_jo.put("weekday_expected_begin", weekday_expected_begin_string);
-			response_jo.put("weekday_expected_end", weekday_expected_end_string);
-			response_jo.put("twitter_handle", twitter_handle);
-			response_jo.put("twitter_access_token", twitter_access_token);
-			response_jo.put("twitter_access_token_secret", twitter_access_token_secret);
-			response_jo.put("twitter_handle", twitter_handle);
-			if(facebook_uid != 0)
-				response_jo.put("facebook_uid", facebook_uid);
-			if(!facebook_access_token.isEmpty())
-				response_jo.put("facebook_access_token", facebook_access_token);
-			if(facebook_access_token_expires != 0)
-				response_jo.put("facebook_access_token_expires", facebook_access_token_expires);
-			if(facebook_page_id != 0)
-				response_jo.put("facebook_page_id", facebook_page_id);
-			if(!facebook_page_name.isEmpty())
-				response_jo.put("facebook_page_name", facebook_page_name);
-			if(!facebook_page_access_token.isEmpty())
-				response_jo.put("facebook_page_access_token", facebook_page_access_token);
-			response_jo.put("facebook_alert_waiting_period", facebook_alert_waiting_period);
-			response_jo.put("facebook_active", facebook_active);
-			response_jo.put("facebook_last_alert", facebook_last_alert);
-			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
-			response_jo.put("twitter_active", twitter_active);
-			response_jo.put("twitter_last_alert", twitter_last_alert);
-			
-			TreeSet<Station> stations_ts = getStationsAsAdmin();
-			Iterator<Station> stations_it = stations_ts.iterator();
-			JSONArray stations_as_admin_ja = new JSONArray();
-			while(stations_it.hasNext())
-			{
-				stations_as_admin_ja.put(stations_it.next().getCallLetters());
-			}
-			System.out.println("User.getAsJSONObject(): found " + stations_as_admin_ja.length() + " stations");
-			response_jo.put("stations_as_admin_ja", stations_as_admin_ja);
-			
-			// need to add stations_as_reporter_ja like the above TODO
-			
-			
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return response_jo;		
-	}
+	
 	
 	public String getTwitterAccessToken()
 	{
@@ -618,14 +562,21 @@ public class User implements java.lang.Comparable<User> {
 		}
 	}
 	
-	public JSONObject getProfileFromFacebook(String access_token)
+	public JSONObject getProfileFromTwitter()
+	{
+		Twitter t = new Twitter();
+		JSONObject user_jo = t.verifyCredentials(twitter_access_token, twitter_access_token_secret);
+		return user_jo;
+	}
+	
+	public JSONObject getProfileFromFacebook()
 	{
 		JSONObject jsonresponse = new JSONObject();
 		
 		try
 		{
 			HttpClient client = new DefaultHttpClient();
-			HttpGet request = new HttpGet("https://graph.facebook.com/me?access_token=" + access_token);
+			HttpGet request = new HttpGet("https://graph.facebook.com/me?access_token=" + facebook_access_token);
 			HttpResponse response;
 			
 			try 
@@ -845,8 +796,10 @@ public class User implements java.lang.Comparable<User> {
 		try {
 			JSONObject response = t.verifyCredentials(getTwitterAccessToken(), getTwitterAccessTokenSecret());
 			System.out.println("User.twitterCredentialsAreValid(): twitter_object response=" + response);
-			if(response.has("twitter_jo") && response.getJSONObject("twitter_jo").has("id"))
-				return true;
+			if(response.has("response_status") && response.getString("response_status").equals("error"))
+				return false;
+			else  // if anything went wrong, verifyCredentials should ALWAYS include a response_status "error". Anything else is success.
+				return true; 
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1034,6 +987,65 @@ public class User implements java.lang.Comparable<User> {
 		return stations;
 	}
 	
+	public JSONObject getAsJSONObject(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile) 
+	{
+		JSONObject response_jo = new JSONObject();
+		try {
+			response_jo.put("designation", getDesignation());
+			response_jo.put("display_name", getDisplayName());
+			response_jo.put("anchor", isAnchor());
+			response_jo.put("weather", isWeather());
+			response_jo.put("sports", isSports());
+			response_jo.put("reporter", isReporter());
+			response_jo.put("homogeneity", homogeneity);
+			response_jo.put("weekend_expected_begin", weekend_expected_begin_string);
+			response_jo.put("weekend_expected_end", weekend_expected_end_string);
+			response_jo.put("weekday_expected_begin", weekday_expected_begin_string);
+			response_jo.put("weekday_expected_end", weekday_expected_end_string);
+			response_jo.put("twitter_handle", twitter_handle);
+			if(return_tokens)
+			{	
+				response_jo.put("twitter_access_token", twitter_access_token);
+				response_jo.put("twitter_access_token_secret", twitter_access_token_secret);
+				response_jo.put("facebook_page_access_token", facebook_page_access_token);
+				response_jo.put("facebook_access_token", facebook_access_token);
+			}
+			response_jo.put("twitter_handle", twitter_handle);
+			response_jo.put("facebook_uid", facebook_uid);
+			response_jo.put("facebook_access_token_expires", facebook_access_token_expires);
+			response_jo.put("facebook_page_id", facebook_page_id);
+			response_jo.put("facebook_page_name", facebook_page_name);
+			response_jo.put("facebook_alert_waiting_period", facebook_alert_waiting_period);
+			response_jo.put("facebook_active", facebook_active);
+			response_jo.put("facebook_last_alert", facebook_last_alert);
+			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
+			response_jo.put("twitter_active", twitter_active);
+			response_jo.put("twitter_last_alert", twitter_last_alert);
+			
+			if(return_tw_profile)
+				response_jo.put("twitter_jo", getProfileFromTwitter());
+			if(return_fb_profile)
+				response_jo.put("facebook_jo", getProfileFromFacebook());
+			
+			TreeSet<Station> stations_ts = getStationsAsAdmin();
+			Iterator<Station> stations_it = stations_ts.iterator();
+			JSONArray stations_as_admin_ja = new JSONArray();
+			while(stations_it.hasNext())
+			{
+				stations_as_admin_ja.put(stations_it.next().getCallLetters());
+			}
+			System.out.println("User.getAsJSONObject(): found " + stations_as_admin_ja.length() + " stations");
+			response_jo.put("stations_as_admin_ja", stations_as_admin_ja);
+			
+			// need to add stations_as_reporter_ja like the above TODO
+			
+			
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return response_jo;		
+	}
 	
 	public int compareTo(User o) // this sorts by designation alphabetically
 	{
@@ -1044,6 +1056,7 @@ public class User implements java.lang.Comparable<User> {
 	    else
 	    	return -1;
 	}
+		
 	
 	public static void main(String args[])
 	{

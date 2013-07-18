@@ -1,10 +1,8 @@
 package tv.huzon;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
@@ -14,15 +12,7 @@ import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-
 import com.amazonaws.util.json.JSONArray;
-import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
 public class Platform {
@@ -34,8 +24,8 @@ public class Platform {
 	String hostname = System.getProperty("RDS_HOSTNAME");
 	String port = System.getProperty("RDS_PORT");
 	
-	String jdbcconnectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password;
-	
+	//String jdbcconnectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password;
+	String jdbcconnectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
 	public Platform()
 	{
 		try {

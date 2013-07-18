@@ -2,6 +2,7 @@ package tv.huzon;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -188,7 +189,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return reporters;
 	}
 	
-	public JSONArray getReportersAsJSONArray()
+	public JSONArray getReportersAsJSONArray(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile)
 	{
 		JSONArray return_ja = new JSONArray();
 		TreeSet<String> localset = reporters;
@@ -197,7 +198,7 @@ public class Station implements java.lang.Comparable<Station> {
 		while(reporter_it.hasNext())
 		{
 			currentreporter = new User(reporter_it.next(), "designation");
-			return_ja.put(currentreporter.getAsJSONObject());
+			return_ja.put(currentreporter.getAsJSONObject(return_tokens,return_tw_profile,return_fb_profile));
 		}
 		return return_ja;
 	}
@@ -418,7 +419,7 @@ public class Station implements java.lang.Comparable<Station> {
 			stmt = con.createStatement();
 			if(designation == null) // get all frames
 			{	
-				//System.out.println("Station.getFrames(no designation): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+				System.out.println("Station.getFrames(no designation): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
 			}
 			else if(designation != null) // get all frames where designation is above single thresh
@@ -426,7 +427,7 @@ public class Station implements java.lang.Comparable<Station> {
 				User reporter = new User(designation, "designation");
 				double homogeneity_double = reporter.getHomogeneity();
 				double threshold = homogeneity_double;
-				//System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
+				System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
 			}
 		
@@ -499,7 +500,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
 	{
-		System.out.println("Station.getFramesAsJSONArray(): long method begin");
+		//System.out.println("Station.getFramesAsJSONArray(): long method begin");
 		JSONArray frames_ja = new JSONArray();
 		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null);
 		Iterator<Frame> it = frameset.iterator();
@@ -718,7 +719,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return true;
 	}
 	
-	boolean isLocked(String social_type)
+	/*boolean isLocked(String social_type)
 	{
 		boolean returnval = true;
 		Connection con = null;
@@ -767,9 +768,101 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 		}   		
 		return returnval;
-	}
+	}*/
 	
 	boolean lock(String uuid, String social_type)
+	{
+		boolean returnval = false;
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		String updateString = null;
+		try
+		{
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			if(social_type.equals("twitter"))
+				updateString = "UPDATE stations SET `twitter_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='') ";
+			else if (social_type.equals("facebook"))
+				updateString = "UPDATE stations SET `facebook_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock`='')";
+			System.out.println("Executing statement: " + updateString);
+			pstmt = con.prepareStatement(updateString);
+			pstmt.executeUpdate();
+			System.out.println(pstmt.getUpdateCount());
+			if(pstmt.getUpdateCount() == 1) // the update actually occurred
+				returnval = true; 
+			else
+			{
+				(new Platform()).addMessageToLog("Station.lock(): Tried to set twitter lock but the existing value was not empty!");
+			}
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Station.lock(): message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				(new Platform()).addMessageToLog("SQLException in Station.lock(): Error occurred when closing con. message=" +sqle.getMessage());
+			}
+		}   		
+		return returnval;
+	}
+	
+
+	boolean unlock(String uuid, String social_type)
+	{
+		boolean returnval = false;
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		String updateString = null;
+		try
+		{
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			if(social_type.equals("twitter"))
+				updateString = "UPDATE stations SET `twitter_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='" + uuid + "') ";
+			else if (social_type.equals("facebook"))
+				updateString = "UPDATE stations SET `facebook_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock`='" + uuid + "')";
+			System.out.println("Executing statement: " + updateString);
+			pstmt = con.prepareStatement(updateString);
+			pstmt.executeUpdate();
+			System.out.println(pstmt.getUpdateCount());
+			if(pstmt.getUpdateCount() == 1) // the update actually occurred
+				returnval = true; 
+			else
+			{
+				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock twitter but the existing value did not match the specified UUID. Another process set this lock! BAD!");
+			}
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Station.unlock(): message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				(new Platform()).addMessageToLog("SQLException in Station.unlock(): Error occurred when closing con. message=" +sqle.getMessage());
+			}
+		}   		
+		return returnval;
+	}
+	
+	
+	/*boolean lock(String uuid, String social_type)
 	{
 		boolean returnval = false;
 		Connection con = null;
@@ -839,9 +932,9 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 		}   		
 		return returnval;
-	}
+	}*/
 		
-	boolean unlock(String uuid, String social_type)
+	/*boolean unlock(String uuid, String social_type)
 	{
 		boolean returnval = false;
 		Connection con = null;
@@ -911,7 +1004,7 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 		}   		
 		return returnval;
-	}
+	}*/
 	
 	String getMessage(String social_type, long timestamp_in_ms, long redirect_id, User reporter)
 	{
@@ -1149,7 +1242,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public static void main(String[] args) {
 		Station s = new Station("wkyt");
-		s.resetProductionAlertTimers();
+		s.unlock("testval3", "twitter");
 		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
 		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
 	}

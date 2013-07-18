@@ -475,20 +475,20 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				$("#results_div").html("");
 				$("#chart1").html("");
 				var rds = "";
-				var datestring = $('#function1_begin_input').val();
+				/*var datestring = $('#function1_begin_input').val();
 				var d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
 				var begin = d.getTime()/1000;
 				datestring = $('#function1_end_input').val();
 			    d = new Date(datestring.substring(0,4), (datestring.substring(4,6) - 1), datestring.substring(6,8), datestring.substring(9,11), datestring.substring(11,13), datestring.substring(13,15), 0);
-				var end = d.getTime()/1000;
+				var end = d.getTime()/1000;*/
 				
 				$.ajax({
 						type: 'GET',
 						url: endpoint,
 						data: {
 				            method: "getFrames",
-				            begin: begin,             
-				            end: end,
+				            begin: $('#function1_begin_input').val(),             
+				            end: $('#function1_end_input').val(),
 				            station: station,
 				            get_score_data: "false",
 		    	            twitter_handle: twitter_handle,

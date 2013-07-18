@@ -182,8 +182,8 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 							image_files[2].delete();
 							image_files[3].delete();
 							
-							if(!station_object.isLocked("facebook"))
-							{
+							//if(!station_object.isLocked("facebook"))
+							//{
 								String uuid = UUID.randomUUID().toString();
 								boolean successfullylocked = station_object.lock(uuid, "facebook");
 								
@@ -244,11 +244,11 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 								{
 									(new Platform()).addMessageToLog("Skipped FB post for " + reporter.getDesignation() + ". Tried to set lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 								}
-							}
-							else
-							{
-								(new Platform()).addMessageToLog("Skipped FB post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
-							}
+							//}
+							//else
+							//{
+							//	(new Platform()).addMessageToLog("Skipped FB post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
+							//}
 							composite_file.delete();
 							
 						} catch (IOException e) {

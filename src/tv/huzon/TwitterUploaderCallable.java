@@ -175,8 +175,8 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							image_files[3].delete();
 							
 							
-							if(!station_object.isLocked("twitter"))
-							{
+							//if(!station_object.isLocked("twitter"))
+							//{
 								String uuid = UUID.randomUUID().toString();
 								boolean successfullylocked = station_object.lock(uuid, "twitter");
 								if(successfullylocked)
@@ -196,8 +196,6 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 									{
 										twitter_successful = false;
 										twitter_failure_message = "Twitter produced an error: " + twit_jo.getString("message");
-										//return_jo.put("twitter_successful", false);
-										//return_jo.put("twitter_failure_message", twit_jo.getString("message"));
 
 										if(twit_jo.has("twitter_code") && (twit_jo.getInt("twitter_code") == 32 || twit_jo.getInt("twitter_code") == 89)) // and it was due to bad credentials
 										{
@@ -240,13 +238,13 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 									twitter_failure_message = "Failed to set TW lock for this station. It seems to be in use already.";
 									(new Platform()).addMessageToLog("Skipped TW post for " + reporter.getDesignation() + ". Tried to set lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
 								}
-							}
-							else
-							{
-								twitter_successful = false;
-								twitter_failure_message = "TW lock for this station already set.";
-								(new Platform()).addMessageToLog("Skipped TW post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
-							}
+							//}
+							//else
+							//{
+							//	twitter_successful = false;
+							//	twitter_failure_message = "TW lock for this station already set.";
+							//	(new Platform()).addMessageToLog("Skipped TW post due to lock.\nreporter=" + reporter.getDesignation() + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode());
+							//}
 							composite_file.delete();
 							
 						} catch (IOException e) {

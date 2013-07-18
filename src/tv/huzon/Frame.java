@@ -963,9 +963,13 @@ public class Frame implements Comparable<Frame> {
 									if(alert_mode.equals("live") || alert_mode.equals("test"))
 									{
 										if(twitter_triggered)
+										{
 											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object)); // live, test or silent
+										}
 										if(facebook_triggered)
+										{
 											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object)); // live, test or silent
+										}
 									}
 									// else if simulation do do not perform any actual twitter or facebook postings.
 									

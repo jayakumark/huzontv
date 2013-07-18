@@ -1178,7 +1178,7 @@ public class Twitter {
 					 }
 					 else
 					 {
-						 jsonresponse.put("twitter_jo", jo); // this is the full result object from Twitter
+						 jsonresponse = jo; // this is the full result object from Twitter
 					 }
 					 
 					 conn.close();
@@ -1216,7 +1216,6 @@ public class Twitter {
 		 }
 		 return jsonresponse;
 	}
-	
 	
 	public static void main(String[] args) {
 

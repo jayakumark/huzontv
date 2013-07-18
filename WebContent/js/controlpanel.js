@@ -192,17 +192,16 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 	    	else
 	    	{
 	    		var reporters_ja = data.reporters_ja;
-	    		
 				reporters_string = reporters_string + "<table style=\"width:100%\">";
 				reporters_string = reporters_string + "	<tr>";
 				reporters_string = reporters_string + "		<td>";
-				reporters_string = reporters_string + "			Designation";
+				reporters_string = reporters_string + "			h.tv designation";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td>";
 				reporters_string = reporters_string + "			Display name";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td>";
-				reporters_string = reporters_string + "			Role";
+				reporters_string = reporters_string + "			Roles";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td>";
 				reporters_string = reporters_string + "			TW handle";
@@ -270,7 +269,14 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			" + reporters_ja[x].display_name;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			Role";
+					if(reporters_ja[x].anchor === true)
+						reporters_string = reporters_string + "			A";
+					if(reporters_ja[x].weather === true)
+						reporters_string = reporters_string + "			W";
+					if(reporters_ja[x].sports === true)
+						reporters_string = reporters_string + "			S";
+					if(reporters_ja[x].reporter === true)
+						reporters_string = reporters_string + "			R";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_handle;
@@ -284,19 +290,20 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_alert_waiting_period;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			TW followers";
+					if(reporters_ja[x].twitter_jo != null)
+						reporters_string = reporters_string + "			" + reporters_ja[x].twitter_jo.followers_count;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			Tweets 30 days";
+					//reporters_string = reporters_string + "			Tweets 30 days";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			Tweets 10 days";
+					//reporters_string = reporters_string + "			Tweets 10 days";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			Tweets 3 days";
+					//reporters_string = reporters_string + "			Tweets 3 days";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			Tweets 24 hr";
+					//reporters_string = reporters_string + "			Tweets 24 hr";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_fb_valid_td\">";
 					reporters_string = reporters_string + "			";
@@ -311,19 +318,19 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_alert_waiting_period;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			FB likes";
+					//reporters_string = reporters_string + "			FB likes";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			FB 30 days";
+					//reporters_string = reporters_string + "			FB 30 days";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			FB 10 days";
+					//reporters_string = reporters_string + "			FB 10 days";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			FB 3 days";
+					//reporters_string = reporters_string + "			FB 3 days";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			FB 24 hr";
+					//reporters_string = reporters_string + "			FB 24 hr";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "	</tr>";
 				}

@@ -516,7 +516,8 @@ public class Endpoint extends HttpServlet {
 					if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
 					{
 						jsonresponse.put("response_status", "success");
-						jsonresponse.put("user_jo", user.getAsJSONObject());
+						 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false;
+						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile));
 						(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
 					else if(method.equals("getFacebookAccessTokenFromAuthorizationCode"))
@@ -535,7 +536,8 @@ public class Endpoint extends HttpServlet {
 							JSONObject preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
 							if(preliminary_jsonresponse.getString("response_status").equals("success"))
 							{
-								JSONObject fb_profile_jo = user.getProfileFromFacebook(preliminary_jsonresponse.getString("access_token"));
+								user.setTwitterAccessTokenAndSecret(preliminary_jsonresponse.getString("access_token"), "notyetknown");
+								JSONObject fb_profile_jo = user.getProfileFromFacebook();
 								long fb_uid = 0L;
 								try
 								{
@@ -759,7 +761,8 @@ public class Endpoint extends HttpServlet {
 								{
 									User target_user = new User(designation, "designation");
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("user_jo", target_user.getAsJSONObject());
+									 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false;
+									jsonresponse.put("user_jo", target_user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile));
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
 								else if (method.equals("verifyTwitterCredentials"))
@@ -837,7 +840,8 @@ public class Endpoint extends HttpServlet {
 								 else if (method.equals("getActiveReporters"))
 								 {	
 									 jsonresponse.put("response_status", "success");
-									 jsonresponse.put("reporters_ja", station_object.getReportersAsJSONArray());
+									 boolean return_tokens = false; boolean return_tw_profile = true; boolean return_fb_profile = true;
+									 jsonresponse.put("reporters_ja", station_object.getReportersAsJSONArray(return_tokens, return_tw_profile, return_fb_profile));
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 }
 								 else if (method.equals("resetProductionAlertTimers")) // DANGEROUS!!!!
