@@ -414,7 +414,7 @@ mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\
 mds = mds + "			twitter alert waiting period:";
 mds = mds + "		</td>";
 mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.twitter_alert_waiting_period;
+mds = mds + "			"  + data.user_jo.twitter_cooldown;
 mds = mds + "		</td>";
 mds = mds + "	</tr>";
 mds = mds + "	<tr>";
@@ -471,8 +471,8 @@ mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\
 mds = mds + "			facebook alert waiting period:";
 mds = mds + "		</td>";
 mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_alert_waiting_period)
-mds = mds + data.user_jo.facebook_alert_waiting_period;
+if(data.user_jo.facebook_cooldown)
+mds = mds + data.user_jo.facebook_cooldown;
 else
 mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
 mds = mds + "		</td>";

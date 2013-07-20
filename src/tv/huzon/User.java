@@ -41,8 +41,8 @@ public class User implements java.lang.Comparable<User> {
 	private double homogeneity;
 	private boolean twitter_active;
 	private boolean facebook_active;
-	private int twitter_alert_waiting_period;
-	private int facebook_alert_waiting_period;
+	private int twitter_cooldown;
+	private int facebook_cooldown;
 	private long twitter_last_alert;
 	private long facebook_last_alert;
 	private long twitter_last_alert_test;
@@ -98,8 +98,8 @@ public class User implements java.lang.Comparable<User> {
 				display_name = rs.getString("display_name");
 				email = rs.getString("email");
 				homogeneity = rs.getDouble("homogeneity");
-				twitter_alert_waiting_period = rs.getInt("twitter_alert_waiting_period");
-				facebook_alert_waiting_period = rs.getInt("facebook_alert_waiting_period");
+				twitter_cooldown = rs.getInt("twitter_cooldown");
+				facebook_cooldown = rs.getInt("facebook_cooldown");
 				twitter_active = rs.getBoolean("twitter_active");
 				facebook_active = rs.getBoolean("facebook_active");
 				twitter_last_alert = rs.getLong("twitter_last_alert");
@@ -404,17 +404,15 @@ public class User implements java.lang.Comparable<User> {
 		return returnval;
 	}
 	
-	public long getFacebookWaitingPeriodInMillis()
-	{
-		return facebook_alert_waiting_period*1000;
-	}
-	
 	public long getTwitterWaitingPeriodInMillis()
 	{
-		return twitter_alert_waiting_period*1000;
+		return twitter_cooldown*1000;
 	}
 	
-	
+	public long getFacebookWaitingPeriodInMillis()
+	{
+		return facebook_cooldown*1000;
+	}
 	
 	public String getTwitterAccessToken()
 	{
@@ -1015,10 +1013,10 @@ public class User implements java.lang.Comparable<User> {
 			response_jo.put("facebook_access_token_expires", facebook_access_token_expires);
 			response_jo.put("facebook_page_id", facebook_page_id);
 			response_jo.put("facebook_page_name", facebook_page_name);
-			response_jo.put("facebook_alert_waiting_period", facebook_alert_waiting_period);
+			response_jo.put("facebook_cooldown", facebook_cooldown);
 			response_jo.put("facebook_active", facebook_active);
 			response_jo.put("facebook_last_alert", facebook_last_alert);
-			response_jo.put("twitter_alert_waiting_period", twitter_alert_waiting_period);
+			response_jo.put("twitter_cooldown", twitter_cooldown);
 			response_jo.put("twitter_active", twitter_active);
 			response_jo.put("twitter_last_alert", twitter_last_alert);
 			
@@ -1036,9 +1034,6 @@ public class User implements java.lang.Comparable<User> {
 			}
 			System.out.println("User.getAsJSONObject(): found " + stations_as_admin_ja.length() + " stations");
 			response_jo.put("stations_as_admin_ja", stations_as_admin_ja);
-			
-			// need to add stations_as_reporter_ja like the above TODO
-			
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block

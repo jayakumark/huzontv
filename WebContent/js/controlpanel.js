@@ -290,7 +290,7 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_valid_td\">";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_alert_waiting_period;
+					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_cooldown;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					if(typeof reporters_ja[x].twitter_jo === undefined || reporters_ja[x].twitter_jo == null || 
@@ -328,7 +328,7 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_alert_waiting_period;
+					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_cooldown;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					//reporters_string = reporters_string + "			FB likes";
