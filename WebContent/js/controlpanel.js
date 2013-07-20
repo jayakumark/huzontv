@@ -157,7 +157,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    async: false,
 	    success: function (data, status) {
 	    	if (data.response_status == "error")
-	    		general_string = general_string + "<div style=\"font-size:16;color:red\">getActiveReporterDesignations error: " + data.message + "</div>";
+	    		general_string = general_string + "<div style=\"font-size:16;color:red\">getStationInformation error: " + data.message + "</div>";
 	    	else
 	    	{
 	    		general_string = JSON.stringify(data);
@@ -282,7 +282,10 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_handle;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_active;
+					if(reporters_ja[x].twitter_active)
+						reporters_string = reporters_string + "			<span style=\"color:green\">yes</span>";
+					else
+						reporters_string = reporters_string + "			<span style=\"color:red\">no</span>";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_valid_td\">";
 					reporters_string = reporters_string + "		</td>";
@@ -290,8 +293,15 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_alert_waiting_period;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					if(reporters_ja[x].twitter_jo != null)
-						reporters_string = reporters_string + "			" + reporters_ja[x].twitter_jo.followers_count;
+					if(typeof reporters_ja[x].twitter_jo === undefined || reporters_ja[x].twitter_jo == null || 
+							typeof reporters_ja[x].twitter_jo_followers_count === undefined || reporters_ja[x].twitter_jo.followers_count == null)
+					{
+						reporters_string = reporters_string + "			<span style=\"color:red\">---</span>";
+					}
+					else
+					{
+						reporters_string = reporters_string + "			<span style=\"color:green\">" + reporters_ja[x].twitter_jo.followers_count + "</span>";
+					}
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					//reporters_string = reporters_string + "			Tweets 30 days";
@@ -309,7 +319,10 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "			";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_active;
+					if(reporters_ja[x].facebook_active)
+						reporters_string = reporters_string + "			<span style=\"color:green\">yes</span>";
+					else
+						reporters_string = reporters_string + "			<span style=\"color:red\">no</span>";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_fbpage_valid_td\">";
 					reporters_string = reporters_string + "			";

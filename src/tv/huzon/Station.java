@@ -427,8 +427,8 @@ public class Station implements java.lang.Comparable<Station> {
 				User reporter = new User(designation, "designation");
 				double homogeneity_double = reporter.getHomogeneity();
 				double threshold = homogeneity_double;
-				System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
-				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_avg > " + threshold + ")"); 
+				System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_score > " + threshold + ")"); 
+				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_score > " + threshold + ")"); 
 			}
 		
 			// this loop gets each frame the database individually
@@ -560,7 +560,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			currentreporter = new User(it.next(), "designation");
 			querystring = querystring + " (`" + currentreporter.getDesignation() + "_ma" + maw_int + "` >= " + (currentreporter.getHomogeneity()*ma_modifier_double) + " AND ";
-			querystring = querystring + " `" + currentreporter.getDesignation() + "_avg` >= " + currentreporter.getHomogeneity() + ") OR ";
+			querystring = querystring + " `" + currentreporter.getDesignation() + "_score` >= " + currentreporter.getHomogeneity() + ") OR ";
 		}
 		querystring = querystring.substring(0,querystring.length() - 4) + "))";
 		//System.out.println("Station.getAlertFrames(): querystring=" + querystring);
@@ -1064,7 +1064,7 @@ public class Station implements java.lang.Comparable<Station> {
 			{
 				if(x == 1)
 					station = rsmd.getTableName(1).substring(rsmd.getTableName(1).indexOf("_") + 1);
-				if(rsmd.getColumnName(x).endsWith("_avg"))
+				if(rsmd.getColumnName(x).endsWith("_score"))
 				{
 					reportercount++;
 				}
@@ -1072,11 +1072,11 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 			//System.out.println("Found " + reportercount + " columns. Initalizing arrays.");
 			//String reporter_designations[] = new String[reportercount];
-			//double reporter_avgs[] = new double[reportercount];
+			//double reporter_scores[] = new double[reportercount];
 			//JSONArray reporter_score_arrays[] = new JSONArray[reportercount];
 			//int reporter_nums[] = new int[reportercount];
 			String reporter_designations[] = null;
-			double reporter_avgs[] = null;
+			double reporter_scores[] = null;
 			JSONArray reporter_score_arrays[] = null;
 			int reporter_nums[] = null;
 			double reporter_ma6s[] = null;
@@ -1088,7 +1088,7 @@ public class Station implements java.lang.Comparable<Station> {
 			while(rs.next())
 			{
 				reporter_designations = new String[reportercount];
-				reporter_avgs = new double[reportercount];
+				reporter_scores = new double[reportercount];
 				reporter_score_arrays = new JSONArray[reportercount];
 				reporter_nums = new int[reportercount];
 				reporter_ma6s = new double[reportercount];
@@ -1105,10 +1105,10 @@ public class Station implements java.lang.Comparable<Station> {
 				while(x <= columncount)
 				{
 					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
-					if(rsmd.getColumnName(x).endsWith("_avg"))
+					if(rsmd.getColumnName(x).endsWith("_score"))
 					{
-						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
-						reporter_avgs[reporter_index] = rs.getDouble(x);
+						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_score"));
+						reporter_scores[reporter_index] = rs.getDouble(x);
 					}
 					else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
@@ -1181,7 +1181,7 @@ public class Station implements java.lang.Comparable<Station> {
 				//System.out.println("Adding Frame object to treeset and going to next...");
 				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
 						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
-						reporter_avgs, reporter_score_arrays, reporter_nums, reporter_ma3s, reporter_ma4s, reporter_ma5s, reporter_ma6s));
+						reporter_scores, reporter_score_arrays, reporter_nums, reporter_ma3s, reporter_ma4s, reporter_ma5s, reporter_ma6s));
 				//System.out.println("... frame added");
 			}
 		}

@@ -230,7 +230,7 @@ public class Endpoint extends HttpServlet {
 										// have decided these raw scores are unnecessary. Leaving it out makes for a smaller, more efficient database.
 										//fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_scores" + "`, ";
 										//valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").toString() + "', ";
-										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_avg" + "`, ";
+										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_score" + "`, ";
 										valuesstring = valuesstring + "'" + currentavgscore + "', ";
 										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_num" + "`, ";
 										valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").length() + "', ";

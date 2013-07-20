@@ -86,16 +86,7 @@ public class GAF4ReporterCallable implements Callable<JSONArray> {
 		JSONArray alert_frames_ja = new JSONArray();
 		try
 		{
-			//con = DriverManager.getConnection(p.getJDBCConnectionString());
-			//stmt = con.createStatement();
-			// get frames where this designation crosses the single frame threshold
-			//rs = stmt.executeQuery("SELECT * FROM frames_" + station_object + " WHERE (timestamp_in_ms >= " + (1000*begin) + " AND timestamp_in_ms <= " + (1000*end) + " AND " + designation + "_avg > " + single_thresh + ") ORDER BY timestamp_in_ms ASC");
-			//rs.last();
-			//System.out.println("GAF4ReporterCallable.call() found " + rs.getRow()  + " frames over threshold (" + homogeneity + " * " + singlemodifier + "=" +  single_thresh + ") for " + designation);
-			//rs.beforeFirst();
-			//Platform p = new Platform();
 			TreeSet<Frame> frames_past_single_thresh = station_object.getFrames((begin*1000), (end*1000), designation);
-			//TreeSet<Frame> frames_past_single_thresh = p.getFramesFromResultSet(rs);
 			Iterator<Frame> frames_past_single_thresh_it = frames_past_single_thresh.iterator();
 			Frame currentframe = null;
 			Frame subsequentframe = null;

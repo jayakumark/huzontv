@@ -60,7 +60,6 @@ public class Alert {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + inc_id); // get the frames in the time range
 			
-			// calculate the number of reporters by looping through all columns and looking for "_avg"
 			if(rs.next())
 			{	
 				social_type = rs.getString("social_type");
@@ -160,7 +159,6 @@ public class Alert {
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + id); // get the frames in the time range
 			
-			// calculate the number of reporters by looping through all columns and looking for "_avg"
 			if(rs.next())
 			{	
 				rs.updateTimestamp("deletion_timestamp", new Timestamp(System.currentTimeMillis()));

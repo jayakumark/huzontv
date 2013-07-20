@@ -602,12 +602,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        					rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 				        					rds = rds + "<img src=\"" + data.frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
 				        					rds = rds + "<br>" + data.frames_ja[x].image_name;
-				        					rds = rds + "<br>avg4des:"+ data.frames_ja[x].reporters[designation].score_avg;
+				        					rds = rds + "<br>avg4des:"+ data.frames_ja[x].reporters[designation].score;
 				        					rds = rds + "<br>homogeneity:" + reporter_homogeneity;
 				        					rds = rds + "<br>threshold:" + (reporter_homogeneity * $('#function2_singlemodifier_input').val());
-				        					//rds = rds + "<br>closest_desg:" + data.frames_ja[x].closest_designation;
-				        					//rds = rds + "<br>closest_avg:" + data.frames_ja[x].closest_avg;
-				        					//rds = rds + "<br>closest_delta:" + (data.frames_ja[x].score_average - data.frames_ja[x].closest_avg);
 				        					rds = rds + "</div>";
 				        				}
 				        			}
@@ -1105,7 +1102,7 @@ function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homo
 	// looping through all frames gathered to graph
 	for(var x = 0; x < frames_ja.length; x++)
 	{
-		scores.push(frames_ja[x].reporters[designation].score_avg);
+		scores.push(frames_ja[x].reporters[designation].score);
 		ma6s.push(frames_ja[x].reporters[designation].ma6);
 	}
 	var plot1 = $.jqplot ('chart1', [scores, ma6s],{

@@ -31,7 +31,7 @@ public class Frame implements Comparable<Frame> {
 	String station;
 	Station station_object;
 	String[] reporter_designations;
-	double[] reporter_scores; // FIXME this should be called reporter_scores
+	double[] reporter_scores;
 	//JSONArray[] reporter_score_arrays;
 	int[] reporter_nums;
 	//double[] reporter_ma5s;
@@ -138,14 +138,14 @@ public class Frame implements Comparable<Frame> {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the specified (unique) frame from the station's frame table
 			
-			// calculate the number of reporters by looping through all columns and looking for "_avg"
+			// calculate the number of reporters by looping through all columns and looking for ""
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int columncount = rsmd.getColumnCount();
 			int reportercount = 0;
 			int x = 1; 
 			while(x <= columncount)
 			{
-				if(rsmd.getColumnName(x).endsWith("_avg"))
+				if(rsmd.getColumnName(x).endsWith("_score"))
 				{
 					reportercount++;
 				}
@@ -175,9 +175,9 @@ public class Frame implements Comparable<Frame> {
 				boolean db_has_ma3_data = true;
 				while(x <= columncount)
 				{
-					if(rsmd.getColumnName(x).endsWith("_avg"))
+					if(rsmd.getColumnName(x).endsWith("_score"))
 					{
-						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_avg"));
+						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_score"));
 						reporter_scores[reporter_index] = rs.getDouble(x);
 					}
 					else if(rsmd.getColumnName(x).endsWith("_num"))
@@ -714,14 +714,14 @@ public class Frame implements Comparable<Frame> {
 	 * 		reporters:[
 	 * 			designation: {
 	 * 				designation: designation,
-	 * 				score_avg: score_avg,
+	 * 				score: score,
 	 * 				num: num,
 	 * 				moving_average: moving_average,
 	 * 				scores: [ score1, score2, .... score3]  // OPTIONAL
 	 * 			},
 	 * 			designation2: {
 	 * 				designation: designation2,
-	 * 				score_avg: score_avg,
+	 * 				score: score,
 	 * 				num: num,
 	 * 				moving_average: moving_average,
 	 * 				scores: [ score1, score2, .... score3] // OPTIONAL
@@ -762,7 +762,7 @@ public class Frame implements Comparable<Frame> {
 				{
 					jo2 = new JSONObject();
 					jo2.put("designation", reporter_designations[x]);
-					jo2.put("score_avg", reporter_scores[x]);
+					jo2.put("score", reporter_scores[x]);
 					jo2.put("num", reporter_nums[x]);
 					jo2.put("ma6", reporter_ma6s[x]);
 					reporter_jo.put(reporter_designations[x],jo2);
@@ -1040,6 +1040,11 @@ public class Frame implements Comparable<Frame> {
 		return return_jo;
 	}
 
+	// Explanation for the two functions below:
+		// When a new frame comes into the backend, it is inserted first WITHOUT moving average calculations. 
+		// As soon as the raw data has been inserted, a subsequent call to calculateAndSetMA6s() does the necessary fill-in.
+		// populateMovingAverage6s() does the actual calculations, where calculateAndSetMA6s() is really just a database update call
+	
 	private void populateMovingAverages()
 	{
 		reporter_ma6s = new double[reporter_designations.length];
@@ -1193,50 +1198,6 @@ public class Frame implements Comparable<Frame> {
 		}
 		
 	}
-	
-	
-	// Explanation for the two functions below:
-	// When a new frame comes into the backend, it is inserted first WITHOUT moving average calculations. 
-	// As soon as the raw data has been inserted, a subsequent call to calculateAndSetMA6s() does the necessary fill-in.
-	// populateMovingAverage6s() does the actual calculations, where calculateAndSetMA6s() is really just a database update call
-	
-/*	private void populateMovingAverage6s()
-	{
-		reporter_ma6s = new double[reporter_designations.length];
-		TreeSet<Frame> window_frames = station_object.getFrames(getTimestampInMillis()-(6 * 1000), getTimestampInMillis(), null);
-		int num_frames_in_window = window_frames.size();
-		int x = 0;
-		if(num_frames_in_window < 6) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
-		{
-			reporter_ma6s = null; // just set it to null
-		}
-		else
-		{	
-			double[] reporter_totals = new double[reporter_designations.length];
-			//System.out.println("Frame.populateMovingAverages(): looping " + num_frames_in_window + " frames for totals");
-			Iterator<Frame> it = window_frames.iterator();
-			Frame currentframe = null;
-			while(it.hasNext())
-			{
-				currentframe = it.next();
-				x = 0;
-				while(x < reporter_designations.length)
-				{
-					reporter_totals[x] = reporter_totals[x] + currentframe.getScore(reporter_designations[x]);
-					x++;
-				}
-			}
-			
-			// then divide the sum designation_avgs by dividing by the number of frames in the window
-			x = 0;
-			//System.out.println("Frame.populateMovingAverages(): looping reporters to get ma6s from totals");
-			while(x < reporter_totals.length)
-			{
-				reporter_ma6s[x] = reporter_totals[x] / num_frames_in_window;
-				x++;
-			}
-		}
-	}*/
 	
 	public void calculateAndSetMAs() // WILL OVERWRITE EXISTING DATA
 	{
