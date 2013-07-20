@@ -35,8 +35,8 @@ var docCookies = {
 
 var devel = true;
 
-document.addEventListener('DOMContentLoaded', function () {
-	
+//document.addEventListener('DOMContentLoaded', function () {
+$(window).load(function () {	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = ""; 
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				            method: "startTwitterAuthentication"
 						},
 				        dataType: 'json',
-				        async: false,
+				        async: true,
 				        success: function (data, status) {
 				        	if (data.response_status == "error")
 				        	{
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	            twitter_access_token: twitter_access_token
 			},
 	        dataType: 'json',
-	        async: false,
+	        async: true,
 	        success: function (data, status) {
 	        	if (data.response_status == "error")
 	        	{
@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function getStationInformation(twitter_handle, twitter_access_token, station)
 {
 	var general_string = "";
+	$("#general_div").html("Loading general station information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -154,7 +155,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	        twitter_access_token: twitter_access_token
 		},
 	    dataType: 'json',
-	    async: false,
+	    async: true,
 	    success: function (data, status) {
 	    	if (data.response_status == "error")
 	    		general_string = general_string + "<div style=\"font-size:16;color:red\">getStationInformation error: " + data.message + "</div>";
@@ -175,6 +176,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 function getActiveReporterDesignations(twitter_handle, twitter_access_token, station)
 {
 	var reporters_string = "";
+	$("#reporters_div").html("Loading reporter information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -185,7 +187,7 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 	        twitter_access_token: twitter_access_token
 		},
 	    dataType: 'json',
-	    async: false,
+	    async: true,
 	    success: function (data, status) {
 	    	if (data.response_status == "error")
 	    		reporters_string = reporters_string + "<div style=\"font-size:16;color:red\">getActiveReporterDesignations error: " + data.message + "</div>";
@@ -194,71 +196,71 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 	    		var reporters_ja = data.reporters_ja;
 				reporters_string = reporters_string + "<table style=\"width:100%\">";
 				reporters_string = reporters_string + "	<tr>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			h.tv designation";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Display name";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Roles";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			TW handle";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			TW alerts on";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
-				reporters_string = reporters_string + "			TW status";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "			TW acct";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
-				reporters_string = reporters_string + "			TW cooldown";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "			TW cooldown (hrs)";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			TW followers";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Tweets 30 days";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Tweets 10 days";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Tweets 3 days";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Tweets 24 hr";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Top-level FB";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB alerts on";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
-				reporters_string = reporters_string + "			FB status";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "			FB page";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
-				reporters_string = reporters_string + "			FB cooldown";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "			FB cooldown (hrs)";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB likes";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB 30 days";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB 10 days";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB 3 days";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB 24 hr";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "	</tr>";
-				
+				var cooldown_in_hours = 0;
 				for(var x=0; x < reporters_ja.length; x++)
 				{
 					reporters_string = reporters_string + "	<tr>";
@@ -287,24 +289,26 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					else
 						reporters_string = reporters_string + "			<span style=\"color:red\">no</span>";
 					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_valid_td\">";
+					reporters_string = reporters_string + "		<td>";
+					if(typeof reporters_ja[x].twitter_jo === undefined || reporters_ja[x].twitter_jo == null || (reporters_ja[x].twitter_jo.response_status != null && reporters_ja[x].twitter_jo.response_status === "error"))
+						reporters_string = reporters_string + "			<span style=\"color:red\">not linked</span>";
+					else
+						reporters_string = reporters_string + "			<span style=\"color:green\">linked</span>";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_cooldown;
+					cooldown_in_hours = Math.round(reporters_ja[x].twitter_cooldown / 360)/10; // displays as nearest tenth
+					reporters_string = reporters_string + "			" + cooldown_in_hours;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					if(typeof reporters_ja[x].twitter_jo === undefined || reporters_ja[x].twitter_jo == null || 
 							typeof reporters_ja[x].twitter_jo_followers_count === undefined || reporters_ja[x].twitter_jo.followers_count == null)
-					{
 						reporters_string = reporters_string + "			<span style=\"color:red\">---</span>";
-					}
 					else
-					{
 						reporters_string = reporters_string + "			<span style=\"color:green\">" + reporters_ja[x].twitter_jo.followers_count + "</span>";
-					}
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					//reporters_string = reporters_string + "			Tweets 30 days";
+					if(reporters_ja[x].twitter_alert_history_ja)
+						reporters_string = reporters_string + "		  " + reporters_ja[x].twitter_alert_history_ja.length;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					//reporters_string = reporters_string + "			Tweets 10 days";
@@ -315,8 +319,12 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "		<td>";
 					//reporters_string = reporters_string + "			Tweets 24 hr";
 					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_fb_valid_td\">";
-					reporters_string = reporters_string + "			";
+					reporters_string = reporters_string + "		<td>";
+					if(typeof reporters_ja[x].facebook_jo === undefined || reporters_ja[x].facebook_jo == null || reporters_ja[x].facebook_jo.error != null) // || 
+							//typeof reporters_ja[x].facebook_jo_followers_count === undefined || reporters_ja[x].facebook_jo.followers_count == null)
+						reporters_string = reporters_string + "			<span style=\"color:red\">not linked</span>";
+					else
+						reporters_string = reporters_string + "			<span style=\"color:green\">linked</span>";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					if(reporters_ja[x].facebook_active)
@@ -324,17 +332,25 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					else
 						reporters_string = reporters_string + "			<span style=\"color:red\">no</span>";
 					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_fbpage_valid_td\">";
-					reporters_string = reporters_string + "			";
+					reporters_string = reporters_string + "		<td>";
+					if(typeof reporters_ja[x].facebook_page_jo === undefined || reporters_ja[x].facebook_page_jo == null || reporters_ja[x].facebook_page_jo.error != null) 
+						reporters_string = reporters_string + "			<span style=\"color:red\">not linked</span>";
+					else
+						reporters_string = reporters_string + "			<span style=\"color:green\">linked</span>";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					reporters_string = reporters_string + "			" + reporters_ja[x].facebook_cooldown;
+					cooldown_in_hours = Math.round(reporters_ja[x].facebook_cooldown / 360)/10; // displays as nearest tenth
+					reporters_string = reporters_string + "			" + cooldown_in_hours;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					//reporters_string = reporters_string + "			FB likes";
+					if(typeof reporters_ja[x].facebook_page_jo === undefined || reporters_ja[x].facebook_page_jo == null || reporters_ja[x].facebook_page_jo.error != null) 
+						reporters_string = reporters_string + "			<span style=\"color:red\">---</span>";
+					else
+						reporters_string = reporters_string + "			<span style=\"color:green\">"+ reporters_ja[x].facebook_page_jo.likes + "</span>";
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
-					//reporters_string = reporters_string + "			FB 30 days";
+					if(reporters_ja[x].facebook_alert_history_ja)
+						reporters_string = reporters_string + "		  " + reporters_ja[x].facebook_alert_history_ja.length;
 					reporters_string = reporters_string + "		</td>";
 					reporters_string = reporters_string + "		<td>";
 					//reporters_string = reporters_string + "			FB 10 days";
@@ -350,12 +366,12 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "</table>";
 				$("#reporters_div").html(reporters_string);
 				
-				for(var x=0; x < reporters_ja.length; x++)
-				{
-					verifyTwitterCredentials(reporters_ja[x].designation);
-					verifyTopLevelFBCredentials(reporters_ja[x].designation);
-					verifyPageFBCredentials(reporters_ja[x].designation);
-				}
+				//for(var x=0; x < reporters_ja.length; x++)
+				//{
+					//verifyTwitterCredentials(reporters_ja[x].designation);
+					//verifyTopLevelFBCredentials(reporters_ja[x].designation);
+				//	verifyPageFBCredentials(reporters_ja[x].designation);
+				//}
 	    	}
 	    }
 	    ,
@@ -366,115 +382,4 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 	});
 }
 
-function verifyTwitterCredentials(designation)
-{
-	
-	var twitter_handle = docCookies.getItem("twitter_handle");
-	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "verifyTwitterCredentials",
-            designation: designation,
-            twitter_handle: twitter_handle,
-            twitter_access_token: twitter_access_token
-		},
-        dataType: 'json',
-        async: true,
-        success: function (data, status) {
-        	
-        	if (data.response_status === "error")
-        	{
-        		//alert("success/error verifying twitter creds for " + designation);
-        		$("#" + designation + "_twitter_valid_td").html(data.message);
-        	}
-        	else if(data.response_status === "success")
-        	{
-        		//alert("success/success verifying twitter creds for " + designation);
-        		if(data.valid === true)
-        			$("#" + designation + "_twitter_valid_td").html("<span style=\"color:green\">VALID</span>");
-        		else
-        			$("#" + designation + "_twitter_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
-        	}
-        	else
-        	{
-        		//alert("success/none verifying twitter creds for " + designation);
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#" + designation + "_twitter_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}
-
-function verifyTopLevelFBCredentials(designation)
-{
-	var twitter_handle = docCookies.getItem("twitter_handle");
-	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "verifyTopLevelFBCredentials",
-            designation: designation,
-            twitter_handle: twitter_handle,
-            twitter_access_token: twitter_access_token
-		},
-        dataType: 'json',
-        async: true,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#" + designation + "_fb_valid_td").html(data.message);
-        	else if(data.response_status == "success")
-        	{
-        		if(data.valid == true)
-        			$("#" + designation + "_fb_valid_td").html("<span style=\"color:green\">VALID</span>");
-        		else
-        			$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}
-
-function verifyPageFBCredentials(designation)
-{
-	var twitter_handle = docCookies.getItem("twitter_handle");
-	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "verifyPageFBCredentials",
-            designation: designation,
-            twitter_handle: twitter_handle,
-            twitter_access_token: twitter_access_token
-		},
-        dataType: 'json',
-        async: true,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#" + designation + "_fbpage_valid_td").html(data.message);
-        	else if(data.response_status == "success")
-        	{
-        		if(data.valid == true)
-        			$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:green\">VALID</span>");
-        		else
-        			$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}
 

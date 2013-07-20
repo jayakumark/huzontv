@@ -600,6 +600,40 @@ public class User implements java.lang.Comparable<User> {
 		return jsonresponse;
 	}
 	
+	public JSONObject getSubAccountFromFacebook()
+	{
+		JSONObject jsonresponse = new JSONObject();
+		
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet request = new HttpGet("https://graph.facebook.com/"+ facebook_page_id + "?access_token=" + facebook_page_access_token);
+			HttpResponse response;
+			
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				System.out.println(text);
+				jsonresponse = new JSONObject(text);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
 	// FIXME can't return boolean. subaccount lookup either succeeded or failed, but if failed we need to know why
 	public JSONArray getSubAccountsFromFacebook()
 	{
@@ -968,7 +1002,7 @@ public class User implements java.lang.Comparable<User> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Endpoint getStationsAsAdmin: message=" +sqle.getMessage());
+			(new Platform()).addMessageToLog("SQLException in User.getStationsAsAdmin: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -985,7 +1019,75 @@ public class User implements java.lang.Comparable<User> {
 		return stations;
 	}
 	
-	public JSONObject getAsJSONObject(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile) 
+	public TreeSet<Alert> getFiredAlerts(int hours, String social_type)
+	{
+		/*Calendar cal = Calendar.getInstance();
+		long end_in_ms = cal.getTimeInMillis();
+		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
+		cal.add(Calendar.HOUR, -1 * hours);
+		long begin_in_ms = cal.getTimeInMillis();*/
+		
+		TreeSet<Alert> alerts = new TreeSet<Alert>();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			stmt = con.createStatement();
+			System.out.println("User.getFiredAlerts(): SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
+					" creation_timestamp <= CURRENT_DATE AND creation_timestamp >= (CURRENT_DATE - interval '" + hours + "' hour)");
+			rs = stmt.executeQuery("SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
+					" creation_timestamp <= CURRENT_DATE AND creation_timestamp >= (CURRENT_DATE - interval '" + hours + "' hour)");
+			Alert currentalert = null;
+			while(rs.next())
+			{
+				currentalert = new Alert(rs.getLong("id"));
+				alerts.add(currentalert);
+			}
+			System.out.println("User.getFiredAlerts(): found " + alerts.size() + " alerts");
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in User.getFiredAlerts: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in Endpoint getFiredAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return alerts;
+	}
+	
+	public JSONArray getFiredAlertsAsJSONArray(int hours, String social_type)
+	{
+		JSONArray return_ja = new JSONArray();
+		TreeSet<Alert> alerts_ts = getFiredAlerts(hours, social_type);
+		Iterator<Alert> alerts_it = alerts_ts.iterator();
+		Alert currentalert = null;
+		while(alerts_it.hasNext())
+		{
+			System.out.println("User.getFiredAlertsAsJSONArray(): adding alert");
+			currentalert = alerts_it.next();
+			return_ja.put(currentalert.getAsJSONObject());
+		}
+		return return_ja;
+	}
+	
+	
+	public JSONObject getAsJSONObject(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, boolean get_alert_history) 
 	{
 		JSONObject response_jo = new JSONObject();
 		try {
@@ -1024,7 +1126,15 @@ public class User implements java.lang.Comparable<User> {
 				response_jo.put("twitter_jo", getProfileFromTwitter());
 			if(return_fb_profile)
 				response_jo.put("facebook_jo", getProfileFromFacebook());
+			if(return_fb_page)
+				response_jo.put("facebook_page_jo", getSubAccountFromFacebook());
 			
+			if(get_alert_history)
+			{
+				response_jo.put("twitter_alert_history_ja", getFiredAlertsAsJSONArray(720, "twitter")); // 30 days in hours 
+				response_jo.put("facebook_alert_history_ja", getFiredAlertsAsJSONArray(720, "facebook")); // 30 days in hours
+			}
+						
 			TreeSet<Station> stations_ts = getStationsAsAdmin();
 			Iterator<Station> stations_it = stations_ts.iterator();
 			JSONArray stations_as_admin_ja = new JSONArray();
@@ -1055,8 +1165,8 @@ public class User implements java.lang.Comparable<User> {
 	
 	public static void main(String args[])
 	{
-		User user = new User("huzon_master", "designation");
-		user.fbPageTokenIsValid();
+		User user = new User("kristen_kennedy", "designation");
+		user.getFiredAlertsAsJSONArray(720, "twitter");
 	}
 	
 	

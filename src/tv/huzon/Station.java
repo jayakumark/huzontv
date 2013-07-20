@@ -189,7 +189,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return reporters;
 	}
 	
-	public JSONArray getReportersAsJSONArray(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile)
+	public JSONArray getReportersAsJSONArray(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, boolean return_alerts)
 	{
 		JSONArray return_ja = new JSONArray();
 		TreeSet<String> localset = reporters;
@@ -198,7 +198,7 @@ public class Station implements java.lang.Comparable<Station> {
 		while(reporter_it.hasNext())
 		{
 			currentreporter = new User(reporter_it.next(), "designation");
-			return_ja.put(currentreporter.getAsJSONObject(return_tokens,return_tw_profile,return_fb_profile));
+			return_ja.put(currentreporter.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
 		}
 		return return_ja;
 	}

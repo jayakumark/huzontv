@@ -516,8 +516,8 @@ public class Endpoint extends HttpServlet {
 					if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
 					{
 						jsonresponse.put("response_status", "success");
-						 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false;
-						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile));
+						 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; boolean return_alerts = false;
+						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
 						(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
 					else if(method.equals("getFacebookAccessTokenFromAuthorizationCode"))
@@ -761,8 +761,8 @@ public class Endpoint extends HttpServlet {
 								{
 									User target_user = new User(designation, "designation");
 									jsonresponse.put("response_status", "success");
-									 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false;
-									jsonresponse.put("user_jo", target_user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile));
+									 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; boolean return_alerts = false;
+									jsonresponse.put("user_jo", target_user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
 								else if (method.equals("verifyTwitterCredentials"))
@@ -840,8 +840,8 @@ public class Endpoint extends HttpServlet {
 								 else if (method.equals("getActiveReporters"))
 								 {	
 									 jsonresponse.put("response_status", "success");
-									 boolean return_tokens = false; boolean return_tw_profile = true; boolean return_fb_profile = true;
-									 jsonresponse.put("reporters_ja", station_object.getReportersAsJSONArray(return_tokens, return_tw_profile, return_fb_profile));
+									 boolean return_tokens = false; boolean return_tw_profile = true; boolean return_fb_profile = true; boolean return_fb_page = true; boolean return_alerts = true;
+									 jsonresponse.put("reporters_ja", station_object.getReportersAsJSONArray(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 }
 								 else if (method.equals("resetProductionAlertTimers")) // DANGEROUS!!!!

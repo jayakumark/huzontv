@@ -8,6 +8,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.Iterator;
+import java.util.TreeSet;
 
 import javax.mail.MessagingException;
 
@@ -23,7 +25,7 @@ import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-public class Alert {
+public class Alert implements java.lang.Comparable<Alert> {
 
 	long id;
 	String social_type;
@@ -247,4 +249,35 @@ public class Alert {
 			setDeletionTimestamp();
 		return successful;
 	}
+	
+	public JSONObject getAsJSONObject()
+	{
+		JSONObject response_jo = new JSONObject();
+		try {
+			response_jo.put("designation", getDesignation());
+			response_jo.put("id", getID());
+			response_jo.put("social_type", getSocialType());
+			response_jo.put("image_url", getImageURL());
+			response_jo.put("creation_timestamp", getTimestamp());
+			response_jo.put("text", getActualText());
+			response_jo.put("station", getStation());
+			response_jo.put("social_item_id", getSocialItemID());
+			response_jo.put("created_by", getCreatedByUser().getDesignation());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return response_jo;		
+	}
+	
+	public int compareTo(Alert o) // this sorts by designation alphabetically
+	{
+	    Timestamp othertimestmap = ((Alert)o).getTimestamp();
+	    int x = othertimestmap.compareTo(creation_timestamp);
+	    if(x >= 0) // this is to prevent equals
+	    	return 1;
+	    else
+	    	return -1;
+	}
+	
 }
