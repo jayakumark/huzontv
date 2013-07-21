@@ -320,10 +320,6 @@ public class Platform {
 		return returnval;
 	}
 	
-	
-	
-	
-
 	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String user_agent, String ip_address, String designation)
 	{
 		boolean returnval = false;
@@ -405,7 +401,10 @@ public class Platform {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Platform p = new Platform();
-		p.addMessageToLog("test message3");
+		Station station_object = new Station("wkyt");
+		User postinguser = new User("huzon_master", "designation");
+		p.createAlertInDB(station_object, "test", "phil_pendleton", "test.png", postinguser);
+		//p.addMessageToLog("test message3");
 	}
 
 }
