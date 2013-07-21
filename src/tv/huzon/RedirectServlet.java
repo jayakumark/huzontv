@@ -53,6 +53,11 @@ public class RedirectServlet extends HttpServlet {
 			{
 				String ip_address = request.getRemoteAddr();
 				String referrer = request.getHeader("referer");
+				String user_agent = request.getHeader("User-Agent");
+				if(referrer == null)
+					referrer = "";
+				if(user_agent == null)
+					user_agent = "";
 				/*Enumeration<String> headerNames = request.getHeaderNames();
 			    while(headerNames.hasMoreElements()) 
 			    {
@@ -64,7 +69,7 @@ public class RedirectServlet extends HttpServlet {
 					referrer = "";
 				}
 				Platform p = new Platform();
-				boolean successful = p.putRedirectHitInDB(station_object.getCallLetters(), Long.parseLong(id), referrer, ip_address, alert_object.getDesignation());
+				boolean successful = p.putRedirectHitInDB(station_object.getCallLetters(), Long.parseLong(id), referrer, user_agent, ip_address, alert_object.getDesignation());
 				if(!successful)
 				{
 					(new Platform()).addMessageToLog("Failed to put redirect hit into DB alert_timestamp=" + alert_object.getTimestamp() + " alert_id=" + alert_object.getID());

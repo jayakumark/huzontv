@@ -1065,6 +1065,13 @@ public class Endpoint extends HttpServlet {
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 											 }		
 										 }
+										 // this function is used to return a raw JSONArray of fired alerts with all the component information for graphing purposes on the front-end										 
+										 else if (method.equals("getFiredAlerts"))
+										 {
+											 JSONArray fired_alerts_ja = null;
+											 //fired_alerts_ja = station_object.getFiredAlerts(begin, end);
+											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+										 }
 									 }
 								 } // end methods requiring station, begin, end
 							}

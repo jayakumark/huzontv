@@ -408,7 +408,7 @@ function getUser(designation)
 
 function getMostRecentAlerts(twitter_handle, twitter_access_token, station)
 {
-	$("#reporters_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -468,7 +468,7 @@ function getMostRecentAlerts(twitter_handle, twitter_access_token, station)
 	        				        	else
 	        				        	{
 	        				        		if(data.social_response === true)
-	        				        			window.location.reload();
+	        				        			getMostRecentAlerts(twitter_handle, twitter_access_token, station);
 	        				        	}
 	        				        }
 	        				        ,

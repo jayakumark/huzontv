@@ -66,7 +66,7 @@ public class Platform {
 			String ms = new Long(timestamp_in_ms%1000).toString();
 			if(ms.length() == 1) { ms = "00" + ms;} 
 			if(ms.length() == 2) { ms = "0" + ms;} 
-			String hr_timestamp = year + "-" + month + "-" + day + " " + hour24 + ":" + minute + ":" + second + " " + ms;			
+			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;			
 			
 			//System.out.println(jdbcconnectionstring);
 			con = DriverManager.getConnection(jdbcconnectionstring);
@@ -74,7 +74,7 @@ public class Platform {
 			//System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
 	           //         + " VALUES('" + hr_timestamp + "','" + message + "')");
 			stmt.executeUpdate("INSERT INTO messages (`timestamp_hr`,`message`) "
-                    	+ " VALUES('" + hr_timestamp + "','" + message + "')");
+                    	+ " VALUES('" + timestamp_hr + "','" + message + "')");
 		    stmt.close();
 		    con.close();
 		}
@@ -172,8 +172,6 @@ public class Platform {
 		}
 	}
 	
-
-	
 	long createAlertInDB(Station station_object, String social_type, String designation, String image_name, User postinguser)
 	{
 		long returnval = -1L;
@@ -182,13 +180,29 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			
+			Calendar cal = Calendar.getInstance();
+			long timestamp_in_ms = cal.getTimeInMillis();
+			String year = new Integer(cal.get(Calendar.YEAR)).toString();
+			String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+			if(month.length() == 1) { month = "0" + month; }
+			String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+			if(day.length() == 1) { day = "0" + day;} 
+			String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+			if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+			String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+			if(minute.length() == 1) { minute = "0" + minute;} 
+			String second = new Integer(cal.get(Calendar.SECOND)).toString();
+			if(second.length() == 1) { second = "0" + second;} 
+			String ms = new Long(timestamp_in_ms%1000).toString();
+			if(ms.length() == 1) { ms = "00" + ms;} 
+			if(ms.length() == 2) { ms = "0" + ms;} 
+			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;	
 			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`,`created_by`) "
-	                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')");
-			stmt.executeUpdate("INSERT INTO alerts (`social_type`,`designation`,`image_url`,`station`,`created_by`) "
-                    + " VALUES('" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')",
+			System.out.println("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`) "
+	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')");
+			stmt.executeUpdate("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`) "
+	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')",
 	                    Statement.RETURN_GENERATED_KEYS);
 			
 		    rs = stmt.getGeneratedKeys();
@@ -310,20 +324,37 @@ public class Platform {
 	
 	
 
-	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String ip_address, String designation)
+	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String user_agent, String ip_address, String designation)
 	{
 		boolean returnval = false;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
+			Calendar cal = Calendar.getInstance();
+			long timestamp_in_ms = cal.getTimeInMillis();
+			String year = new Integer(cal.get(Calendar.YEAR)).toString();
+			String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+			if(month.length() == 1) { month = "0" + month; }
+			String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+			if(day.length() == 1) { day = "0" + day;} 
+			String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+			if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+			String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+			if(minute.length() == 1) { minute = "0" + minute;} 
+			String second = new Integer(cal.get(Calendar.SECOND)).toString();
+			if(second.length() == 1) { second = "0" + second;} 
+			String ms = new Long(timestamp_in_ms%1000).toString();
+			if(ms.length() == 1) { ms = "00" + ms;} 
+			if(ms.length() == 2) { ms = "0" + ms;} 
+			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;	
 			
 			con = DriverManager.getConnection(jdbcconnectionstring);
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`, `station`) " +
-					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "','" + station + "')");
-			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`alert_id`,`referrer`,`ip_address`,`designation`, `station`) " +
-					"VALUES('" + alert_id + "','" + referrer + "','" + ip_address + "','" + designation + "','" + station + "')");
+			System.out.println("INSERT INTO redirects_" + station + " (`timestamp_in_ms`, `timestamp_hr`, `alert_id`,`referrer`,`user_agent`,`ip_address`,`designation`, `station`) " +
+					"VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + alert_id + "','" + referrer + "','" + user_agent + "','" + ip_address + "','" + designation + "','" + station + "')");
+			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`timestamp_in_ms`, `timestamp_hr`, `alert_id`,`referrer`,`user_agent`,`ip_address`,`designation`, `station`) " +
+					"VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + alert_id + "','" + referrer + "','" + user_agent + "','" + ip_address + "','" + designation + "','" + station + "')");
 			returnval = true;
 			stmt.close();
 			con.close();

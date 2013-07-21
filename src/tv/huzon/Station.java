@@ -233,6 +233,67 @@ public class Station implements java.lang.Comparable<Station> {
 		return s3_bucket_public_hostname;
 	}
 	
+	JSONArray getFiredAlerts(long begin_long, long end_long, boolean include_redirects)
+	{
+		JSONArray fired_alerts_ja = new JSONArray();
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		Platform p = new Platform();
+		try
+		{
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			System.out.println("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
+					" creation_timestamp <= FROM_UNIXTIME(" + end_long + "/1000) AND creation_timestamp >= FROM_UNIXTIME(" + begin_long + "/1000))");
+			rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
+					" creation_timestamp <= FROM_UNIXTIME(" + end_long + "/1000) AND creation_timestamp >= FROM_UNIXTIME(" + begin_long + "/1000))");
+			/*int x = 0;
+			JSONObject jo;
+			while(rs.next() && x < num_to_get)
+			{
+				jo = new JSONObject();
+				jo.put("image_url", rs.getString("image_url"));
+				jo.put("designation", rs.getString("designation"));
+				java.util.Date date = rs.getTimestamp("creation_timestamp");
+				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
+				if(rs.getString("created_by").isEmpty())
+					jo.put("created_by", rs.getString("designation"));
+				else
+					jo.put("created_by", rs.getString("created_by"));
+				jo.put("social_type", rs.getString("social_type"));
+				jo.put("station", rs.getString("station"));
+				jo.put("id", rs.getLong("id"));
+				alerts_ja.put(jo);
+				x++;
+			}*/
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			p.addMessageToLog("SQLException in Platform.getFiredAlerts: message=" +sqle.getMessage());
+		} 
+		/*catch (JSONException e) {
+			e.printStackTrace();
+		}*/
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				p.addMessageToLog("SQLException in Platform.getFiredAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return fired_alerts_ja;
+	}
+	
 	JSONArray getMostRecentAlerts(int num_to_get)
 	{
 		JSONArray alerts_ja = new JSONArray();
@@ -718,58 +779,7 @@ public class Station implements java.lang.Comparable<Station> {
 		}   		
 		return true;
 	}
-	
-	/*boolean isLocked(String social_type)
-	{
-		boolean returnval = true;
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		try
-		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
-				stmt = con.createStatement();
-				// get frames where this designation crosses the single frame threshold
-				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "'";
-				rs = stmt.executeQuery(query);
-				if(rs.next())
-				{
-					String lock = null;
-					if(social_type.equals("twitter"))
-						lock = rs.getString("twitter_lock");
-					if(social_type.equals("facebook"))
-						lock = rs.getString("facebook_lock");
-					if(lock.isEmpty())
-						returnval = false;
-				}
-				else
-				{
-					(new Platform()).addMessageToLog("Eror in Station.isLocked(): couldn't find row for station=" + getCallLetters());
-				}
-				rs.close();
-				stmt.close();
-				con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Station.isLocked(): message=" +sqle.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				(new Platform()).addMessageToLog("SQLException in Station.isLocked(): Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}   		
-		return returnval;
-	}*/
-	
+
 	boolean lock(String uuid, String social_type)
 	{
 		boolean returnval = false;
@@ -860,151 +870,6 @@ public class Station implements java.lang.Comparable<Station> {
 		}   		
 		return returnval;
 	}
-	
-	
-	/*boolean lock(String uuid, String social_type)
-	{
-		boolean returnval = false;
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		try
-		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
-				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				// get frames where this designation crosses the single frame threshold
-				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "' ";
-				rs = stmt.executeQuery(query);
-				if(rs.next())
-				{
-					if(social_type.equals("twitter"))
-					{
-						if(!rs.getString("twitter_lock").isEmpty())
-						{	
-							(new Platform()).addMessageToLog("Station.lock(): Tried to set twitter lock but the existing value was not empty!");
-							returnval = false;
-						}
-						else
-						{
-							rs.updateString("twitter_lock", uuid);
-							returnval = true;
-							rs.updateRow();
-						}
-					}
-					else if(social_type.equals("facebook"))
-					{
-						if(!rs.getString("facebook_lock").isEmpty())
-						{	
-							(new Platform()).addMessageToLog("Station.lock(): Tried to set facebook lock but the existing value was not empty!");
-							returnval = false;
-						}
-						else
-						{
-							rs.updateString("facebook_lock", uuid);
-							returnval = true;
-							rs.updateRow();
-						}
-					}
-				}
-				else
-				{
-					(new Platform()).addMessageToLog("Eror in Station.lock(): couldn't find row for station=" + getCallLetters());
-				}
-				rs.close();
-				stmt.close();
-				con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Station.lock(): message=" +sqle.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				(new Platform()).addMessageToLog("SQLException in Station.lock(): Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}   		
-		return returnval;
-	}*/
-		
-	/*boolean unlock(String uuid, String social_type)
-	{
-		boolean returnval = false;
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		try
-		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
-				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				// get frames where this designation crosses the single frame threshold
-				String query = "SELECT * FROM stations WHERE call_letters='" + getCallLetters() + "' ";
-				rs = stmt.executeQuery(query);
-				if(rs.next())
-				{
-					if(social_type.equals("twitter"))
-					{
-						if(!rs.getString("twitter_lock").equals(uuid))
-						{	
-							(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock twitter but the existing value did not match the specified UUID. Another process set this lock! BAD!");
-							returnval = false;
-						}
-						else
-						{
-							rs.updateString("twitter_lock", "");
-							returnval = true;
-							rs.updateRow();
-						}
-					}
-					else if(social_type.equals("facebook"))
-					{
-						if(!rs.getString("facebook_lock").equals(uuid))
-						{	
-							(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock facebook but the existing value did not match the specified UUID. Another process set this lock! BAD!");
-							returnval = false;
-						}
-						else
-						{
-							rs.updateString("facebook_lock", "");
-							returnval = true;
-							rs.updateRow();
-						}
-					}
-				}
-				else
-				{
-					(new Platform()).addMessageToLog("Eror in Station.unlock(): couldn't find row for station=" + getCallLetters());
-				}
-				rs.close();
-				stmt.close();
-				con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Station.unlock(): message=" +sqle.getMessage());
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				(new Platform()).addMessageToLog("SQLException in Station.unlock(): Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}   		
-		return returnval;
-	}*/
 	
 	String getMessage(String social_type, long timestamp_in_ms, long redirect_id, User reporter)
 	{
@@ -1242,7 +1107,9 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public static void main(String[] args) {
 		Station s = new Station("wkyt");
-		s.unlock("testval3", "twitter");
+		JSONArray fired_alerts_ja = null;
+		fired_alerts_ja = s.getFiredAlerts(1374435846000L, 1373831000000L, false);
+		//s.unlock("testval3", "twitter");
 		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
 		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
 	}

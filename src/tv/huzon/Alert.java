@@ -28,6 +28,8 @@ import com.amazonaws.util.json.JSONObject;
 public class Alert implements java.lang.Comparable<Alert> {
 
 	long id;
+	long timestamp_in_ms;
+	String timestamp_hr;
 	String social_type;
 	String image_url;
 	Timestamp creation_timestamp;
@@ -36,6 +38,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 	String actual_text;
 	String social_item_id;
 	String created_by;
+	
 	
 	String dbName = System.getProperty("RDS_DB_NAME"); 
 	String userName = System.getProperty("RDS_USERNAME"); 
@@ -64,6 +67,8 @@ public class Alert implements java.lang.Comparable<Alert> {
 			
 			if(rs.next())
 			{	
+				timestamp_in_ms = rs.getLong("timestamp_in_ms");
+				timestamp_hr = rs.getString("timestamp_hr");
 				social_type = rs.getString("social_type");
 				image_url = rs.getString("image_url");
 				creation_timestamp = rs.getTimestamp("creation_timestamp");
@@ -113,6 +118,11 @@ public class Alert implements java.lang.Comparable<Alert> {
 	String getImageURL()
 	{
 		return image_url;
+	}
+	
+	long getTimestampInMillis()
+	{
+		return timestamp_in_ms;
 	}
 	
 	Timestamp getTimestamp()
