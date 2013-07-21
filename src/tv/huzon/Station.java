@@ -39,7 +39,7 @@ public class Station implements java.lang.Comparable<Station> {
 	private int dma_2013;
 	private TreeSet<String> administrators;
 	private TreeSet<String> reporters;
-	private boolean active;
+	//private boolean active;
 	private boolean valid;
 	private int frame_rate; // milliseconds per frame
 	private String s3_bucket_public_hostname;
@@ -104,7 +104,7 @@ public class Station implements java.lang.Comparable<Station> {
 				{
 					administrators.add(st.nextToken()); // = rs.getString("station");
 				}
-				active = rs.getBoolean("active");
+				//active = rs.getBoolean("active");
 				s3_bucket_public_hostname = rs.getString("s3_bucket_public_hostname");
 				valid = true;
 			}
@@ -203,10 +203,10 @@ public class Station implements java.lang.Comparable<Station> {
 		return return_ja;
 	}
 
-	public boolean isActive()
+	/*public boolean isActive()
 	{
 		return active;
-	}
+	}*/
 	
 	public String getCity()
 	{
@@ -1214,7 +1214,7 @@ public class Station implements java.lang.Comparable<Station> {
 			return_jo.put("state", getState());
 			return_jo.put("frame_rate", getFrameRate());
 			return_jo.put("dma2013", getDMA());
-			return_jo.put("active", isActive());
+			//return_jo.put("active", isActive());
 			return_jo.put("reporters", new JSONArray(getReporterDesignations()).toString());
 			return_jo.put("administrators", new JSONArray(getAdministrators()).toString());
 			return_jo.put("maw", maw);

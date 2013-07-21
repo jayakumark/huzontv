@@ -115,7 +115,7 @@ $(window).load(function () {
 	        		{	
 	        			if(data.user_jo.stations_as_admin_ja.length > 1)
 		        		{
-		        			$("#message_div").html("Multiple stations as admin. Using administering_station cookie.");
+		        			//$("#message_div").html("Multiple stations as admin. Using administering_station cookie.");
 		        			station = docCookies.getItem("administering_station");
 		        		}	
 	        			else
@@ -129,7 +129,8 @@ $(window).load(function () {
     	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
 	        			
 	        			$("#administrators_div").html("getSelf successful, this is the administrators_div");
-    	        		$("#alerts_div").html("getSelf successful, this is the alerts_div");
+	        			
+    	        		getMostRecentAlerts(twitter_handle, twitter_access_token, station);
 	        		}
 	        	}
 	        },
@@ -161,7 +162,15 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    		general_string = general_string + "<div style=\"font-size:16;color:red\">getStationInformation error: " + data.message + "</div>";
 	    	else
 	    	{
-	    		general_string = JSON.stringify(data);
+	    		general_string = general_string + "<b>station:</b> " + data.station_jo.call_letters;
+	    		general_string = general_string + "<br><b>city:</b> " + data.station_jo.city;
+	    		general_string = general_string + "<br><b>state:</b> " + data.station_jo.state;
+	    		general_string = general_string + "<br><b>2013 dma:</b> " + data.station_jo.dma2013;
+	    		general_string = general_string + "<br><b>alert mode:</b> " + data.station_jo.alert_mode;
+	    		general_string = general_string + "<br><b>ma window:</b> " + data.station_jo.maw;
+	    		general_string = general_string + "<br><b>ma modifier:</b> " + data.station_jo.mamodifier;
+	    		general_string = general_string + "<br><b>delta:</b> " + data.station_jo.delta;
+	    		general_string = general_string + "<br><b>frame rate:</b> " + data.station_jo.frame_rate;
 	    		$("#general_div").html(general_string);
 	    	}
 	    }
@@ -221,19 +230,19 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "			TW followers";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			Tweets 30 days";
+				reporters_string = reporters_string + "			Tweets<br>30 days";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB linked";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB page linked";
+				reporters_string = reporters_string + "			FB page<br>linked";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB active";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB cooldown (hrs)";
+				reporters_string = reporters_string + "			FB CD (hrs)";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			FB likes";
@@ -270,9 +279,6 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				for(var x=0; x < reporters_ja.length; x++)
 				{
 					getUser(reporters_ja[x]);
-					//getTwitterProfile(reporters_ja[x]);
-					//getFacebookProfile(reporters_ja[x]);
-					//getFacebookPage(reporters_ja[x]);
 				}
 	    	}
 	    }
@@ -400,201 +406,90 @@ function getUser(designation)
 	});
 }
 
-/*
-function verifyTwitterCredentials(designation)
+function getMostRecentAlerts(twitter_handle, twitter_access_token, station)
 {
-
-	var twitter_handle = docCookies.getItem("twitter_handle");
-	var twitter_access_token = docCookies.getItem("twitter_access_token");
+	$("#reporters_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
 		data: {
-            method: "verifyTwitterCredentials",
-            designation: designation,
+            method: "getMostRecentAlerts",
+            station: station,
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
 		},
         dataType: 'json',
-        async: true,
+        async: false,
         success: function (data, status) {
-        	
-        	if (data.response_status === "error")
+        	if (data.response_status == "error")
         	{
-        		//alert("success/error verifying twitter creds for " + designation);
-        		$("#" + designation + "_twitter_valid_td").html(data.message);
+        		$("#message_div").html("<span style=\"font-size:16;color:red\">gS Error: " + data.message + "</span>");
         	}
-        	else if(data.response_status === "success")
+        	else // getMostRecentAlerts was successful, meaning twitter_handle and twitter_access_token were OK
         	{
-        		//alert("success/success verifying twitter creds for " + designation);
-        		if(data.valid === true)
-        			$("#" + designation + "_twitter_valid_td").html("<span style=\"color:green\">VALID</span>");
-        		else
-        			$("#" + designation + "_twitter_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
-        	}
-        	else
-        	{
-        		//alert("success/none verifying twitter creds for " + designation);
+        		var alerts_ja = data.alerts_ja;
+        		var mds = "";
+        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
+        		for(var x = 0; x < alerts_ja.length; x++)
+        		{	
+        			mds = mds + "	<tr>";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\">";
+	        		mds = mds + "			<img src=\"" + alerts_ja[x].image_url + "\" style=\"width:400px;height:225px\">";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
+	        		mds = mds + "			" + alerts_ja[x].creation_timestamp + "<br>" +  alerts_ja[x].designation + "<br>" + alerts_ja[x].station + "<br>" + alerts_ja[x].social_type + "<br>" + alerts_ja[x].created_by;;
+	        		mds = mds + "		</td>";
+	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
+	        		mds = mds + "			<a href=\"#\" id=\"delete_link_" + x + "\">DELETE</a>";
+	        		mds = mds + "		</td>";
+	        		mds = mds + "	</tr>";
+        		}
+        		mds = mds + "</table>";
+        		$("#alerts_div").html(mds);
+        		for(var x = 0; x < alerts_ja.length; x++)
+        		{	
+        			$("#delete_link_" + x).click({value1: x},
+        					function (event) {
+	        					//alert("deleting index=" + event.data.value1);
+	        					$.ajax({
+	        						type: 'GET',
+	        						url: endpoint,
+	        						data: {
+	        				            method: "deleteSocialItem",
+	        				            id: alerts_ja[event.data.value1].id, 
+	        				            twitter_handle: twitter_handle,
+	        				            twitter_access_token: twitter_access_token
+	        						},
+	        				        dataType: 'json',
+	        				        async: false,
+	        				        success: function (data, status) {
+	        				        	if (data.response_status == "error")
+	        				        		$("#message_div").html("error message=" + data.message);
+	        				        	else
+	        				        	{
+	        				        		if(data.social_response === true)
+	        				        			window.location.reload();
+	        				        	}
+	        				        }
+	        				        ,
+	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        				        	$("#message_div").html("ajax error");
+	        				            console.log(textStatus, errorThrown);
+	        				        }
+	        					});
+	        					return false;
+        					}
+        				);
+        		}
+        		
         	}
         }
         ,
         error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#" + designation + "_twitter_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
             console.log(textStatus, errorThrown);
         }
 	});
 }
-
-function verifyTopLevelFBCredentials(designation)
-{
-	var twitter_handle = docCookies.getItem("twitter_handle");
-	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "verifyTopLevelFBCredentials",
-            designation: designation,
-            twitter_handle: twitter_handle,
-            twitter_access_token: twitter_access_token
-		},
-        dataType: 'json',
-        async: true,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#" + designation + "_fb_valid_td").html(data.message);
-        	else if(data.response_status == "success")
-        	{
-        		if(data.valid == true)
-        			$("#" + designation + "_fb_valid_td").html("<span style=\"color:green\">VALID</span>");
-        		else
-        			$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}
-
-function verifyPageFBCredentials(designation)
-{
-	var twitter_handle = docCookies.getItem("twitter_handle");
-	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "verifyPageFBCredentials",
-            designation: designation,
-            twitter_handle: twitter_handle,
-            twitter_access_token: twitter_access_token
-		},
-        dataType: 'json',
-        async: true,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#" + designation + "_fbpage_valid_td").html(data.message);
-        	else if(data.response_status == "success")
-        	{
-        		if(data.valid == true)
-        			$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:green\">VALID</span>");
-        		else
-        			$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:red\">NOT VALID</span>");
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#" + designation + "_fbpage_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}*/
-
-/*
- * reporters_string = reporters_string + "	<tr>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_designation_td\">";
-					reporters_string = reporters_string + "			" + reporters_ja[x].designation;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_display_name_td\">";
-					reporters_string = reporters_string + "			" + reporters_ja[x].display_name;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_roles_td\">";
-					if(reporters_ja[x].anchor === true)
-						reporters_string = reporters_string + "			A";
-					if(reporters_ja[x].weather === true)
-						reporters_string = reporters_string + "			W";
-					if(reporters_ja[x].sports === true)
-						reporters_string = reporters_string + "			S";
-					if(reporters_ja[x].reporter === true)
-						reporters_string = reporters_string + "			R";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_handle_td\">";
-					reporters_string = reporters_string + "			" + reporters_ja[x].twitter_handle;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_active_td\">";
-					if(reporters_ja[x].twitter_active)
-						reporters_string = reporters_string + "			<span style=\"color:green\">yes</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:red\">no</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_linked_td\">";
-					if(typeof reporters_ja[x].twitter_jo === undefined || reporters_ja[x].twitter_jo == null || (reporters_ja[x].twitter_jo.response_status != null && reporters_ja[x].twitter_jo.response_status === "error"))
-						reporters_string = reporters_string + "			<span style=\"color:red\">not linked</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:green\">linked</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_cooldown_td\">";
-					cooldown_in_hours = Math.round(reporters_ja[x].twitter_cooldown / 360)/10; // displays as nearest tenth
-					reporters_string = reporters_string + "			" + cooldown_in_hours;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_twitter_followers_td\">";
-					if(typeof reporters_ja[x].twitter_jo === undefined || reporters_ja[x].twitter_jo == null || 
-							typeof reporters_ja[x].twitter_jo_followers_count === undefined || reporters_ja[x].twitter_jo.followers_count == null)
-						reporters_string = reporters_string + "			<span style=\"color:red\">---</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:green\">" + reporters_ja[x].twitter_jo.followers_count + "</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_twitter_alert_count_td\">";
-					if(reporters_ja[x].twitter_alert_history_ja)
-						reporters_string = reporters_string + "		  " + reporters_ja[x].twitter_alert_history_ja.length;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_facebook_linked_td\">";
-					if(typeof reporters_ja[x].facebook_jo === undefined || reporters_ja[x].facebook_jo == null || reporters_ja[x].facebook_jo.error != null) // || 
-							//typeof reporters_ja[x].facebook_jo_followers_count === undefined || reporters_ja[x].facebook_jo.followers_count == null)
-						reporters_string = reporters_string + "			<span style=\"color:red\">not linked</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:green\">linked</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_facebook_active_td\">";
-					if(reporters_ja[x].facebook_active)
-						reporters_string = reporters_string + "			<span style=\"color:green\">yes</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:red\">no</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_facebook_page_linked_td\">";
-					if(typeof reporters_ja[x].facebook_page_jo === undefined || reporters_ja[x].facebook_page_jo == null || reporters_ja[x].facebook_page_jo.error != null) 
-						reporters_string = reporters_string + "			<span style=\"color:red\">not linked</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:green\">linked</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_facebook_cooldown_td\">";
-					cooldown_in_hours = Math.round(reporters_ja[x].facebook_cooldown / 360)/10; // displays as nearest tenth
-					reporters_string = reporters_string + "			" + cooldown_in_hours;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_facebook_likes_td\">";
-					if(typeof reporters_ja[x].facebook_page_jo === undefined || reporters_ja[x].facebook_page_jo == null || reporters_ja[x].facebook_page_jo.error != null) 
-						reporters_string = reporters_string + "			<span style=\"color:red\">---</span>";
-					else
-						reporters_string = reporters_string + "			<span style=\"color:green\">"+ reporters_ja[x].facebook_page_jo.likes + "</span>";
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x].designation + "_facebook_alert_count_td\">";
-					if(reporters_ja[x].facebook_alert_history_ja)
-						reporters_string = reporters_string + "		  " + reporters_ja[x].facebook_alert_history_ja.length;
-					reporters_string = reporters_string + "		</td>";
-					reporters_string = reporters_string + "	</tr>";*/
- 
 
 
