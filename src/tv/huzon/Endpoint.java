@@ -802,7 +802,8 @@ public class Endpoint extends HttpServlet {
 										return_alerts = true;
 									jsonresponse.put("response_status", "success");
 									jsonresponse.put("user_jo", target_user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
-									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+									// commenting this out due to message log spam. Fires once for each reporter on a page load of controlpanel. Too much.
+									// (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
 								else if (method.equals("verifyTwitterCredentials"))
 								{	

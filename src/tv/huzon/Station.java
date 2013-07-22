@@ -780,7 +780,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return true;
 	}
 
-	boolean lock(String uuid, String social_type)
+	boolean lock(String uuid, String lock_type)
 	{
 		boolean returnval = false;
 		Connection con = null;
@@ -790,9 +790,9 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			Platform p = new Platform();
 			con = DriverManager.getConnection(p.getJDBCConnectionString());
-			if(social_type.equals("twitter"))
+			if(lock_type.equals("twitter"))
 				updateString = "UPDATE stations SET `twitter_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='') ";
-			else if (social_type.equals("facebook"))
+			else if (lock_type.equals("facebook"))
 				updateString = "UPDATE stations SET `facebook_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock`='')";
 			System.out.println("Executing statement: " + updateString);
 			pstmt = con.prepareStatement(updateString);
@@ -802,7 +802,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("Station.lock(): Tried to set twitter lock but the existing value was not empty!");
+				(new Platform()).addMessageToLog("Station.lock(): Tried to set " + lock_type + " lock but the existing value was not empty!");
 			}
 			con.close();
 		}
@@ -826,7 +826,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 
-	boolean unlock(String uuid, String social_type)
+	boolean unlock(String uuid, String lock_type)
 	{
 		boolean returnval = false;
 		Connection con = null;
@@ -836,9 +836,9 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			Platform p = new Platform();
 			con = DriverManager.getConnection(p.getJDBCConnectionString());
-			if(social_type.equals("twitter"))
+			if(lock_type.equals("twitter"))
 				updateString = "UPDATE stations SET `twitter_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='" + uuid + "') ";
-			else if (social_type.equals("facebook"))
+			else if (lock_type.equals("facebook"))
 				updateString = "UPDATE stations SET `facebook_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock`='" + uuid + "')";
 			System.out.println("Executing statement: " + updateString);
 			pstmt = con.prepareStatement(updateString);
@@ -848,7 +848,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock twitter but the existing value did not match the specified UUID. Another process set this lock! BAD!");
+				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock " + lock_type + " lock but the existing value did not match the specified UUID. Another process set this lock! BAD!");
 			}
 			con.close();
 		}

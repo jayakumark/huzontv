@@ -124,11 +124,8 @@ $(window).load(function () {
 	        			getStationInformation(twitter_handle, twitter_access_token, station);
     	        		
 	        			$("#graph_div").html("getSelf successful, this is the graph_div");
-    	        		$("#rankings_div").html("getSelf successful, this is the rankings_div");
 	        			
     	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
-	        			
-	        			$("#administrators_div").html("getSelf successful, this is the administrators_div");
 	        			
     	        		getMostRecentAlerts(twitter_handle, twitter_access_token, station);
 	        		}
