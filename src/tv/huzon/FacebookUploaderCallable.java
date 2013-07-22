@@ -45,9 +45,8 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 		message =
 				reporter.getDisplayName() +
 					",\n\nAn alert triggered for you with huzon.tv. However, our system was unable to actually fire the alert because your FB account " + 
-					"has become disconnected from huzon.tv. This can happen for several reasons:" +
-					"\n\n- huzon.tv access to your account has expired (60 days)" + 
-					"\n- You disabled the huzon.tv app in your FB privacy configuration" +
+					"has become disconnected from huzon.tv. This can happen for a couple of reasons:" +
+					"\n\n- You disabled the huzon.tv app in your FB privacy configuration" +
 					"\n- Your FB account was never linked to huzon.tv in the first place"+
 					"\n\nPlease go to https://www.huzon.tv/registration.html to link your FB account to huzon.tv and enable automated alerts. " +
 					"Thanks!\n\nhuzon.tv staff\n\nPS: Here's the image that would have posted: " + frame2upload.getURLString();	

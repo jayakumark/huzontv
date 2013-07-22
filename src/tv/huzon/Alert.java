@@ -155,7 +155,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 		if(created_by.isEmpty())
 			return (new User(designation, "designation")); // early on, the designation was also the creator. If the created_by value is empty, assume this.
 		else
-			return (new User(created_by, "designation"));
+			return (new User(created_by, "designation")); 
 	}
 	
 	boolean setDeletionTimestamp()

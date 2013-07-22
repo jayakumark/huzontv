@@ -59,7 +59,10 @@ var docCookies = {
 		};
 
 
-
+function isIE () {
+	  var myNav = navigator.userAgent.toLowerCase();
+	  return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
+	}
 
 var devel = true;
 
@@ -67,7 +70,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
-	if(location.protocol !== "https:")
+	if(isIE())
+	{
+		$("#message_div").html("<span style=\"font-size:16;color:red\">For security reasons, this registration page does not support Microsoft Internet Explorer. Please use Chrome, Firefox, Safari or Opera instead. Thanks!</span>");
+	}
+	else if(location.protocol !== "https:")
 	{
 		$("#message_div").html("<span style=\"font-size:16;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.huzon.tv/registration.html\">https://www.huzon.tv/registration.html</a> instead.</span>");
 	}
@@ -90,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        dataType: 'json',
 		        async: false,
 		        success: function (data, status) {
-		        	if (data.response_status == "error")
+		        	if (data.response_status === "error")
 		        	{
 		        		$("#message_div").html("<span style=\"font-size:16;color:red\">gTATFAC Error: " + data.message + " </span>");
 		        	}
@@ -99,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to huzon.tv!<br><br>Please wait. Reloading page...</span>");
 		        		docCookies.setItem("twitter_handle", data.twitter_handle, 31536e3);
 		        		docCookies.setItem("twitter_access_token", data.twitter_access_token, 31536e3);
+		        		//alert('twitter_handle null, oauth verifier existed, returning from call to gTATFAC. Reloading.');
 		        		window.location.href = "https://www.huzon.tv/registration.html";
 		        	}
 		        }
@@ -127,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        dataType: 'json',
 				        async: false,
 				        success: function (data, status) {
-				        	if (data.response_status == "error")
+				        	if (data.response_status === "error")
 				        	{
 				        		$("#message_div").html("<span style=\"font-size:16;color:red\">sTA Error: " + data.message + "</span>");
 				        	}
@@ -136,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Twitter authentication started...</span>");
 				        		//$("#main_div").html("");
 				        		oauth_token = data.oauth_token;
+				        		//alert('twitter_handle null, oauth did not exist, returning from call to startTwitterAuthentication. Reloading.');
 				        		window.location.href = "https://api.twitter.com/oauth/authenticate?oauth_token=" + oauth_token;
 				        	}
 				        }
@@ -159,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			var state = docCookies.getItem("state");
 			if(state === facebook_state)
 			{
-				// this is a response from facebook after user has granted access
+				// this is a redirect from facebook after user has granted access
 				$.ajax({
 					type: 'GET',
 					url: endpoint,
@@ -172,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        dataType: 'json',
 			        async: false,
 			        success: function (data, status) {
-			        	if (data.response_status == "error")
+			        	if (data.response_status === "error")
 			        	{
 			        		$("#message_div").html("<span style=\"font-size:14;color:red\">gFATFAC Error: " + data.message + " </span>");
 			        		docCookies.removeItem("state");
@@ -180,8 +189,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			        	else
 			        	{
 			        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Facebook account to huzon.tv! Thanks!</span>");
-			        		window.location.href = "https://www.huzon.tv/registration.html";
 			        		docCookies.removeItem("state");
+			        		//alert('twitter_handle not null, fb code exists, returning from call to getFBAccessTokenFromAuthCode. Reloading.');
+			        		window.location.href = "https://www.huzon.tv/registration.html";
 			        	}
 			        }
 			        ,
@@ -198,990 +208,260 @@ document.addEventListener('DOMContentLoaded', function () {
 				$("#message_div").html("<span style=\"font-size:14;color:red\">State variables did not match. Please start over by clicking <a href=\"https://www.huzon.tv/registration.html\">HERE</a>.</span>");
 			}
 		}	
-		
-		//alert("twitter_handle and twitter_access_token cookies !== null");
-		$.ajax({
-			type: 'GET',
-			url: endpoint,
-			data: {
-	            method: "getSelf",
-	            twitter_handle: twitter_handle,
-	            twitter_access_token: twitter_access_token
-			},
-	        dataType: 'json',
-	        async: false,
-	        success: function (data, status) {
-	        	if (data.response_status == "error")
-	        	{
-	        		$("#message_div").html("<span style=\"font-size:16;color:red\">gS Error: " + data.message + "</span>");
-	        		if(data.error_code && data.error_code == "07734") // the twitter cookie credentials were invalid. Delete them and reload page (start over).
-	        		{
-	        			docCookies.removeItem("twitter_access_token");
-	        			docCookies.removeItem("twitter_handle");
-	        			window.location.href = "https://www.huzon.tv/registration.html";
-	        		}
-	        	}
-	        	else // getSelf was successful, meaning twitter_handle and twitter_access_token were OK
-	        	{
-	        		var mds = "";
-	        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
-	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\" colspan=2>";
-	        		mds = mds + "			Information for <span style=\"color:green\">" + data.user_jo.display_name + "</span>";
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
-	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:20px\" colspan=2>";
-	        		mds = mds + "1. Twitter linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.twitter_handle + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-	        		mds = mds + "2. Facebook linked? ";
-	        		var fb_toplevel_valid = false;
-	        		var fb_subaccounts_ja = null;
-	        		$.ajax({
-	        			type: 'GET',
-	        			url: endpoint,
-	        			data: {
-	        	            method: "verifyTopLevelFBCredentials",
-	        	            designation: data.user_jo.designation,
-	        	            twitter_handle: twitter_handle,
-	        	            twitter_access_token: twitter_access_token
-	        			},
-	        	        dataType: 'json',
-	        	        async: false,
-	        	        success: function (data, status) {
-	        	        	if (data.response_status == "error")
-	        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
-	        	        	else if(data.response_status == "success")
-	        	        	{
-	        	        		//alert(JSON.stringify(data));
-	        	        		if(data.valid === true)
-	        	        		{
-	        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-	        	        			fb_toplevel_valid = true;
-	        	        		}
-	        	        		else
-	        	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> click here <br>";
-	        	        	}
-	        	        }
-	        	        ,
-	        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-	        	            console.log(textStatus, errorThrown);
-	        	        }
-	        		});
-	        		
-	        		mds = mds + "3. Facebook <i>reporter page</i> linked? ";
-	        		var fb_page_valid = false;
-	        		var fb_page_id = data.user_jo.facebook_page_id;
-	        		$.ajax({
-	        			type: 'GET',
-	        			url: endpoint,
-	        			data: {
-	        	            method: "verifyPageFBCredentials",
-	        	            designation: data.user_jo.designation,
-	        	            twitter_handle: twitter_handle,
-	        	            twitter_access_token: twitter_access_token
-	        			},
-	        	        dataType: 'json',
-	        	        async: false,
-	        	        success: function (data, status) {
-	        	        	if (data.response_status == "error")
-	        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
-	        	        	else if(data.response_status == "success")
-	        	        	{
-	        	        		var valid_page_id = "";
-	        	        		if(data.valid === true)
-	        	        		{
-	        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-	        	        			fb_page_valid = true;
-	        	        			
-	        	        			// get the (determined to be valid) page information from the user object already retrieved
-	        	        			valid_page_id = fb_page_id;  			
-	        	        		}
-	        	        		else
-	        	        		{
-	        	        			if(fb_toplevel_valid === true)
-	        	        				mds = mds + "<span style=\"color:red\">NO</span> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> select a page below <br>";
-	        	        			else
-	        	        				mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
-	        	        		}
-
-	        	        		// in either case...
-        	        			// get the page options from facebook so we can show user which one is currently selected (if any) and which other options are available.
-        	        			$.ajax({
-        	        				type: 'GET',
-        	        				url: endpoint,
-        							data: {
-        					            method: "getFacebookSubAccountInfoFromFacebook",
-        					            twitter_handle: twitter_handle,
-        					            twitter_access_token: twitter_access_token
-        							},
-        					        dataType: 'json',
-        					        async: false,
-        					        success: function (data, status) {
-        					        	if (data.response_status === "error")
-        					        	{
-        					        		// This is ok. Probably just means the user has not linked their top-level account yet. Fail silently
-        					        	}
-        					        	else
-        					        	{
-        					        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
-        					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
-        					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
-        					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
-        					        		{
-        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
-        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + (fb_subaccounts_ja[x].id == valid_page_id));
-        					        			if(fb_page_valid === true && (fb_subaccounts_ja[x].id == valid_page_id)) // this is the checked option
-        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
-        					        			else
-        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
-        					        		}
-        					        		mds = mds + "			</table>";
-        					        	}
-        					        }
-        					        ,
-        					        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        					        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-        					            console.log(textStatus, errorThrown);
-        					        }
-        						});
-	        	        	}
-	        	        }
-	        	        ,
-	        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-	        	            console.log(textStatus, errorThrown);
-	        	        }
-	        		});
-	        		
-	        		if(fb_toplevel_valid && fb_page_valid)
-	        		{
-	        			mds = mds + "<br><br>You're finished! Thanks!";
-	        		}	
-	        		else if(!fb_toplevel_valid && fb_page_valid)
-	        		{
-	        			mds = mds + "<br><br>You're finished! Thanks!<br>(Your main Facebook account has become unlinked, but that's ok. All huzon.tv needs is a connection to your FB reporter page.)";
-	        		}
-	        		
-	        		$("#main_div").html(mds);
-	        		
-	        		$("#facebook_link").click({value1: data.user_jo.designation},
-        					function (event) {
-	        					var randomnumber=Math.floor(Math.random()*1000000);
-	        					docCookies.setItem("state", randomnumber+"", 31536e3);
-	        					docCookies.setItem("designation", event.data.value1, 31536e3);
-	        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
-	        					return false;
-        					}
-        				);
-	        		
-	        		if(fb_subaccounts_ja != null)
-	        		{	
-	        			for(var x=0; x < fb_subaccounts_ja.length; x++)
-		        		{
-	        				$("#" + fb_subaccounts_ja[x].id + "_radio").click({fb_subaccount_id: fb_subaccounts_ja[x].id},
-	            					function (event) {
-	        							$.ajax({
-	    	        						type: 'GET',
-	    	        						url: endpoint,
-	    	        						data: {
-	    	        				            method: "setFacebookSubAccountInfo",
-	    	        				            twitter_handle: twitter_handle,
-	    	    					            twitter_access_token: twitter_access_token,
-	    	    					            fb_subaccount_id: event.data.fb_subaccount_id
-	    	        						},
-	    	        				        dataType: 'json',
-	    	        				        async: false,
-	    	        				        success: function (data, status) {
-	    	        				        	if (data.response_status == "error")
-	    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
-	    	        				        	else
-	    	        				        	{
-	    	        				        		window.location.href = "https://www.huzon.tv/registration.html";
-	    	        				        	}
-	    	        				        }
-	    	        				        ,
-	    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-	    	        				            console.log(textStatus, errorThrown);
-	    	        				        }
-	    	        					});
-	        						});
-		        		}
-    				}
-	        		
-	        	
-	        		
-	        		/*if(!data.user_jo.facebook_uid && !data.user_jo.facebook_page_id)
-	        		{
-	        			mds = mds + "2. Facebook linked? <a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> click here <br>";
-	        			mds = mds + "3. Facebook <i>reporter page</i> linked? <span style=\"color:red\">NO</span>";
-	        		}
-	        		else if (data.user_jo.facebook_uid && !data.user_jo.facebook_page_id)
-	        		{
-	        			mds = mds + "2. Facebook linked? <span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-	        			mds = mds + "3. Facebook <i>reporter page</i> linked? <span style=\"color:red\">NO</span> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> (select a subaccount below)";
-	        		}	
-	        		else if (data.user_jo.facebook_uid && data.user_jo.facebook_page_id)
-	        		{
-	        			mds = mds + "2. Facebook linked? <span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-	        			mds = mds + "3. Facebook <i>reporter page</i> linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.facebook_page_name + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-	        		}	
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
-	        		
-	        		mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:20px\" colspan=2>";
-	        		
-	        		if (data.user_jo.facebook_uid && !data.user_jo.facebook_page_id)
-	        		{
-	        			$.ajax({
-	        				type: 'GET',
-	        				url: endpoint,
-							data: {
-					            method: "getFacebookSubAccountInfoFromFacebook",
-					            twitter_handle: twitter_handle,
-					            twitter_access_token: twitter_access_token
-							},
-					        dataType: 'json',
-					        async: false,
-					        success: function (data, status) {
-					        	if (data.response_status == "error")
-					        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error getting facebook subaccount info. message= " + data.message + "</span>");
-					        	else
-					        	{
-					        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
-					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
-					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
-					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
-					        		{
-					        			mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
-					        		}
-					        		mds = mds + "			</table>";
-					        	}
-					        }
-					        ,
-					        error: function (XMLHttpRequest, textStatus, errorThrown) {
-					        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-					            console.log(textStatus, errorThrown);
-					        }
-						});
-	        		}	
-	        		else if (data.user_jo.facebook_uid && data.user_jo.facebook_page_id)
-	        		{
-	        			mds = mds + "You're finished! If you made a mistake and need to start over, please contact huzon.tv support.";
-	        		}	
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
-	        		
-	        		mds = mds + "</table>";
-	        		
-	        	
-	        		if(fb_subaccounts_ja != null)
-	        		{	
-	        			for(var x=0; x < fb_subaccounts_ja.length; x++)
-		        		{
-	        				
-		        		}
-    				}*/
-	        	}
-	        }
-	        ,
-	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-	            console.log(textStatus, errorThrown);
-	        }
-		});
-	}
-	else
-	{
-		alert("incorrect state");
-	}	
-	
-	
-});
-	
-/*
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
-mds = mds + "3. Facebook <i>reporter page</i> linked? ";
-var fb_subaccounts_ja = null;
-if(data.user_jo.facebook_page_id && data.user_jo.facebook_access_token != null && data.user_jo.facebook_access_token != "" 
-&& data.user_jo.facebook_page_access_token != null && data.user_jo.facebook_page_access_token != "")
-{
-mds = mds + "			<span style=\"color:blue\">YES -- You're finished. Thanks!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-}
-else
-{
-mds = mds + "			<span style=\"color:red\">NO</span> (select below)";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-
-$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "getFacebookSubAccountInfoFromFacebook",
-            twitter_handle: twitter_handle,
-            twitter_access_token: twitter_access_token
-		},
-        dataType: 'json',
-        async: false,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error getting facebook subaccount info. message= " + data.message + "</span>");
-        	else
-        	{
-        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
-        		fb_subaccounts_ja = data.fb_subaccounts_ja;
-        		mds = mds + "	<tr>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-        		mds = mds + "			facebook brand pages:";
-        		mds = mds + "		</td>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-        		mds = mds + " 			<table>";
-        		for(var x=0; x < fb_subaccounts_ja.length; x++)
-        		{
-        			mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "(" + fb_subaccounts_ja[x].id + ")</td></tr>";
-        		}
-        		mds = mds + "			</table>";
-        		mds = mds + "		</td>";
-        		mds = mds + "	</tr>";
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}
-*/
-/*mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\" colspan=2>";
-
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			designation:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			" + data.user_jo.designation;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			stations as reporter:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-for(var x = 0; x < data.user_jo.stations_as_reporter.length; x++)
-{
-mds = mds + "			" + data.user_jo.stations_as_reporter[x];
-}
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			stations as admin:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-for(var x = 0; x < data.user_jo.stations_as_administrator.length; x++)
-{
-mds = mds + "		" + data.user_jo.stations_as_administrator[x];
-}
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			news roles:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\"";
-if(data.user_jo.anchor)
-mds = mds + "anchor";
-if(data.user_jo.reporter)
-mds = mds + " reporter";
-if(data.user_jo.sports)
-mds = mds + " sports";
-if(data.user_jo.weather)
-mds = mds + " weather";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			studio homogeneity:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "		 	"  + data.user_jo.homogeneity_studio;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			natural homogeneity:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "		 	"  + data.user_jo.homogeneity_natural;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			artificial homogeneity:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "		 	"  + data.user_jo.homogeneity_artificial;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-
-
-
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			twitter handle:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.twitter_handle;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			twitter access token:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			<i>hidden</i>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			twitter access token secret:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			<i>hidden</i>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			twitter alert waiting period:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.twitter_cooldown;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			twitter delete after:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.twitter_delete_after;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			twitter last alert:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.twitter_last_alert;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook uid:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_uid)
-mds = mds + data.user_jo.facebook_uid;
-else
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook access token:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_access_token)
-mds = mds + "<i>hidden</i>";
-else
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook access token expires:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_access_token_expires)
-mds = mds + data.user_jo.facebook_access_token_expires;
-else
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook alert waiting period:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_cooldown)
-mds = mds + data.user_jo.facebook_cooldown;
-else
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook delete after:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_delete_after)
-mds = mds + data.user_jo.facebook_delete_after;
-else
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook last alert:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_last_alert != null)
-mds = mds + " " + data.user_jo.facebook_last_alert;
-else
-mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB acct not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-
-// if the top-level facebook account is linked but there is no facebook_page_id...
-// get the subaccounts directly from facebook so the user can select one of them
-var fb_subaccounts_ja = null;
-if(data.user_jo.facebook_access_token != null && data.user_jo.facebook_access_token != "" && data.user_jo.facebook_page_id == null)
-{
-$.ajax({
-	type: 'GET',
-	url: endpoint,
-	data: {
-        method: "getFacebookSubAccountInfoFromFacebook",
-        twitter_handle: twitter_handle,
-        twitter_access_token: twitter_access_token
-	},
-    dataType: 'json',
-    async: false,
-    success: function (data, status) {
-    	if (data.response_status == "error")
-    		$("#message_div").html("<span style=\"font-size:16;color:red\">Error getting facebook subaccount info. message= " + data.message + "</span>");
-    	else
-    	{
-    		$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
-    		fb_subaccounts_ja = data.fb_subaccounts_ja;
-    	}
-    }
-    ,
-    error: function (XMLHttpRequest, textStatus, errorThrown) {
-    	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-        console.log(textStatus, errorThrown);
-    }
-});
-}
-if(fb_subaccounts_ja == null)
-{	
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook page id:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_page_id)
-	mds = mds + data.user_jo.facebook_page_id;
-else
-	mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB reporter page not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook page name:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_page_name)
-	mds = mds + data.user_jo.facebook_page_name;
-else
-	mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB reporter page not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook page access token:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-if(data.user_jo.facebook_page_access_token)
-	mds = mds + "<i>hidden</i>";
-else
-	mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">FB reporter page not linked!</span>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-}
-else
-{
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			facebook brand pages:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + " 			<table>";
-for(var x=0; x < fb_subaccounts_ja.length; x++)
-{
-	mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "(" + fb_subaccounts_ja[x].id + ")</td></tr>";
-}
-mds = mds + "			</table>";
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-}
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			weekday expected:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.weekday_expected_begin + "-" + data.user_jo.weekday_expected_end;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";
-mds = mds + "	<tr>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:right;font-weight:bold\">";
-mds = mds + "			weekend expected:";
-mds = mds + "		</td>";
-mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-mds = mds + "			"  + data.user_jo.weekend_expected_begin + "-" + data.user_jo.weekend_expected_end;
-mds = mds + "		</td>";
-mds = mds + "	</tr>";*/
-
-/*
-else if(typeof huzon_auth === undefined || huzon_auth === null || huzon_auth === "")
-{
-	$("#message_div").html("<span style=\"font-size:16;color:red\">Please enter the password you were provided. </span>");
-	var mds = "<table><tr><td style=\"vertical-align:middle\">Password: </td><td style=\"vertical-align:middle\"><input type=password id=\"huzon_auth_input\"></td><td style=\"vertical-align:middle\"><input type=button id=\"huzon_auth_go_button\" value=\"go\"></td></tr></table>";
-	$("#main_td").html(mds);
-	$("#huzon_auth_go_button").click(function () {
-			//docCookies.setItem("huzon_auth", $("#huzon_auth_input").val(), 31536e3);
+		else
+		{	
+			//alert("twitter_handle and twitter_access_token cookies !== null");
 			$.ajax({
 				type: 'GET',
 				url: endpoint,
 				data: {
-		            method: "checkPassword",
-		            password: $("#huzon_auth_input").val()
+		            method: "getSelf",
+		            twitter_handle: twitter_handle,
+		            twitter_access_token: twitter_access_token
 				},
 		        dataType: 'json',
 		        async: false,
 		        success: function (data, status) {
-		        	if (data.response_status == "error")
+		        	if (data.response_status === "error")
 		        	{
-		        		$("#message_div").html("<span style=\"font-size:16;color:red\">Incorrect password. Please try again.</span>");
+		        		// no need to produce any error, just reload 
+		        		//$("#message_div").html("<span style=\"font-size:16;color:red\">gS Error: " + data.message + "</span>");
+		        		if(data.error_code && data.error_code === "07734") // the twitter cookie credentials were invalid. Delete them and reload page (start over).
+		        		{
+		        			docCookies.removeItem("twitter_access_token");
+		        			docCookies.removeItem("twitter_handle");
+		        			//alert('twitter_handle not null, fb code did not exist, returning from call to getSelf where error code was 07734. Wiping cookies and reloading.');
+		        			window.location.href = "https://www.huzon.tv/registration.html";
+		        		}
+		        		else
+		        		{
+		        			// shouldn't something happen here?
+		        		}
 		        	}
-		        	else
+		        	else // getSelf was successful, meaning twitter_handle and twitter_access_token were OK
 		        	{
-		        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Correct! Reloading page...</span>");
-		        		docCookies.setItem("huzon_auth", $("#huzon_auth_input").val(), 31536e3);
-		        		window.location.reload();
+		        		var mds = "";
+		        		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
+		        		mds = mds + "	<tr>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\" colspan=2>";
+		        		mds = mds + "			Information for <span style=\"color:green\">" + data.user_jo.display_name + "</span>";
+		        		mds = mds + "		</td>";
+		        		mds = mds + "	</tr>";
+		        		mds = mds + "	<tr>";
+		        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:20px\" colspan=2>";
+		        		mds = mds + "1. Twitter linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.twitter_handle + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+		        		mds = mds + "2. Facebook linked? ";
+		        		var fb_toplevel_valid = false;
+		        		var fb_subaccounts_ja = null;
+		        		$.ajax({
+		        			type: 'GET',
+		        			url: endpoint,
+		        			data: {
+		        	            method: "verifyTopLevelFBCredentialsSelf",
+		        	            designation: data.user_jo.designation,
+		        	            twitter_handle: twitter_handle,
+		        	            twitter_access_token: twitter_access_token
+		        			},
+		        	        dataType: 'json',
+		        	        async: false,
+		        	        success: function (data, status) {
+		        	        	if (data.response_status === "error")
+		        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
+		        	        	else if(data.response_status === "success")
+		        	        	{
+		        	        		//alert(JSON.stringify(data));
+		        	        		if(data.valid === true)
+		        	        		{
+		        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+		        	        			fb_toplevel_valid = true;
+		        	        		}
+		        	        		else
+		        	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> click here <br>";
+		        	        	}
+		        	        }
+		        	        ,
+		        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+		        	            console.log(textStatus, errorThrown);
+		        	        }
+		        		});
+		        		
+		        		mds = mds + "3. Facebook <i>reporter page</i> linked? ";
+		        		var fb_page_valid = false;
+		        		var fb_page_id = data.user_jo.facebook_page_id;
+		        		$.ajax({
+		        			type: 'GET',
+		        			url: endpoint,
+		        			data: {
+		        	            method: "verifyPageFBCredentialsSelf",
+		        	            designation: data.user_jo.designation,
+		        	            twitter_handle: twitter_handle,
+		        	            twitter_access_token: twitter_access_token
+		        			},
+		        	        dataType: 'json',
+		        	        async: false,
+		        	        success: function (data, status) {
+		        	        	if (data.response_status === "error")
+		        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
+		        	        	else if(data.response_status === "success")
+		        	        	{
+		        	        		var valid_page_id = "";
+		        	        		if(data.valid === true)
+		        	        		{
+		        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+		        	        			fb_page_valid = true;
+
+		        	        			// get the (determined to be valid) page information from the user object already retrieved
+		        	        			valid_page_id = fb_page_id;  			
+		        	        		}
+		        	        		else
+		        	        		{
+		        	        			if(fb_toplevel_valid === true)
+		        	        				mds = mds + "<span style=\"color:red\">NO</span> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> select a page below <br>";
+		        	        			else
+		        	        				mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
+		        	        		}
+
+		        	        		// in either case...
+	        	        			// get the page options from facebook so we can show user which one is currently selected (if any) and which other options are available.
+	        	        			$.ajax({
+	        	        				type: 'GET',
+	        	        				url: endpoint,
+	        							data: {
+	        					            method: "getFacebookSubAccountInfoFromFacebook",
+	        					            twitter_handle: twitter_handle,
+	        					            twitter_access_token: twitter_access_token
+	        							},
+	        					        dataType: 'json',
+	        					        async: false,
+	        					        success: function (data, status) {
+	        					        	if (data.response_status === "error")
+	        					        	{
+	        					        		// This is ok. Probably just means the user has not linked their top-level account yet. Fail silently
+	        					        	}
+	        					        	else
+	        					        	{
+	        					        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
+	        					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
+	        					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
+	        					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
+	        					        		{
+	        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
+	        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1)));
+	        					        			if(fb_page_valid === true && ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1))) // this is the checked option
+	        					        			{
+	        					        				//alert(fb_subaccounts_ja[x].name + "checked");
+	        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type='radio' CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
+	        					        			}
+	        					        			else
+	        					        			{
+	        					        				//alert(fb_subaccounts_ja[x].name + "not checked");
+	        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
+	        					        			}
+	        					        		}
+	        					        		mds = mds + "			</table>";
+	        					        	}
+	        					        }
+	        					        ,
+	        					        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        					        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+	        					            console.log(textStatus, errorThrown);
+	        					        }
+	        						});
+		        	        	}
+		        	        }
+		        	        ,
+		        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+		        	            console.log(textStatus, errorThrown);
+		        	        }
+		        		});
+		        		
+		        		if(fb_toplevel_valid && fb_page_valid)
+		        		{
+		        			mds = mds + "<br><br>You're finished! Thanks!";
+		        		}	
+		        		else if(!fb_toplevel_valid && fb_page_valid)
+		        		{
+		        			mds = mds + "<br><br>You're finished! Thanks!<br>(Your main Facebook account has become unlinked, but that's ok. All huzon.tv needs is a connection to your FB reporter page.)";
+		        		}
+		        		
+		        		$("#main_div").html(mds);
+		        		
+		        		$("#facebook_link").click({value1: data.user_jo.designation},
+	        					function (event) {
+		        					var randomnumber=Math.floor(Math.random()*1000000);
+		        					var state = randomnumber+"";
+		        					docCookies.setItem("state", state, 300);
+		        					docCookies.setItem("designation", event.data.value1, 31536e3);
+		        					alert('Sending you to Facebook. Grant ALL permissions you are prompted for. Otherwise, huzon.tv will not work properly.');
+		        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
+		        					return false;
+	        					}
+	        				);
+		        		
+		        		if(fb_subaccounts_ja != null)
+		        		{	
+		        			for(var x=0; x < fb_subaccounts_ja.length; x++)
+			        		{
+		        				$("#" + fb_subaccounts_ja[x].id + "_radio").click({fb_subaccount_id: fb_subaccounts_ja[x].id},
+		            					function (event) {
+		        							//alert('setting facebook sub account info with ' + event.data.fb_subaccount_id);
+		        							$.ajax({
+		    	        						type: 'GET',
+		    	        						url: endpoint,
+		    	        						data: {
+		    	        				            method: "setFacebookSubAccountInfo",
+		    	        				            twitter_handle: twitter_handle,
+		    	    					            twitter_access_token: twitter_access_token,
+		    	    					            fb_subaccount_id: event.data.fb_subaccount_id
+		    	        						},
+		    	        				        dataType: 'json',
+		    	        				        async: false,
+		    	        				        success: function (data, status) {
+		    	        				        	if (data.response_status === "error")
+		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
+		    	        				        	else
+		    	        				        	{
+		    	        				        		//alert('twitter_handle not null, fb code did not exist, getSelf was successful. Get get and setFBSubAccountInfo was successful. Reloading.');
+		    	        				        		window.location.href = "https://www.huzon.tv/registration.html";
+		    	        				        	}
+		    	        				        }
+		    	        				        ,
+		    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+		    	        				            console.log(textStatus, errorThrown);
+		    	        				        }
+		    	        					});
+		        						});
+			        		}
+	    				}
 		        	}
 		        }
 		        ,
 		        error: function (XMLHttpRequest, textStatus, errorThrown) {
-		        	$("#main_td").html("ajax error");
+		        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
 		            console.log(textStatus, errorThrown);
 		        }
 			});
-			return false;
-			}
-		);
-}
-else
-{
-	var oauth_verifier = getParameterByName("oauth_verifier");
-	if(oauth_verifier !== "")
+		}
+	}
+	else
 	{
-		// this is a response from twitter after user has granted access
-		var designation = docCookies.getItem("designation");
-		$.ajax({
-			type: 'GET',
-			url: endpoint,
-			data: {
-	            method: "getTwitterAccessTokenFromAuthorizationCode",
-	            oauth_verifier: oauth_verifier,
-	            oauth_token: getParameterByName("oauth_token"),
-	            designation: designation,
-	            huzon_auth: huzon_auth
-			},
-	        dataType: 'json',
-	        async: false,
-	        success: function (data, status) {
-	        	if (data.response_status == "error")
-	        	{
-	        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: It looks like you're trying to link an Twitter account that doesn't match the Twitter handle we're expecting. Are you logged into the right account? Did you click the right link below? Please try again.<br><br>Detailed error message from server: " + data.message + " </span>");
-	        	}
-	        	else
-	        	{
-	        		$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account to huzon.tv! Thanks!</span>");
-	        	}
-	        }
-	        ,
-	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	$("#main_td").html("ajax error");
-	            console.log(textStatus, errorThrown);
-	        }
-		});
+		// incorrect registration page state. Delete all cookies and start again.
+		// logic above says
+		// if secure
+		// else if twitter_handle == null
+		// else if twitter_handle !== null && twitter_access_token !== null
+		// then do this section. So to reach here, twitter_access_token would have to be null while twitter_handle != null, logic above should be improved, I guess
+		docCookies.removeItem("twitter_access_token");
+		docCookies.removeItem("twitter_handle");
+		docCookies.removeItem("state");
+		docCookies.removeItem("designation");
+		window.location.href = "https://www.huzon.tv/registration.html";
 	}	
 	
 	
+});
 	
-	var designations = null;
-	$.ajax({
-		type: 'GET',
-		url: endpoint,
-		data: {
-            method: "getDesignationsAndAccounts",
-            station: "wkyt",
-            include_master: "yes",
-            huzon_auth: huzon_auth
-		},
-        dataType: 'json',
-        async: false,
-        success: function (data, status) {
-        	if (data.response_status == "error")
-        		$("#message_div").html("<span style=\"font-size:16;color:red\">error getting station designations</span>");
-        	else
-        	{
-        		designations = data.designations;
-        		//$("#message_div").html("Designations successfully retrieved.");
-
-        		var mds = "";
-        		mds = mds + "<div style=\"font-size:16px;font-weight:bold\">";
-        		mds = mds + "<table style=\"margin-left:auto;margin-right:20px;border-spacing:10px\">";
-        		mds = mds + "	<tr>";
-        		mds = mds + "		<td colspan=5 style=\"vertical-align:top;text-align:left\">";
-        		mds = mds + "			<span style=\"color:blue;font-weight:bold\">BLUE</span> = account is linked</span><br>";
-        		mds = mds + "			<span style=\"color:red;font-weight:bold\">RED</span> = account is not linked</span><br>";
-        		mds = mds + "		</td>";
-        		mds = mds + "	</tr>";
-        		mds = mds + "	<tr>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;\" colspan=5>";
-        		mds = mds + "			<hr>";
-        		mds = mds + "		</td>";
-        		mds = mds + "	</tr>";
-        		mds = mds + "	<tr>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Name</td>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Acct type</td>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Twitter</td>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Facebook</td>";
-        		mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">FB brand page</td>";
-        		mds = mds + "	</tr>";
-        		designations.sort(function(a,b){
-        			aa = a.acct_type;
-        			bb = b.acct_type;
-        			if(aa > bb)
-        				return 1;
-        			else if(bb > aa)
-        				return -1;
-        			else
-        			{
-        				aaa = a.designation;
-        				bbb = b.designation;
-        				if(aaa > bbb)
-        					return 1;
-        				else if(bbb > aaa)
-        					return -1;
-        				else
-        				{
-        					//alert("can't have equal designations. They should be unique.")
-        				}
-        			}
-        		});
-        		var first_person_encountered = false;
-        		for(var a = 0; a < designations.length; a++)
-        		{
-        			if(designations[a].acct_type === "person" && !first_person_encountered)
-        			{
-        				mds = mds + "	<tr>";
-        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;\" colspan=5>";
-        				mds = mds + "			<hr>";
-        				mds = mds + "		</td>";
-        				mds = mds + "	</tr>";
-        				mds = mds + "	<tr>";
-        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Name</td>";
-        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Acct type</td>";
-        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Twitter</td>";
-        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">Facebook</td>";
-        				mds = mds + "		<td style=\"vertical-align:top;text-align:left;font-weight:bold;\">FB brand page</td>";
-        				mds = mds + "	</tr>";
-        				first_person_encountered = true;
-        			}
-        			mds = mds + "	<tr>";
-        			mds = mds + "		<td style=\"vertical-align:top;text-align:left;\">";
-        			mds = mds + "							" + designations[a].display_name + "";
-        			mds = mds + "		</td>";
-        			mds = mds + "		<td style=\"vertical-align:top;text-align:left;\">";
-        			mds = mds + "							" + designations[a].acct_type + "";
-        			mds = mds + "		</td>";
-        			mds = mds + "		<td style=\"vertical-align:top;text-align:left;\">";
-        			if(designations[a].twitter_handle)
-        			{
-        				if(designations[a].twitter_connected && designations[a].twitter_connected === "yes")
-        					mds = mds + " 			<span style=\"color:blue\">" + designations[a].twitter_handle + "</span>";
-        				else
-        					mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_twitter_link\" style=\"color:red\">" + designations[a].twitter_handle + "</a>";
-        			}
-        			else
-        			{
-        				mds = mds + " 			<span style=\"color:red\">UNKNOWN</span>";
-        			}
-        			mds = mds + "		</td>";
-        			mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-        			if(designations[a].facebook_connected && designations[a].facebook_connected === "yes")
-        				mds = mds + " 			<span style=\"color:blue\">facebook</span>";
-        			else
-        				mds = mds + " 			<a href=\"#\" id=\"" + designations[a].designation + "_facebook_link\" style=\"color:red\">facebook</a>";
-        			mds = mds + "		</td>";
-        			mds = mds + "		<td style=\"vertical-align:top;text-align:left\">";
-        			if(designations[a].facebook_connected && designations[a].facebook_connected === "yes")
-        			{
-        				if(designations[a].facebook_accounts.length > 0)
-        				{
-        					if(designations[a].facebook_account_id)
-        					{	
-        						mds = mds + " 			<table> <!-- 1 -->";
-	        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
-		        				{
-	        						// <span style=\"color:red\">
-	        						if((designations[a].facebook_account_id+"") === designations[a].facebook_accounts[b].id)
-	        							mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio checked id=\"" + designations[a].designation + "_" + designations[a].facebook_accounts[b].id + "_radio\"></td><td style=\"color:blue\">" + designations[a].facebook_accounts[b].name + "</td></tr>";
-	        						else	
-	        						{
-	        							// do nothing. Don't need to display all this person's accounts to everyone
-	        							//mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
-	        						}
-		        				}
-	        					mds = mds + " 			</table>";
-        					}
-        					else
-        					{
-        						mds = mds + " 			<table> <!-- 2 -->";
-	        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
-		        				{
-	        						mds = mds + " 			<tr><td style=\"valign:middle\"><input type=radio id=\"" + designations[a].designation + "_" + designations[a].facebook_accounts[b].id + "_radio\"></td><td>" + designations[a].facebook_accounts[b].name + "</td></tr>";
-		        				}
-	        					mds = mds + " 			</table>";
-        					}	
-        					
-        					
-        				}
-        				else
-        				{
-        					mds = mds + " 			<span style=\"color:red\">no accts detected</span>";
-        				}
-        			}
-        			else
-        			{
-        				mds = mds + " 			<span style=\"color:red\">link fb first</span>";
-        			}
-        			mds = mds + "		</td>";
-        			mds = mds + "	</tr>";
-        		}	
-        		mds = mds + "</table>";
-        		mds = mds + "</div>";
-        		$("#main_td").html(mds);
-        		
-        		for(var a = 0; a < designations.length; a++)
-        		{
-        			$("#" + designations[a].designation + "_twitter_link").click({value1: designations[a].designation},
-        				function (event) {
-        				docCookies.setItem("designation", event.data.value1, 31536e3);
-        				var oauth_token = null;
-        				$.ajax({
-        					type: 'GET',
-        					url: endpoint,
-        					data: {
-        			            method: "startTwitterAuthentication",
-        			            designation: event.data.value1,
-        			            huzon_auth: huzon_auth
-        					},
-        			        dataType: 'json',
-        			        async: false,
-        			        success: function (data, status) {
-        			        	if (data.response_status == "error")
-        			        		$("#message_div").html("<span style=\"font-size:16;color:red\">error getting station designations</span>");
-        			        	else
-        			        	{
-        			        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Twitter authentication started...</span>");
-        			        		oauth_token = data.oauth_token;
-        			        		//oauth_token_secret = data.oauth_token_secret;
-        			        		
-        			        		window.location.href = "https://api.twitter.com/oauth/authenticate?oauth_token=" + oauth_token;
-        	        		
-        			        	}
-        			        }
-        			        ,
-        			        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        			        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-        			            console.log(textStatus, errorThrown);
-        			        }
-        				});
-        					return false;
-        				}
-        			);
-        			
-        			$("#" + designations[a].designation + "_facebook_link").click({value1: designations[a].designation},
-        					function (event) {
-        					var randomnumber=Math.floor(Math.random()*1000000);
-        					docCookies.setItem("state", randomnumber+"", 31536e3);
-        					docCookies.setItem("designation", event.data.value1, 31536e3);
-        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
-        				
-        						return false;
-        					}
-        				);
-        			
-        			if(designations[a].facebook_connected && designations[a].facebook_connected === "yes")
-        			{
-        				if(designations[a].facebook_accounts.length > 0)
-        				{
-        					for(var b=0; b < designations[a].facebook_accounts.length; b++)
-	        				{	
-	        					$("#" + designations[a].designation + "_" + designations[a].facebook_accounts[b].id + "_radio").click({id: designations[a].facebook_accounts[b].id, designation: designations[a].designation, name: designations[a].facebook_accounts[b].name},
-		        					function (event) {
-	        							//alert("Setting subaccount for parent account: designation=" + event.data.designation + " fb_name=" + event.data.name + " fb_id=" + event.data.id);
-	        							$.ajax({
-	    	        						type: 'GET',
-	    	        						url: endpoint,
-	    	        						data: {
-	    	        				            method: "setFacebookSubAccountInfo",
-	    	        				            designation: event.data.designation,
-	    	        				            id: event.data.id
-	    	        						},
-	    	        				        dataType: 'json',
-	    	        				        async: false,
-	    	        				        success: function (data, status) {
-	    	        				        	if (data.response_status == "error")
-	    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
-	    	        				        	else
-	    	        				        	{
-	    	        				        		$("#message_div").html("<span style=\"font-size:16;color:blue\">Designated account is now set. Thanks! (Your non-selected pages will be hidden to others.)</span>");
-	    	        				        		window.location.reload();
-	    	        				        	}
-	    	        				        }
-	    	        				        ,
-	    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-	    	        				            console.log(textStatus, errorThrown);
-	    	        				        }
-	    	        					});
-	        						}
-	        					);
-	        				}
-        				}
-        			}
-        			
-        		}
-        	}
-        }
-        ,
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-            console.log(textStatus, errorThrown);
-        }
-	});
-}*/
 

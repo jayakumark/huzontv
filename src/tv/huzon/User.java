@@ -486,6 +486,49 @@ public class User implements java.lang.Comparable<User> {
 			return false;
 	}
 	
+	boolean setFacebookAccessToken(String access_token)
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			Platform p = new Platform();
+			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_access_token", access_token);
+				rs.updateRow();
+				facebook_access_token = access_token;
+				returnval = true;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return returnval;
+	}
+	
 	// boolean ok. Either db update succeeded or failed. If failed, then an error will be sent to admin.
 	boolean setFacebookAccessTokenExpiresAndUID(String access_token, long expires_timestamp, long fb_uid)
 	{
@@ -521,6 +564,9 @@ public class User implements java.lang.Comparable<User> {
 				rs.updateLong("facebook_uid", fb_uid);
 				rs.updateRow();
 				returnval = true;
+				facebook_access_token = access_token;
+				facebook_access_token_expires = expires_timestamp;
+				facebook_uid = fb_uid;
 			}
 			rs.close();
 			stmt.close();
@@ -570,7 +616,6 @@ public class User implements java.lang.Comparable<User> {
 	public JSONObject getProfileFromFacebook()
 	{
 		JSONObject jsonresponse = new JSONObject();
-		
 		try
 		{
 			HttpClient client = new DefaultHttpClient();
@@ -662,7 +707,10 @@ public class User implements java.lang.Comparable<User> {
 				} 
 				System.out.println("Endpoint.getFacebookSubAccounts(): response to https://graph.facebook.com/me/accounts?access_token=" + facebook_access_token + "=" + text);
 				JSONObject jo = new JSONObject(text);
-				jsonresponse = jo.getJSONArray("data");
+				if(jo.has("data"))
+					jsonresponse = jo.getJSONArray("data");
+				else
+					jsonresponse = new JSONArray();
 			} catch (ClientProtocolException e) {
 				jsonresponse = null;
 				e.printStackTrace();
@@ -863,6 +911,9 @@ public class User implements java.lang.Comparable<User> {
 			}
 		 */
 		
+		if(getFacebookAccessToken() == null || getFacebookAccessToken().isEmpty())
+			return false;
+		
 		boolean fb_call_successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
@@ -930,11 +981,14 @@ public class User implements java.lang.Comparable<User> {
     			}
 			}
 		 */
+		System.out.println("User.fbPageTokenIsValid(): getFacebookPageAccessToken()=" + getFacebookPageAccessToken());
+		if(getFacebookPageAccessToken() == null || getFacebookPageAccessToken().isEmpty())
+			return false;
 		
 		boolean fb_call_successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
-			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookPageAccessToken() + "&access_token=" + "CAACgjFMZB9ysBAEfqpWOYNcf5gjKs6JojekKZBYDxGc67z5f9hz8ORuQjOKo5doaMneLZCMlFllIMztSCVDZAqC0ZCEgco3PZA4sIVM5tfrzWDu7cishKZCxREjpqIDME2ZCJiHziKMRkJAyuCCXgPGh" ); //(new User("huzon_master", "designation").getFacebookAccessToken()));
+			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookPageAccessToken() + "&access_token=" + "&access_token=" + (new User("huzon_master", "designation").getFacebookAccessToken()));
 			HttpResponse response = httpClient.execute(hg);
 			int statusCode = response.getStatusLine().getStatusCode();
 	        fb_call_successful = statusCode == 200 ? true : false;

@@ -341,15 +341,16 @@ public class Endpoint extends HttpServlet {
 		}	
 		return;
 	}
-
+ 
+	
+	
+	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
 		// All requests must be secure
 		// All requests must have a method value
 		// startTwitterAuthentication and getTwitterAccessTokenFromAuthorizationCode do not need TW authorization, every other request does.
 		// for methods requiring authentication there are currently two permission levels: normal and global
-		
-		
 		
 		//System.out.println("tv.huzon.Endpoint.doGet(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
@@ -520,6 +521,28 @@ public class Endpoint extends HttpServlet {
 						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
 						(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
+					// this is unnecessary. getSelf tests Twitter credentials already
+					/*else if (method.equals("verifyTwitterCredentialsSelf")) 
+					{	
+						boolean tCredsAreValid = user.twitterCredentialsAreValid();
+						jsonresponse.put("response_status", "success");
+						jsonresponse.put("valid", tCredsAreValid);
+						 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+					}*/
+					else if (method.equals("verifyTopLevelFBCredentialsSelf"))
+					{	
+						boolean fbCredsAreValid = user.fbTopLevelTokenIsValid();
+						jsonresponse.put("valid", fbCredsAreValid);
+						jsonresponse.put("response_status", "success");
+						 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");	
+					} 
+					else if (method.equals("verifyPageFBCredentialsSelf"))
+					{	
+						boolean fbPageCredsAreValid = user.fbPageTokenIsValid();
+						jsonresponse.put("valid", fbPageCredsAreValid);
+						jsonresponse.put("response_status", "success");
+						 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");		
+					} 
 					else if(method.equals("getFacebookAccessTokenFromAuthorizationCode"))
 					{
 						String facebook_code = request.getParameter("facebook_code");
@@ -536,7 +559,8 @@ public class Endpoint extends HttpServlet {
 							JSONObject preliminary_jsonresponse = getFacebookAccessTokenFromAuthorizationCode(facebook_code);
 							if(preliminary_jsonresponse.getString("response_status").equals("success"))
 							{
-								user.setTwitterAccessTokenAndSecret(preliminary_jsonresponse.getString("access_token"), "notyetknown");
+								System.out.println("Endpoint.getFATFAC(): prelim_json=" + preliminary_jsonresponse);
+								user.setFacebookAccessToken(preliminary_jsonresponse.getString("access_token"));
 								JSONObject fb_profile_jo = user.getProfileFromFacebook();
 								long fb_uid = 0L;
 								try
