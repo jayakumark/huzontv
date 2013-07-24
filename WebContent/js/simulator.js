@@ -389,10 +389,10 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "						End: <input type=\"text\" id=\"function4_end_input\" value=\"20130709_235900\" size=13><br>";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Waiting period: <input type=\"text\" id=\"function4_awp_input\" value=\"3600\" size=4> ";
+	fds = fds + "						CD: <input type=\"text\" id=\"function4_awp_input\" value=\"3600\" size=4> ";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
-	fds = fds + "						Group by: <input type=\"text\" id=\"function4_grouping_input\" value=\"3600\" size=5> ";
+	fds = fds + "						Interval: <input type=\"text\" id=\"function4_grouping_input\" value=\"3600\" size=5> ";
 	fds = fds + "   					<input id=\"function4_go_button\" type=button value=\"GO\">";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
@@ -700,6 +700,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 
 	$("#function4_go_button").click(
 			function () {
+				$("#results_div").html(rds);
 				$("#results_div").html("");
 				$("#chart1").html("");
 				
@@ -745,7 +746,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				{
 					
 					rds = rds + "	<tr>";
-					rds = rds + "		<td id=\"gAF_results_td_" + x + "\" style=\"width=100%;background-color:#dddddd\"></td>";
+					rds = rds + "		<td style=\"width:150px;background-color:#dddddd;font-size:16px;font-weight:bold;vertical-align:middle\">Hour " + x + "</td>";
+					rds = rds + "		</td>";
+					rds = rds + "		<td id=\"gAF_results_td_" + x + "\" style=\"background-color:#dddddd\"></td>";
 					rds = rds + "		</td>";
 					rds = rds + "	</tr>";
 				}	
@@ -1160,7 +1163,7 @@ function getAlertFramesClosure(begin_in_ms, end_in_ms, mamodifier, nrpst, awp, d
             twitter_access_token: twitter_access_token
 		},
         dataType: 'json',
-        async: true,
+        async: false,
         success: function (data, status) {
         	//alert("returning to paint " + row_id);
         	if (data.response_status == "error")
@@ -1170,7 +1173,7 @@ function getAlertFramesClosure(begin_in_ms, end_in_ms, mamodifier, nrpst, awp, d
         	else
         	{
         		var rowstring = "";
-        		if(data.alert_frames_ja)
+        		if(data.alert_frames_ja && data.alert_frames_ja.length > 0)
     			{	
         			data.alert_frames_ja.sort(function(a,b){
         				a = a.timestamp_in_ms;
@@ -1185,10 +1188,10 @@ function getAlertFramesClosure(begin_in_ms, end_in_ms, mamodifier, nrpst, awp, d
         				rowstring = rowstring + "<br>image_name:" + data.alert_frames_ja[x].image_name;
         				rowstring = rowstring + "<br>designation:" + data.alert_frames_ja[x].designation;
         				rowstring = rowstring + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
-        				rowstring = rowstring + "<br>score_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].score_for_frame_that_passed_ma_thresh;
+        				//rowstring = rowstring + "<br>score_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].score_for_frame_that_passed_ma_thresh;
         				rowstring = rowstring + "<br>ma_for_alert_frame:" + data.alert_frames_ja[x].ma_for_alert_frame;
-        				rowstring = rowstring + "<br>ma_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].ma_for_frame_that_passed_ma_thresh;
-        				rowstring = rowstring + "<br>image_name_for_frame_that_passed_ma_thresh:<br>" + data.alert_frames_ja[x].image_name_for_frame_that_passed_ma_thresh;
+        				//rowstring = rowstring + "<br>ma_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].ma_for_frame_that_passed_ma_thresh;
+        				//rowstring = rowstring + "<br>image_name_for_frame_that_passed_ma_thresh:<br>" + data.alert_frames_ja[x].image_name_for_frame_that_passed_ma_thresh;
         				rowstring = rowstring + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity;
         				rowstring = rowstring + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
         				rowstring = rowstring + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
@@ -1215,7 +1218,7 @@ function getAlertFramesClosure(begin_in_ms, end_in_ms, mamodifier, nrpst, awp, d
     			}
         		else
         		{
-        			alert("no alerts for " + row_id );
+        			$("#" + row_id).html("No alerts for this interval.");
         		}
         	}
         }

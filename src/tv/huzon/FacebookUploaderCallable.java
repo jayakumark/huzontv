@@ -68,6 +68,12 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 				facebook_failure_message = "Station alert_mode is set to silent";
 				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
 			}
+			else if(!reporter.isFacebookActive())
+			{
+				facebook_successful = false;
+				facebook_failure_message = "Reporter is not facebook active";
+				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". facebook_active=false");
+			}
 			else if(station_object.getAlertMode().equals("test") || station_object.getAlertMode().equals("live"))
 			{
 				User postinguser = null;
@@ -75,7 +81,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 					postinguser = new User("huzon_master", "designation");
 				else
 					postinguser = reporter;
-				
+								
 				// the mode is live or test, we will either be firing a social alert OR sending an email about missing or invalid credentials. Both actions need a lock to prevent doubles.
 				String uuid = UUID.randomUUID().toString();
 				boolean successfullylocked = station_object.lock(uuid, "facebook");
@@ -203,9 +209,9 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 									boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
 									if(alert_text_update_successful && social_id_update_successful)
-										se.sendMail("FB successful for " + reporter.getDesignation(), "Text and social id updated correctly, too. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("FB successful for " + reporter.getDesignation(), "Text and social id updated correctly, too. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/controlpanel.html", "cyrus7580@gmail.com", "info@huzon.tv");
 									else
-										se.sendMail("FB (mostly) successful for " + reporter.getDesignation(), "Text and social id did not update correctly in the DB, though, though. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("FB (mostly) successful for " + reporter.getDesignation(), "Text and social id did not update correctly in the DB, though, though. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/controlpanel.html", "cyrus7580@gmail.com", "info@huzon.tv");
 								} 
 								catch (FacebookException e) 
 								{

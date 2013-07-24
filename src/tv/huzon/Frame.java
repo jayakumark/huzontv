@@ -911,15 +911,13 @@ public class Frame implements Comparable<Frame> {
 									
 									if(!reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers, tw_wp_override_in_sec))
 									{	
-										if(reporter.isTwitterActive())
-											twitter_triggered = true; // <---------------
+										twitter_triggered = true; // <---------------
 										reporter.setLastAlert(getTimestampInMillis(), "twitter", which_timers); // set last alert regardless of credentials, successful posting or twitter_active
 									} 
 									
 									if(!reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec))
 									{
-										if(reporter.isFacebookActive())
-											facebook_triggered = true; // <---------------
+										facebook_triggered = true; // <---------------
 										reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials, successful posting or facebook_active
 									} 
 									
@@ -928,12 +926,12 @@ public class Frame implements Comparable<Frame> {
 										if(twitter_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object)); // live, test or silent
+											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object)); 
 										}
 										if(facebook_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object)); // live, test or silent
+											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object));
 										}
 									}
 									// else if simulation do do not perform any actual twitter or facebook postings.

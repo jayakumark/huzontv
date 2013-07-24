@@ -61,7 +61,13 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 			{
 				twitter_successful = false;
 				twitter_failure_message = "Station alert_mode is set to silent";
-				(new Platform()).addMessageToLog("FB triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
+				(new Platform()).addMessageToLog("TW triggered but suppressed for " + reporter.getDesignation() + ". mode=silent");
+			}
+			else if(!reporter.isTwitterActive())
+			{
+				twitter_successful = false;
+				twitter_failure_message = "Reporter is not twitter active";
+				(new Platform()).addMessageToLog("TW triggered but suppressed for " + reporter.getDesignation() + ". twitter_active=false");
 			}
 			else if(station_object.getAlertMode().equals("test") || station_object.getAlertMode().equals("live"))
 			{
@@ -224,9 +230,9 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 									boolean social_id_update_successful = p.updateSocialItemID(redirect_id,twit_jo.getString("id"));
 									if(alert_text_update_successful && social_id_update_successful)
-										se.sendMail("TW successful for " + reporter.getDesignation(), "Text and social id updated correctly, too. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("TW successful for " + reporter.getDesignation(), "Text and social id updated correctly, too. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/controlpanel.html", "cyrus7580@gmail.com", "info@huzon.tv");
 									else
-										se.sendMail("TW (mostly) successful for " + reporter.getDesignation(), "Text and social id did not update correctly in the DB, though, though. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+										se.sendMail("TW (mostly) successful for " + reporter.getDesignation(), "Text and social id did not update correctly in the DB, though, though. user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/controlpanel.html", "cyrus7580@gmail.com", "info@huzon.tv");
 								}
 								composite_file.delete();
 							} catch (IOException e) {
