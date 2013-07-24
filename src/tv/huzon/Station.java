@@ -1,27 +1,22 @@
 package tv.huzon;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
-import java.util.Vector;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import javax.mail.MessagingException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
@@ -51,29 +46,24 @@ public class Station implements java.lang.Comparable<Station> {
 	private double mamodifier;
 	private double delta;
 	
-	String dbName = System.getProperty("RDS_DB_NAME"); 
-	String userName = System.getProperty("RDS_USERNAME"); 
-	String password = System.getProperty("RDS_PASSWORD"); 
-	String hostname = System.getProperty("RDS_HOSTNAME");
-	String port = System.getProperty("RDS_PORT");
+	private DataSource datasource;
 	
 	public Station(String inc_call_letters)
 	{
-		//System.err.println("Station init()");
 		try {
-		        Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
 			e.printStackTrace();
-		} 
+		}
 		valid = false;
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM stations WHERE call_letters='" + inc_call_letters + "'");
 			if(rs.next())
@@ -239,10 +229,9 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
-		Platform p = new Platform();
 		try
 		{
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
 					" creation_timestamp <= FROM_UNIXTIME(" + end_long + "/1000) AND creation_timestamp >= FROM_UNIXTIME(" + begin_long + "/1000))");
@@ -274,7 +263,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			p.addMessageToLog("SQLException in Platform.getFiredAlerts: message=" +sqle.getMessage());
+			(new Platform()).addMessageToLog("SQLException in Platform.getFiredAlerts: message=" +sqle.getMessage());
 		} 
 		/*catch (JSONException e) {
 			e.printStackTrace();
@@ -288,7 +277,7 @@ public class Station implements java.lang.Comparable<Station> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				p.addMessageToLog("SQLException in Platform.getFiredAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				(new Platform()).addMessageToLog("SQLException in Platform.getFiredAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return fired_alerts_ja;
@@ -300,10 +289,9 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
-		Platform p = new Platform();
 		try
 		{
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `deletion_timestamp` IS NULL) ORDER BY creation_timestamp DESC LIMIT 0," + num_to_get);
 			int x = 0;
@@ -332,7 +320,7 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			p.addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
+			(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -345,7 +333,7 @@ public class Station implements java.lang.Comparable<Station> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				p.addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return alerts_ja;
@@ -377,8 +365,7 @@ public class Station implements java.lang.Comparable<Station> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			System.out.println("Station.getFrameTimestamps(): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
@@ -475,8 +462,7 @@ public class Station implements java.lang.Comparable<Station> {
 		
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			if(designation == null) // get all frames
 			{	
@@ -629,10 +615,9 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
-		Platform p = new Platform();
 		try
 		{
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(querystring);
 			TreeSet<Frame> frames = getFramesFromResultSet(rs);
@@ -693,8 +678,7 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 				// get frames where this designation crosses the single frame threshold
 				rs = stmt.executeQuery(query);
@@ -744,22 +728,21 @@ public class Station implements java.lang.Comparable<Station> {
 		ResultSet rs = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
-				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				// get frames where this designation crosses the single frame threshold
-				rs = stmt.executeQuery(query);
-				while(rs.next())
-				{
-					rs.updateLong("facebook_last_alert_test", 0);
-					rs.updateLong("twitter_last_alert_test", 0);
-					rs.updateString("facebook_last_alert_test_hr", "");
-					rs.updateString("twitter_last_alert_test_hr", "");
-					rs.updateRow();
-				}
-				rs.close();
-				stmt.close();
-				con.close();
+			con = datasource.getConnection();
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			// get frames where this designation crosses the single frame threshold
+			rs = stmt.executeQuery(query);
+			while(rs.next())
+			{
+				rs.updateLong("facebook_last_alert_test", 0);
+				rs.updateLong("twitter_last_alert_test", 0);
+				rs.updateString("facebook_last_alert_test_hr", "");
+				rs.updateString("twitter_last_alert_test_hr", "");
+				rs.updateRow();
+			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -788,8 +771,7 @@ public class Station implements java.lang.Comparable<Station> {
 		String updateString = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			if(lock_type.equals("twitter"))
 				updateString = "UPDATE stations SET `twitter_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='') ";
 			else if (lock_type.equals("facebook"))
@@ -834,8 +816,7 @@ public class Station implements java.lang.Comparable<Station> {
 		String updateString = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			if(lock_type.equals("twitter"))
 				updateString = "UPDATE stations SET `twitter_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='" + uuid + "') ";
 			else if (lock_type.equals("facebook"))

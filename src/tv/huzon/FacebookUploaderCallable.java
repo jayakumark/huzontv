@@ -202,7 +202,10 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 									// if either of these fail, notify admin from within functions themselves
 									boolean alert_text_update_successful = p.updateAlertText(redirect_id, message);
 									boolean social_id_update_successful = p.updateSocialItemID(redirect_id, facebookresponse);
-									se.sendMail("FB successful for " + reporter.getDesignation(), "Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+									if(alert_text_update_successful && social_id_update_successful)
+										se.sendMail("FB successful for " + reporter.getDesignation(), "Text and social id updated correctly, too. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
+									else
+										se.sendMail("FB (mostly) successful for " + reporter.getDesignation(), "Text and social id did not update correctly in the DB, though, though. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". mode=" + station_object.getAlertMode() + "\n\nhttps://www.huzon.tv/alert_monitor.html", "cyrus7580@gmail.com", "info@huzon.tv");
 								} 
 								catch (FacebookException e) 
 								{

@@ -17,6 +17,9 @@
         <dependent-module archiveName="java-aws-mturk.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//home/cyrus/Desktop/libraries/java-aws-mturk.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="tomcat-dbcp.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//home/cyrus/Desktop/libraries/tomcat-dbcp.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="java-output-path" value="/huzontv/build/classes"/>
         <property name="context-root" value="huzontv"/>
     </wb-module>

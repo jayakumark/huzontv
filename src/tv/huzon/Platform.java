@@ -1,7 +1,6 @@
 package tv.huzon;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -11,6 +10,10 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 
 import javax.mail.MessagingException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONObject;
@@ -18,30 +21,20 @@ import com.amazonaws.util.json.JSONObject;
 public class Platform {
 
 	private TreeSet<Station> stations;
-	String dbName = System.getProperty("RDS_DB_NAME"); 
-	String userName = System.getProperty("RDS_USERNAME"); 
-	String password = System.getProperty("RDS_PASSWORD"); 
-	String hostname = System.getProperty("RDS_HOSTNAME");
-	String port = System.getProperty("RDS_PORT");
 	
-	//String jdbcconnectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password;
-	String jdbcconnectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
+	DataSource datasource;
 	public Platform()
 	{
 		try {
-		        Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
 			e.printStackTrace();
-		} 
+		}
 		stations = null; 
 	}
-	
-	public String getJDBCConnectionString()
-	{
-		return jdbcconnectionstring;
-	}
-	
+
 	public void addMessageToLog(String message)
 	{
 		Connection con = null;
@@ -68,8 +61,7 @@ public class Platform {
 			if(ms.length() == 2) { ms = "0" + ms;} 
 			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;			
 			
-			//System.out.println(jdbcconnectionstring);
-			con = DriverManager.getConnection(jdbcconnectionstring);
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			//System.out.println("INSERT INTO messages (`timestamp_hr`,`message`) "
 	           //         + " VALUES('" + hr_timestamp + "','" + message + "')");
@@ -112,7 +104,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			con = DriverManager.getConnection(jdbcconnectionstring);
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT call_letters FROM `stations`");
 			Station currentstation = null;
@@ -197,7 +189,7 @@ public class Platform {
 			if(ms.length() == 1) { ms = "00" + ms;} 
 			if(ms.length() == 2) { ms = "0" + ms;} 
 			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;	
-			con = DriverManager.getConnection(jdbcconnectionstring);
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`) "
 	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')");
@@ -244,8 +236,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection(jdbcconnectionstring);
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
@@ -286,8 +277,7 @@ public class Platform {
 		Statement stmt = null;
 		try
 		{
-			
-			con = DriverManager.getConnection(jdbcconnectionstring);
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id='" + alert_id_long + "'"); 
 			if(rs.next())
@@ -345,7 +335,7 @@ public class Platform {
 			if(ms.length() == 2) { ms = "0" + ms;} 
 			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;	
 			
-			con = DriverManager.getConnection(jdbcconnectionstring);
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			System.out.println("INSERT INTO redirects_" + station + " (`timestamp_in_ms`, `timestamp_hr`, `alert_id`,`referrer`,`user_agent`,`ip_address`,`designation`, `station`) " +
 					"VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + alert_id + "','" + referrer + "','" + user_agent + "','" + ip_address + "','" + designation + "','" + station + "')");

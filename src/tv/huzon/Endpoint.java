@@ -1,35 +1,25 @@
 package tv.huzon;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import javax.mail.MessagingException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -41,34 +31,78 @@ import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-import facebook4j.Facebook;
-import facebook4j.FacebookException;
-import facebook4j.FacebookFactory;
-import facebook4j.Media;
-import facebook4j.auth.AccessToken;
-
-
 public class Endpoint extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
-	String dbName = System.getProperty("RDS_DB_NAME"); 
-	String userName = System.getProperty("RDS_USERNAME"); 
-	String password = System.getProperty("RDS_PASSWORD"); 
-	String hostname = System.getProperty("RDS_HOSTNAME");
-	String port = System.getProperty("RDS_PORT");
+	
+/*
+ * Illustration of connection pooling best practices. 
+ * 
+ * 
+import java.sql.*;
+import javax.sql.*;
+
+public class JDBCServlet extends HttpServlet {
+
+  private DataSource datasource;
+
+  public void init(ServletConfig config) throws ServletException {
+    try {
+      // Look up the JNDI data source only once at init time
+      Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+      datasource = (DataSource) envCtx.lookup("jdbc/MyDataSource");
+    }
+    catch (NamingException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private Connection getConnection() throws SQLException {
+    return datasource.getConnection();
+  }
+
+  public void doGet (HttpServletRequest req, HttpServletResponse res) throws ServletException {
+    Connection connection=null;
+    try {
+      connection = getConnection();
+      ..<do JDBC work>..
+    } 
+    catch (SQLException sqlException) {
+      sqlException.printStackTrace();
+    }
+    finally {
+      if (connection != null) 
+        try {connection.close();} catch (SQLException e) {}
+      }
+    }
+  }
+}
+ 
+ */
+	
+	private DataSource datasource;
+	
 	
 	public void init(ServletConfig config) throws ServletException
 	{
 		//System.err.println("Endpoint init()");
-		try {
+	/*	try {
 			Class.forName("com.mysql.jdbc.Driver");
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
+		*/
+		try {
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
+			e.printStackTrace();
+		}
 		super.init(config);
 	}
-
+	
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
 		//System.out.println("tv.huzon.Endpoint.doPost(): entering...");
@@ -139,8 +173,7 @@ public class Endpoint extends HttpServlet {
 								try
 								{
 									long inc_ts = jsonpostbody.getLong("timestamp_in_ms");
-									con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
-
+									con = datasource.getConnection();
 									stmt = con.createStatement();
 									rs = stmt.executeQuery("SELECT timestamp_in_ms FROM frames_" + jsonpostbody.getString("station") + " ORDER BY timestamp_in_ms DESC limit 1");
 									if(rs.next()) // the only reason there wouldn't be a row is the VERY FIRST FRAME EVER for this station's table (or if the table gets emptied for some reason
@@ -1259,9 +1292,7 @@ public class Endpoint extends HttpServlet {
 	    fb_exchange_token=EXISTING_ACCESS_TOKEN */
 	
 	public static void main(String[] args) {
-		Endpoint e = new Endpoint();
-		User cyrus = new User("huzon_master", "designation");
-		String llat = e.getLongLivedFacebookAccessToken(cyrus.getFacebookAccessToken());
+		//Endpoint e = new Endpoint();
 	}
 	
 }

@@ -2,16 +2,15 @@ package tv.huzon;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.Iterator;
-import java.util.TreeSet;
 
-import javax.mail.MessagingException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
@@ -21,7 +20,6 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
-import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
@@ -39,20 +37,18 @@ public class Alert implements java.lang.Comparable<Alert> {
 	String social_item_id;
 	String created_by;
 	
-	
-	String dbName = System.getProperty("RDS_DB_NAME"); 
-	String userName = System.getProperty("RDS_USERNAME"); 
-	String password = System.getProperty("RDS_PASSWORD"); 
-	String hostname = System.getProperty("RDS_HOSTNAME");
-	String port = System.getProperty("RDS_PORT");
+	private DataSource datasource;
 	
 	public Alert(long inc_id)
 	{
 		try {
-	        Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
 			e.printStackTrace();
-		} 
+		}
+		
 		id = inc_id;
 		
 		ResultSet rs = null;
@@ -60,8 +56,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + inc_id); // get the frames in the time range
 			
@@ -166,8 +161,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE id=" + id); // get the frames in the time range
 			

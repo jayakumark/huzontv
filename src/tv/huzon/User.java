@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,12 +12,14 @@ import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
-import javax.mail.MessagingException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -65,25 +66,27 @@ public class User implements java.lang.Comparable<User> {
 	private boolean sports;
 	private boolean reporter;
 	private boolean global_admin;
-	
-	String dbName = System.getProperty("RDS_DB_NAME"); 
-	String userName = System.getProperty("RDS_USERNAME"); 
-	String password = System.getProperty("RDS_PASSWORD"); 
-	String hostname = System.getProperty("RDS_HOSTNAME");
-	String port = System.getProperty("RDS_PORT");
-	
+ 
 	// additional values
 	boolean valid;
-		
+	
+	DataSource datasource;
+	
 	public User(String inc_des_or_twit, String constructor_type)
 	{
+		try {
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
+			e.printStackTrace();
+		}
 		//System.out.println("User(): entering inc_des_or_twit=" + inc_des_or_twit + " and constructor_type=" + constructor_type);
 		valid = false;
 		ResultSet rs = null;  		Connection con = null; 		Statement stmt = null;  	
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			String query_to_exec = "";
 			if(constructor_type.equals("twitter_handle"))
@@ -344,8 +347,7 @@ public class User implements java.lang.Comparable<User> {
 			String hr_timestamp = year  + month + day + "_" + hour24 + minute + second + "_" + ms;			
 			
 			
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			while(rs.next())
@@ -432,8 +434,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "'"); 
 			while(rs.next())
@@ -494,8 +495,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -538,8 +538,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -769,8 +768,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -833,8 +831,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
 			if(rs.next())
@@ -1037,8 +1034,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			System.out.println("User.getStationsAsAdmin(): SELECT * FROM `stations` WHERE `administrators` like '%" + designation + "%' ");
 			rs = stmt.executeQuery("SELECT * FROM `stations` WHERE `administrators` like '%" + designation + "%' ");
@@ -1087,8 +1083,7 @@ public class User implements java.lang.Comparable<User> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			System.out.println("User.getFiredAlerts(): SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
 					" creation_timestamp <= CURRENT_DATE AND creation_timestamp >= (CURRENT_DATE - interval '" + hours + "' hour)");

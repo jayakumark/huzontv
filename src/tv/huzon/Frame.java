@@ -3,7 +3,6 @@ package tv.huzon;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -15,7 +14,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.mail.MessagingException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
@@ -64,15 +66,7 @@ public class Frame implements Comparable<Frame> {
 	double second_highest_score;
 	
 	TreeSet<Frame> frames_in_window = null; // null = not yet intialized, empty = processed but no frames.
-	
-	String dbName = System.getProperty("RDS_DB_NAME"); 
-	String userName = System.getProperty("RDS_USERNAME"); 
-	String password = System.getProperty("RDS_PASSWORD"); 
-	String hostname = System.getProperty("RDS_HOSTNAME");
-	String port = System.getProperty("RDS_PORT");
-	
-	//String connectionstring = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + pass word;
-	//String connectionstring = "jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?user=huzon&password=cTp88qLkS240y5x";
+	DataSource datasource;
 	
 	// to be used when another process has gotten a bunch of rows from the frames table 
 	// and we want to build a bunch of frame objects without calling the database a zillion times.
@@ -80,6 +74,15 @@ public class Frame implements Comparable<Frame> {
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
 			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma3s, double[] inc_reporter_ma4s, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
 	{
+		
+		try {
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
+			e.printStackTrace();
+		}
+		
 		timestamp_in_ms = inc_timestamp_in_ms;
 		image_name = inc_image_name;
 		s3_location = inc_s3_location;
@@ -124,6 +127,14 @@ public class Frame implements Comparable<Frame> {
 	
 	public Frame(long inc_timestamp_in_ms, String inc_station)
 	{
+		try {
+			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
+			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
+		}
+		catch (NamingException e) {
+			e.printStackTrace();
+		}
+		
 		timestamp_in_ms = inc_timestamp_in_ms;
 		station = inc_station;
 		station_object = new Station(station);
@@ -133,8 +144,7 @@ public class Frame implements Comparable<Frame> {
 		Statement stmt = null;
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the specified (unique) frame from the station's frame table
 			
@@ -549,53 +559,6 @@ public class Frame implements Comparable<Frame> {
 		}
 		return -1;
 	}
-	
-	/*
-	void updateRowWithMovingAverage6s(String[] reporter_designations, double[] inc_reporter_ma6s)
-	{
-		// after calculating moving average, update the row with the information
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;		
-		try
-		{
-			con = DriverManager.getConnection("jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password);
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM frames_" + station_object.getCallLetters() + " WHERE timestamp_in_ms=" + getTimestampInMillis()); // get the frames in the time range
-			if(!rs.next())
-			{
-				System.out.println("Frame.updateRowWithMovingAverage6s(): ERROR could not find frame in table frames_" + station_object.getCallLetters() + " for timestamp_in_ms=" + getTimestampInMillis());
-			}
-			else
-			{
-				for(int y = 0; y < inc_reporter_ma6s.length; y++)
-				{
-					rs.updateDouble(reporter_designations[y] + "_ma6", inc_reporter_ma6s[y]);
-				}
-				rs.updateRow();
-			}
-			rs.close();
-			stmt.close();
-			con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				sqle.printStackTrace();
-			}
-		}  
-		reporter_ma6s = inc_reporter_ma6s;
-	}*/
-	
 	// 
 	URL[] get2x2CompositeURLs(boolean faces_only, String designation)
 	{
@@ -1212,8 +1175,7 @@ public class Frame implements Comparable<Frame> {
 		Statement stmt = null;		
 		try
 		{
-			Platform p = new Platform();
-			con = DriverManager.getConnection(p.getJDBCConnectionString());
+			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			rs = stmt.executeQuery("SELECT * FROM frames_" + station + " WHERE timestamp_in_ms=" + timestamp_in_ms); // get the frames in the time range
 			if(!rs.next())
@@ -1419,8 +1381,4 @@ public class Frame implements Comparable<Frame> {
 		else
 			return second_highest_ma3_designation;
 	}
-	
-	
-	
-	
 }

@@ -2,9 +2,7 @@ package tv.huzon;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Enumeration;
 
-import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -64,10 +62,6 @@ public class RedirectServlet extends HttpServlet {
 			      String headerName = headerNames.nextElement();
 			      System.out.println(headerName + "\t" + request.getHeader(headerName));
 			    }*/
-				if(referrer == null)
-				{
-					referrer = "";
-				}
 				Platform p = new Platform();
 				boolean successful = p.putRedirectHitInDB(station_object.getCallLetters(), Long.parseLong(id), referrer, user_agent, ip_address, alert_object.getDesignation());
 				if(!successful)
