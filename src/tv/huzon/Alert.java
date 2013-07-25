@@ -36,6 +36,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 	String actual_text;
 	String social_item_id;
 	String created_by;
+	Station station_object;
 	
 	private DataSource datasource;
 	
@@ -69,6 +70,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 				creation_timestamp = rs.getTimestamp("creation_timestamp");
 				designation = rs.getString("designation");
 				station_str = rs.getString("station");
+				station_object = new Station(station_str);
 				actual_text = rs.getString("actual_text");
 				social_item_id = rs.getString("social_item_id");
 				created_by = rs.getString("created_by");
@@ -252,6 +254,51 @@ public class Alert implements java.lang.Comparable<Alert> {
 		if(successful)
 			setDeletionTimestamp();
 		return successful;
+	}
+	
+	public long getRedirectCount(boolean sansbot)
+	{
+		long returnval = 0;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = datasource.getConnection();
+			stmt = con.createStatement();
+			if(sansbot)
+			{
+				rs = stmt.executeQuery("SELECT COUNT(*) FROM redirects_" + station_object.getCallLetters() + " WHERE alert_id=" + id + 
+						" AND `user_agent` NOT LIKE '%bot%' AND `user_agent` NOT LIKE '%UnwindFetchor%' AND `user_agent` NOT LIKE '%JS-Kit%'" +
+						" AND `user_agent` NOT LIKE '%NING%' AND `user_agent` NOT LIKE '%facebookexternalhit%' AND `user_agent` NOT LIKE '%RockmeltEmbedder%' " +
+						"AND `user_agent`!='' AND `user_agent` NOT LIKE '%LongURL API%' AND `user_agent` NOT LIKE '%PycURL%' AND `user_agent` NOT LIKE '%Java/%' " +
+						"AND `user_agent` NOT LIKE '%spider%'  AND `user_agent` NOT LIKE '%Spider%' AND `user_agent` NOT LIKE '%Butterfly%'");
+			}
+			else
+				rs = stmt.executeQuery("SELECT COUNT(*) FROM redirects_" + station_object.getCallLetters() + " WHERE alert_id=" + id); // get the frames in the time range
+			rs.next();
+			returnval = rs.getLong(1);
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Alert.setDeletionTimestamp: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}   		
+		return returnval;
 	}
 	
 	public JSONObject getAsJSONObject()

@@ -1,6 +1,7 @@
 package tv.huzon;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -223,39 +224,42 @@ public class Station implements java.lang.Comparable<Station> {
 		return s3_bucket_public_hostname;
 	}
 	
-	JSONArray getFiredAlerts(long begin_long, long end_long, boolean include_redirects)
+	// datestring convenience method
+	TreeSet<Alert> getFiredAlerts(String beginstring, String endstring)
 	{
-		JSONArray fired_alerts_ja = new JSONArray();
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFiredAlerts(beginstring, endstring): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFiredAlerts(beginstring, endstring): endstring must be at least 8 char long");
+			return null;
+		}
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
+		return getFiredAlerts(begin_in_ms, end_in_ms);
+	}
+	
+	TreeSet<Alert> getFiredAlerts(long begin_long, long end_long)
+	{
+		TreeSet<Alert> returnset = new TreeSet<Alert>();
 		ResultSet rs = null;
 		Connection con = null;
 		Statement stmt = null;
 		try
 		{
 			con = datasource.getConnection();
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
-					" creation_timestamp <= FROM_UNIXTIME(" + end_long + "/1000) AND creation_timestamp >= FROM_UNIXTIME(" + begin_long + "/1000))");
+			stmt = con.createStatement();
+			System.out.println("Station.getFiredAlerts(long,long): SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
+					" timestamp_in_ms >= " + begin_long +" AND timestamp_in_ms <= " + end_long + ")");
 			rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
-					" creation_timestamp <= FROM_UNIXTIME(" + end_long + "/1000) AND creation_timestamp >= FROM_UNIXTIME(" + begin_long + "/1000))");
-			/*int x = 0;
-			JSONObject jo;
-			while(rs.next() && x < num_to_get)
+					" timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
+			while(rs.next())
 			{
-				jo = new JSONObject();
-				jo.put("image_url", rs.getString("image_url"));
-				jo.put("designation", rs.getString("designation"));
-				java.util.Date date = rs.getTimestamp("creation_timestamp");
-				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
-				if(rs.getString("created_by").isEmpty())
-					jo.put("created_by", rs.getString("designation"));
-				else
-					jo.put("created_by", rs.getString("created_by"));
-				jo.put("social_type", rs.getString("social_type"));
-				jo.put("station", rs.getString("station"));
-				jo.put("id", rs.getLong("id"));
-				alerts_ja.put(jo);
-				x++;
-			}*/
+				returnset.add(new Alert(rs.getLong("id")));
+			}
 			rs.close();
 			stmt.close();
 			con.close();
@@ -263,11 +267,8 @@ public class Station implements java.lang.Comparable<Station> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.getFiredAlerts: message=" +sqle.getMessage());
+			(new Platform()).addMessageToLog("Station.getFiredAlerts(long,long): SQLException: message=" +sqle.getMessage());
 		} 
-		/*catch (JSONException e) {
-			e.printStackTrace();
-		}*/
 		finally
 		{
 			try
@@ -276,13 +277,109 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 			catch(SQLException sqle)
 			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Platform.getFiredAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				System.out.println("Station.getFiredAlerts(long,long): Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("Station.getFiredAlerts(long,long): sqlexception Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
-		return fired_alerts_ja;
+		return returnset;
 	}
 	
+	// datestring convenience method
+	JSONArray getFiredAlertStatistics(String beginstring, String endstring, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
+	{
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFiredAlertStatistics(beginstring,endstring,interval, incl_redir_count, incl_sansbot_count): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFiredAlertStatistics(beginstring,endstring,interval, incl_redir_count, incl_sansbot_count): endstring must be at least 8 char long");
+			return null;
+		}
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
+		return getFiredAlertStatistics(begin_in_ms, end_in_ms, interval_in_ms, include_unabridged_redirect_count, include_sansbot_redirect_count);
+	}
+	
+	JSONArray getFiredAlertStatistics(long begin_long, long end_long, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
+	{
+		System.out.println("Station.getFiredAlertStatistics(): entering");
+		JSONArray return_ja = new JSONArray();
+		long x = begin_long;
+		while(x < end_long)
+		{
+			return_ja.put(getFiredAlertStatisticsForInterval(x, x+interval_in_ms, false, false));
+			x = x + interval_in_ms;
+		}
+		return return_ja;
+	}
+	
+	// this gets the results for one specific period in time, an hour, a day, week, month, etc and should be called multiple times for long time periods with many intervals
+	// begin_long and end_long are set to this one, specific interval
+	JSONObject getFiredAlertStatisticsForInterval(long begin_long, long end_long, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
+	{
+		System.out.println("Station.getFiredAlertStatisticsForInterval(): entering");
+		
+		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long); // get the fired alerts for just this interval
+		long unabridged_redirect_count = 0; long sansbot_redirect_count = 0;
+		Iterator<Alert> alert_it = fired_alert_set.iterator();
+		Alert currentalert = null;
+		while(alert_it.hasNext())
+		{
+			currentalert = alert_it.next();
+			unabridged_redirect_count = unabridged_redirect_count + currentalert.getRedirectCount(false); // include everything (unabridged)
+			sansbot_redirect_count = sansbot_redirect_count + currentalert.getRedirectCount(true); // filter out bots (sansbot)
+		}
+		
+		JSONObject return_jo = new JSONObject();
+		try {
+			String intervalstring = toDateString(begin_long);
+			return_jo.put("day", new Integer(intervalstring).intValue());
+			return_jo.put("fired_alert_count", fired_alert_set.size());
+			return_jo.put("unabridged_redirect_count", unabridged_redirect_count);
+			return_jo.put("sansbot_redirect_count", sansbot_redirect_count);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return return_jo;
+	}
+	
+	private String toDateString(long timestamp_in_ms)
+	{
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(timestamp_in_ms); // we know that the most recent image has a timestamp of right now. It can't "survive" there for more than a few seconds
+		// make the filename human-readable
+		String year = new Integer(cal.get(Calendar.YEAR)).toString();
+		String month = new Integer(cal.get(Calendar.MONTH) + 1).toString();
+		if(month.length() == 1) { month = "0" + month; }
+		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
+		if(day.length() == 1) { day = "0" + day;} 
+		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		/*if(hour24.length() == 1) { hour24 = "0" + hour24;} 
+		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
+		if(minute.length() == 1) { minute = "0" + minute;} 
+		String second = new Integer(cal.get(Calendar.SECOND)).toString();
+		if(second.length() == 1) { second = "0" + second;} 
+		String ms = new Long(timestamp_in_ms%1000).toString();
+		if(ms.length() == 1) { ms = "00" + ms;} 
+		if(ms.length() == 2) { ms = "0" + ms;}*/
+		String datestring = "";
+		datestring = year  + month + day;
+		return datestring;
+	}
+	
+	
+	public static void main(String[] args) {
+		Station s = new Station("wkyt");
+		JSONObject fired_alert_count_jo = null;
+		//fired_alert_count_jo = s.getFiredAlertCount(1374454057000L, 1374768476258L, false, false);
+		//s.unlock("testval3", "twitter");
+		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
+		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
+	}
+
 	JSONArray getMostRecentAlerts(int num_to_get)
 	{
 		JSONArray alerts_ja = new JSONArray();
@@ -1086,13 +1183,4 @@ public class Station implements java.lang.Comparable<Station> {
 	    	return -1;
 	}
 	
-	public static void main(String[] args) {
-		Station s = new Station("wkyt");
-		JSONArray fired_alerts_ja = null;
-		fired_alerts_ja = s.getFiredAlerts(1374435846000L, 1373831000000L, false);
-		//s.unlock("testval3", "twitter");
-		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
-		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
-	}
-
 }

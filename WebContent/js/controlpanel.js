@@ -37,6 +37,7 @@ var devel = true;
 
 //document.addEventListener('DOMContentLoaded', function () {
 $(window).load(function () {	
+	
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = ""; 
@@ -121,13 +122,13 @@ $(window).load(function () {
 	        			else
 	        				station = data.user_jo.stations_as_admin_ja[0];
 	        			
-	        			getStationInformation(twitter_handle, twitter_access_token, station);
+	        			//getStationInformation(twitter_handle, twitter_access_token, station);
     	        		
-	        			$("#graph_div").html("getSelf successful, this is the graph_div");
+	        			graphFiredAlertStatistics(twitter_handle, twitter_access_token, station);
 	        			
-    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
+    	        		//getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
 	        			
-    	        		getMostRecentAlerts(twitter_handle, twitter_access_token, station);
+    	        		//getMostRecentAlerts(twitter_handle, twitter_access_token, station);
 	        		}
 	        	}
 	        },
@@ -169,6 +170,98 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    		general_string = general_string + "<br><b>delta:</b> " + data.station_jo.delta;
 	    		general_string = general_string + "<br><b>frame rate:</b> " + data.station_jo.frame_rate;
 	    		$("#general_div").html(general_string);
+	    	}
+	    }
+	    ,
+	    error: function (XMLHttpRequest, textStatus, errorThrown) {
+	    	$("#results_div").html("ajax error");
+	        console.log(textStatus, errorThrown);
+	    }
+	});
+}
+
+function graphFiredAlertStatistics(twitter_handle, twitter_access_token, station)
+{
+	var alert_stats_string = "";
+	$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+	        method: "getFiredAlertStatistics",
+	        station: station,
+	        begin: "20130721_050000",
+	        end: "20130725_235959",
+	        twitter_handle: twitter_handle,
+	        twitter_access_token: twitter_access_token
+		},
+	    dataType: 'json',
+	    async: true,
+	    success: function (data, status) {
+	    	if (data.response_status == "error")
+	    	{
+	    		alert_stats_string = "<div style=\"font-size:16;color:red\">getFiredAlertStatistics error: " + data.message + "</div>";
+	    		$("#graph_div").html(alert_stats_string);
+	    	}
+	    	else
+	    	{
+	    			var fired_alert_counts = []; 
+	    			var unabridged_redirect_counts = [];
+	    			var sansbot_redirect_counts = [];
+	    			// looping through all frames gathered to graph
+	    			var max_redirect_count = 0;
+	    			var xticks = [];
+	    			for(var x = 0; x < data.fired_alerts_ja.length; x++)
+	    			{
+	    				xticks.push(data.fired_alerts_ja[x].day+"");
+	    				fired_alert_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].fired_alert_count]);
+	    				sansbot_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].sansbot_redirect_count]);
+	    				unabridged_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].unabridged_redirect_count]);
+	    				if(data.fired_alerts_ja[x].unabridged_redirect_count > max_redirect_count)
+	    					max_redirect_count = data.fired_alerts_ja[x].unabridged_redirect_count;
+	    			}
+	    			
+	    			var plot1 = $.jqplot ('chart1', [fired_alert_counts, sansbot_redirect_counts, unabridged_redirect_counts],{
+	    				title: 'Fired Alerts & Clicks by Time Interval',
+	    				//series:[{showMarker:false}],
+	    				axes: {
+	    					xaxis:{
+	    						ticks: xticks,
+	  	    		            label:'Time interval (hour, day, week, etc)',
+	  	    		            labelRenderer: $.jqplot.CanvasAxisLabelRenderer
+	  	    		        },
+	    					yaxis: {
+	    						label:'# alerts and clicks',
+	    						labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+	    			            min:0,max: (max_redirect_count + 20) // spacer
+	    			        }
+	    				}
+	    				,
+	    				canvasOverlay: {
+	    					show: true
+	    			        /*objects: [
+	    			                  {horizontalLine: {
+	    		    			            name: 'pebbles',
+	    		    			            y: (reporter_homogeneity),
+	    		    			            lineWidth: 3,
+	    		    			            color: 'rgb(100, 55, 124)',
+	    		    			            shadow: true,
+	    		    			            lineCap: 'butt',
+	    		    			            xOffset: 0
+	    		    			          }},  
+	    			          {dashedHorizontalLine: {
+	    			            name: 'bam-bam',
+	    			            y: (reporter_homogeneity * mamodifier),
+	    			            lineWidth: 4,
+	    			            dashPattern: [8, 16],
+	    			            lineCap: 'round',
+	    			            xOffset: '25',
+	    			            color: 'rgb(66, 98, 144)',
+	    			            shadow: false
+	    			          }}
+	    			        ]*/
+	    			      }
+	    			    });
 	    	}
 	    }
 	    ,

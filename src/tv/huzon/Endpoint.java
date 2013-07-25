@@ -803,7 +803,7 @@ public class JDBCServlet extends HttpServlet {
 						 *                | |                                                                                 | |                                     __/ |
 						 *                |_|                                                                                 |_|                                    |___/ 
 						 */
-						if(method.equals("getUser") || method.equals("verifyTwitterCredentials") || method.equals("verifyTopLevelFBCredentials") || method.equals("verifyPageFBCredentials"))
+						else if(method.equals("getUser") || method.equals("verifyTwitterCredentials") || method.equals("verifyTopLevelFBCredentials") || method.equals("verifyPageFBCredentials"))
 						{
 							String designation = request.getParameter("designation");
 							if(designation == null)
@@ -874,9 +874,9 @@ public class JDBCServlet extends HttpServlet {
 						 *                | |                                                                                 | |                                   
 						 *                |_|                                                                                 |_|                                   
 						 */
-						if(method.equals("getActiveReporterDesignations") || method.equals("resetProductionAlertTimers") || method.equals("resetTestAlertTimers") || method.equals("getMostRecentAlerts") || // station only
+						else if(method.equals("getActiveReporterDesignations") || method.equals("resetProductionAlertTimers") || method.equals("resetTestAlertTimers") || method.equals("getMostRecentAlerts") || // station only
 								method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames") 
-								|| method.equals("getStation") || method.equals("getActiveReporters")) // station + begin/end
+								|| method.equals("getStation") || method.equals("getActiveReporters") || method.equals("getFiredAlertStatistics")) // station + begin/end
 						{
 							String station_param = request.getParameter("station");
 							if(station_param == null)
@@ -961,7 +961,7 @@ public class JDBCServlet extends HttpServlet {
 								  *                | |                                                                   | |                                  |/               __/ |       |/                    
 								  *                |_|                                                                   |_|                                                  |___/                              
 								  */
-								 else if(method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames"))
+								 else if(method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames") || method.equals("getFiredAlertStatistics"))
 								 {
 									 String begin = request.getParameter("begin");
 									 String end = request.getParameter("end");
@@ -983,7 +983,9 @@ public class JDBCServlet extends HttpServlet {
 										 boolean use_long = false;
 										 long begin_long = 0L;
 										 long end_long = 0L;
-										 if(begin.indexOf("_") == -1 && end.indexOf("_") == -1)
+										 // to be a long value, it should be in milliseconds (more than 8 chars) and not contain an underscore
+										 // all else should be considered a YYYYMMDD or YYYYMMDD_HHMMSS value
+										 if(begin.indexOf("_") == -1 && end.indexOf("_") == -1 && begin.length() > 8 && end.length() > 8) 
 										 {
 											 begin_long = Long.parseLong(begin);
 											 end_long = Long.parseLong(end);
@@ -1124,10 +1126,16 @@ public class JDBCServlet extends HttpServlet {
 											 }		
 										 }
 										 // this function is used to return a raw JSONArray of fired alerts with all the component information for graphing purposes on the front-end										 
-										 else if (method.equals("getFiredAlerts"))
+										 else if (method.equals("getFiredAlertStatistics"))
 										 {
+											 System.out.println("Ep.doGet.getFiredAlertStatistics() called");
 											 JSONArray fired_alerts_ja = null;
-											 //fired_alerts_ja = station_object.getFiredAlerts(begin, end);
+											 if(use_long)
+												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin_long, end_long, 86400000L, true, false);
+											 else
+												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin, end, 86400000L, true, false);
+											 jsonresponse.put("response_status", "success");
+											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
 											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 										 }
 									 }
@@ -1161,6 +1169,12 @@ public class JDBCServlet extends HttpServlet {
 								}
 							}	
 						} 
+						else
+						{
+							jsonresponse.put("message", "User had global permissions, but the method was unknown.");
+							jsonresponse.put("response_status", "error");
+							(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful.");
+						}
 					} // end methods requiring global permissions (user is global admin) block
 					else
 					{

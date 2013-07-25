@@ -1,8 +1,12 @@
 <html>
 <head>
-	<title>huzon.tv Alert Monitor</title>
+	<title>huzon.tv Station Control Panel</title>
 	<link rel="icon" type="image/png" href="images/huzon_logo_16x16.png" />
+	 <LINK href="css/jquery.jqplot.min.css" rel="stylesheet" type="text/css">
     <script src="js/jquery-1.8.2.js"></script>
+    <script src="js/jquery.jqplot.min.js"></script>
+    <script type="text/javascript" src="js/jqplot.canvasTextRenderer.min.js"></script>
+    <script type="text/javascript" src="js/jqplot.canvasAxisLabelRenderer.min.js"></script>
     <script src="js/controlpanel.js"></script>
          <style>
         	body
@@ -28,7 +32,7 @@
     </head>
 		
 <body>	
-	<div id="header" style="width:1180px;text-align:center;font-size:20px">
+	<div id="header" style="width:100%;text-align:center;font-size:20px">
 		<table style="margin-left:auto;margin-right:auto">
 			<tr>
 				<td style="vertical-align:middle">
@@ -48,15 +52,16 @@
 	</div>
 	<div id="general_div" style="width:1180px;margin-right:auto;margin-left:auto">
 	</div>
-	<div id="graph_div" style="width:1180px;margin-right:auto;margin-left:auto"> <!--  number of alerts (of each type) + number of clickthroughs (of each type) per day for 2 weeks -->
-	</div>	
-	<!-- <div id="rankings_div" style="width:1180px;margin-right:auto;margin-left:auto"> </div> --> <!--  series of rankings of the reporters from the station (e.g. most clickthroughs per alert, clickthroughs per follower, etc) -->
+	
+	<div id="chart1" style="width:100%"></div>
 		
 	<div id="reporters_div" style="width:1180px;margin-right:auto;margin-left:auto"> <!--  table of reporter data, whether accounts are linked, how many alerts, successful/failed, etc -->
 	</div>	
-	<!-- <div id="administrators_div" style="width:1180px;margin-right:auto;margin-left:auto"></div> --> <!--  table of administrator data -->
 	
 	<div id="alerts_div" style="width:1180px;margin-right:auto;margin-left:auto"> <!--  Shows table of most recent alerts and allows the user to delete -->
 	</div>
+	
+	
+	
 </body>
 </html>

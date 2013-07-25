@@ -7,8 +7,8 @@
 				password="cTp88qLkS240y5x"
 				driverClassName="com.mysql.jdbc.Driver"
 				url="jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb" 
-				maxActive="24"
-				maxIdle="4" 
+				maxActive="20"
+				maxIdle="10" 
 				factory="org.apache.commons.dbcp.BasicDataSourceFactory" />
 
 </Context>
