@@ -1,6 +1,7 @@
 package tv.huzon;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -310,11 +311,51 @@ public class Platform {
 		return returnval;
 	}
 	
-	boolean putRedirectHitInDB(String station, long alert_id, String referrer, String user_agent, String ip_address, String designation)
+	boolean updateRedirectUltimateDestinationValue(String station, long redirect_id, String ultimate_destination)
 	{
 		boolean returnval = false;
 		Connection con = null;
+		PreparedStatement pstmt = null;
+		String updateString = null;
+		try
+		{
+			con = datasource.getConnection();
+			updateString = "UPDATE redirects_" + station + " SET `ultimate_destination`='" + ultimate_destination + "' WHERE id='" + redirect_id + "' ";
+			pstmt = con.prepareStatement(updateString);
+			pstmt.executeUpdate();
+			if(pstmt.getUpdateCount() == 1) // the update actually occurred
+				returnval = true; 
+			else
+			{
+				addMessageToLog("Platform.updateRedirectUltimateDestinationValue(): Tried to set redirect ultimate destination to " + ultimate_destination + " but failed.");
+			}
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			addMessageToLog("SQLException in Platform.updateRedirectUltimateDestinationValue(): message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				addMessageToLog("SQLException in Platform.updateRedirectUltimateDestinationValue(): Error occurred when closing con. message=" +sqle.getMessage());
+			}
+		}   		
+		return returnval;
+	}
+	
+	long putRedirectHitInDB(String station, long alert_id, String referrer, String user_agent, String ip_address, String designation)
+	{
+		long returnval = -1L;
+		Connection con = null;
 		Statement stmt = null;
+		ResultSet rs = null;
 		try
 		{
 			Calendar cal = Calendar.getInstance();
@@ -340,8 +381,16 @@ public class Platform {
 			System.out.println("INSERT INTO redirects_" + station + " (`timestamp_in_ms`, `timestamp_hr`, `alert_id`,`referrer`,`user_agent`,`ip_address`,`designation`, `station`) " +
 					"VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + alert_id + "','" + referrer + "','" + user_agent + "','" + ip_address + "','" + designation + "','" + station + "')");
 			stmt.executeUpdate("INSERT INTO redirects_" + station + " (`timestamp_in_ms`, `timestamp_hr`, `alert_id`,`referrer`,`user_agent`,`ip_address`,`designation`, `station`) " +
-					"VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + alert_id + "','" + referrer + "','" + user_agent + "','" + ip_address + "','" + designation + "','" + station + "')");
-			returnval = true;
+					"VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + alert_id + "','" + referrer + "','" + user_agent + "','" + ip_address + "','" + designation + "','" + station + "')",
+                    Statement.RETURN_GENERATED_KEYS);
+			
+			rs = stmt.getGeneratedKeys();
+
+			if (rs.next()) {
+				returnval = rs.getLong(1);
+			} else {
+				System.out.println("Endpoint.createAlertInDB(): error getting auto_increment value from row just entered.");
+			}
 			stmt.close();
 			con.close();
 		}
@@ -354,7 +403,7 @@ public class Platform {
 		{
 			try
 			{
-				if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+				if (rs  != null) { rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.Date;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -125,6 +126,11 @@ public class Alert implements java.lang.Comparable<Alert> {
 	Timestamp getTimestamp()
 	{
 		return creation_timestamp;
+	}
+	
+	long getAgeInMillis()
+	{
+		return (new Date().getTime() - getTimestampInMillis());
 	}
 	
 	String getDesignation()
@@ -308,6 +314,16 @@ public class Alert implements java.lang.Comparable<Alert> {
 			response_jo.put("designation", getDesignation());
 			response_jo.put("id", getID());
 			response_jo.put("social_type", getSocialType());
+			if(getSocialType().equals("twitter"))
+			{
+				Twitter t = new Twitter();
+				User reporter = new User(getDesignation(), "designation");
+				JSONObject twitter_object_response_jo = t.getTweet(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), getSocialItemID());
+				if(!twitter_object_response_jo.has("response_status")) // no error returned from twitter, just the object itself
+				{
+					response_jo.put("tweet_jo", twitter_object_response_jo);
+				}
+			}
 			response_jo.put("image_url", getImageURL());
 			response_jo.put("creation_timestamp", getTimestamp());
 			response_jo.put("text", getActualText());

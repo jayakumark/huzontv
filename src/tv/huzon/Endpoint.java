@@ -35,64 +35,10 @@ public class Endpoint extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 	
-/*
- * Illustration of connection pooling best practices. 
- * 
- * 
-import java.sql.*;
-import javax.sql.*;
-
-public class JDBCServlet extends HttpServlet {
-
-  private DataSource datasource;
-
-  public void init(ServletConfig config) throws ServletException {
-    try {
-      // Look up the JNDI data source only once at init time
-      Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
-      datasource = (DataSource) envCtx.lookup("jdbc/MyDataSource");
-    }
-    catch (NamingException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private Connection getConnection() throws SQLException {
-    return datasource.getConnection();
-  }
-
-  public void doGet (HttpServletRequest req, HttpServletResponse res) throws ServletException {
-    Connection connection=null;
-    try {
-      connection = getConnection();
-      ..<do JDBC work>..
-    } 
-    catch (SQLException sqlException) {
-      sqlException.printStackTrace();
-    }
-    finally {
-      if (connection != null) 
-        try {connection.close();} catch (SQLException e) {}
-      }
-    }
-  }
-}
- 
- */
-	
 	private DataSource datasource;
-	
 	
 	public void init(ServletConfig config) throws ServletException
 	{
-		//System.err.println("Endpoint init()");
-	/*	try {
-			Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		*/
 		try {
 			Context envCtx = (Context) new InitialContext().lookup("java:comp/env");
 			datasource = (DataSource) envCtx.lookup("jdbc/huzondb");
@@ -552,16 +498,8 @@ public class JDBCServlet extends HttpServlet {
 						jsonresponse.put("response_status", "success");
 						 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; boolean return_alerts = false;
 						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
-						(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
+						//(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
-					// this is unnecessary. getSelf tests Twitter credentials already
-					/*else if (method.equals("verifyTwitterCredentialsSelf")) 
-					{	
-						boolean tCredsAreValid = user.twitterCredentialsAreValid();
-						jsonresponse.put("response_status", "success");
-						jsonresponse.put("valid", tCredsAreValid);
-						 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
-					}*/
 					else if (method.equals("verifyTopLevelFBCredentialsSelf"))
 					{	
 						boolean fbCredsAreValid = user.fbTopLevelTokenIsValid();
@@ -876,7 +814,8 @@ public class JDBCServlet extends HttpServlet {
 						 */
 						else if(method.equals("getActiveReporterDesignations") || method.equals("resetProductionAlertTimers") || method.equals("resetTestAlertTimers") || method.equals("getMostRecentAlerts") || // station only
 								method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames") 
-								|| method.equals("getStation") || method.equals("getActiveReporters") || method.equals("getFiredAlertStatistics")) // station + begin/end
+								|| method.equals("getStation") || method.equals("getActiveReporters") || method.equals("getFiredAlerts") || method.equals("getFiredAlertStatistics") 
+								|| method.equals("setAlertMode")) // station + begin/end
 						{
 							String station_param = request.getParameter("station");
 							if(station_param == null)
@@ -908,7 +847,7 @@ public class JDBCServlet extends HttpServlet {
 								 {	
 									 jsonresponse.put("response_status", "success");
 									 jsonresponse.put("reporters_ja", new JSONArray(station_object.getReporterDesignations()));
-									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+									// (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 }
 								/* else if (method.equals("getActiveReporters"))
 								 {	
@@ -929,11 +868,36 @@ public class JDBCServlet extends HttpServlet {
 									 jsonresponse.put("response_status", "success");
 									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								 }
-								 else if (method.equals("getMostRecentAlerts"))
+								 else if (method.equals("setAlertMode"))
 								 {	
-									 jsonresponse.put("alerts_ja",station_object.getMostRecentAlerts(24));
-									 jsonresponse.put("response_status", "success");
-									 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+									 String alert_mode = request.getParameter("alert_mode");
+									 if(alert_mode == null)
+									 {
+										 jsonresponse.put("message", "This method (" + method + ") requires an alert_mode value.");
+										 jsonresponse.put("response_status", "error");
+										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing alert_mode value.");
+									 }
+									 else if(!(alert_mode.equals("live") || alert_mode.equals("test") || alert_mode.equals("silent")))
+									 {
+										 jsonresponse.put("message", "Invalid alert_mode value.");
+										 jsonresponse.put("response_status", "error");
+										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to invalid alert_mode value.");
+									 }
+									 else
+									 {	 
+										 boolean successful = station_object.setAlertMode(alert_mode);
+										 if(!successful)
+										 {	 
+											 jsonresponse.put("response_status", "error");
+											 jsonresponse.put("message", "Failure to set alert mode with station_object.");
+											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful.");
+										 }
+										 else
+										 {
+											 jsonresponse.put("response_status", "success");
+											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+										 }
+									 }
 								 }
 								 else if(method.equals("getStation"))
 								 {
@@ -961,7 +925,8 @@ public class JDBCServlet extends HttpServlet {
 								  *                | |                                                                   | |                                  |/               __/ |       |/                    
 								  *                |_|                                                                   |_|                                                  |___/                              
 								  */
-								 else if(method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames") || method.equals("getFiredAlertStatistics"))
+								 else if(method.equals("getFrameTimestamps") || method.equals("getFrames") || method.equals("getFramesAboveDesignationHomogeneityThreshold") || method.equals("getAlertFrames") 
+										 || method.equals("getFiredAlerts") || method.equals("getFiredAlertStatistics"))
 								 {
 									 String begin = request.getParameter("begin");
 									 String end = request.getParameter("end");
@@ -1125,7 +1090,20 @@ public class JDBCServlet extends HttpServlet {
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 											 }		
 										 }
-										 // this function is used to return a raw JSONArray of fired alerts with all the component information for graphing purposes on the front-end										 
+										 // this function is used to return a raw JSONArray of fired alerts 										 
+										 else if (method.equals("getFiredAlerts"))
+										 {
+											 System.out.println("Ep.doGet.getFiredAlerts() called");
+											 JSONArray fired_alerts_ja = null;
+											 if(use_long)
+												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin_long, end_long);
+											 else
+												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin, end);
+											 jsonresponse.put("response_status", "success");
+											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
+											 //(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+										 }
+										 // this function is used to return a raw JSONArray of fired alerts STATISTICS (not the alerts themselves) for graphing purposes on the front-end										 
 										 else if (method.equals("getFiredAlertStatistics"))
 										 {
 											 System.out.println("Ep.doGet.getFiredAlertStatistics() called");
@@ -1136,7 +1114,7 @@ public class JDBCServlet extends HttpServlet {
 												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin, end, 86400000L, true, false);
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
-											 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
+											 //(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 										 }
 									 }
 								 } // end methods requiring station, begin, end

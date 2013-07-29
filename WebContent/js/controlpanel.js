@@ -122,13 +122,18 @@ $(window).load(function () {
 	        			else
 	        				station = data.user_jo.stations_as_admin_ja[0];
 	        			
-	        			//getStationInformation(twitter_handle, twitter_access_token, station);
+	        			getStationInformation(twitter_handle, twitter_access_token, station);
     	        		
-	        			graphFiredAlertStatistics(twitter_handle, twitter_access_token, station);
+	        			var d = new Date();
+	        			var end = d.getTime();
+	        			var endstring = end + "";
+	        			var begin = end - (2592000000/30*14); // 30 days
+	        			var beginstring = begin + "";
+	        			graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        			
-    	        		//getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
+    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
 	        			
-    	        		//getMostRecentAlerts(twitter_handle, twitter_access_token, station);
+    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        		}
 	        	}
 	        },
@@ -164,12 +169,57 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    		general_string = general_string + "<br><b>city:</b> " + data.station_jo.city;
 	    		general_string = general_string + "<br><b>state:</b> " + data.station_jo.state;
 	    		general_string = general_string + "<br><b>2013 dma:</b> " + data.station_jo.dma2013;
-	    		general_string = general_string + "<br><b>alert mode:</b> " + data.station_jo.alert_mode;
 	    		general_string = general_string + "<br><b>ma window:</b> " + data.station_jo.maw;
 	    		general_string = general_string + "<br><b>ma modifier:</b> " + data.station_jo.mamodifier;
 	    		general_string = general_string + "<br><b>delta:</b> " + data.station_jo.delta;
 	    		general_string = general_string + "<br><b>frame rate:</b> " + data.station_jo.frame_rate;
+	    		general_string = general_string + "<br><b>alert mode:</b>";
+	    		general_string = general_string + "<select id=\"alert_mode_select\">";
+	    		general_string = general_string + "	<option SELECTED id=\"alert_mode_live_option\" value=\"live\">live</option>";
+	    		general_string = general_string + "	<option id=\"alert_mode_test_option\" value=\"test\">test</option>";
+	    		general_string = general_string + "	<option id=\"alert_mode_silent_option\" value=\"silent\">silent</option>";
+	    		general_string = general_string + "</select> <span id=\"alert_mode_change_span\"></span>";
 	    		$("#general_div").html(general_string);
+	    		if(data.station_jo.alert_mode === "live")
+	    			$("#alert_mode_live_option").prop('selected', true);
+	    		else if(data.station_jo.alert_mode === "test")
+	    			$("#alert_mode_test_option").prop('selected', true);
+	    		else if(data.station_jo.alert_mode === "silent")
+	    			$("#alert_mode_silent_option").prop('selected', true);
+	    		$("#alert_mode_select").change(function () {
+					$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "setAlertMode",
+				            alert_mode: $("#alert_mode_select").val(), 
+				            station: station,
+					        twitter_handle: twitter_handle,
+					        twitter_access_token: twitter_access_token
+				        },
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status === "error")
+				        	{
+				        		$("#alert_mode_change_span").css("color", "red");
+				        		$("#alert_mode_change_span").html("error");
+				        	}
+				        	else
+				        	{
+				        		$("#alert_mode_change_span").css("color", "green");
+				        		$("#alert_mode_change_span").html("updated");
+				        	}
+				        	var int=self.setInterval(function(){$("#alert_mode_change_span").html("");},5000); // clear it out after 5 seconds
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#alert_mode_change_span").html("ajax error");
+				        	$("#alert_mode_change_span").css("color", "red");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+            	});	
 	    	}
 	    }
 	    ,
@@ -180,7 +230,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	});
 }
 
-function graphFiredAlertStatistics(twitter_handle, twitter_access_token, station)
+function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
 	var alert_stats_string = "";
 	$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
@@ -190,8 +240,8 @@ function graphFiredAlertStatistics(twitter_handle, twitter_access_token, station
 		data: {
 	        method: "getFiredAlertStatistics",
 	        station: station,
-	        begin: "20130721_050000",
-	        end: "20130725_235959",
+	        begin: beginstring,
+	        end: endstring,
 	        twitter_handle: twitter_handle,
 	        twitter_access_token: twitter_access_token
 		},
@@ -206,7 +256,7 @@ function graphFiredAlertStatistics(twitter_handle, twitter_access_token, station
 	    	else
 	    	{
 	    			var fired_alert_counts = []; 
-	    			var unabridged_redirect_counts = [];
+	    			//var unabridged_redirect_counts = [];
 	    			var sansbot_redirect_counts = [];
 	    			// looping through all frames gathered to graph
 	    			var max_redirect_count = 0;
@@ -216,12 +266,12 @@ function graphFiredAlertStatistics(twitter_handle, twitter_access_token, station
 	    				xticks.push(data.fired_alerts_ja[x].day+"");
 	    				fired_alert_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].fired_alert_count]);
 	    				sansbot_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].sansbot_redirect_count]);
-	    				unabridged_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].unabridged_redirect_count]);
-	    				if(data.fired_alerts_ja[x].unabridged_redirect_count > max_redirect_count)
-	    					max_redirect_count = data.fired_alerts_ja[x].unabridged_redirect_count;
+	    				//unabridged_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].unabridged_redirect_count]);
+	    				if(data.fired_alerts_ja[x].sansbot_redirect_count > max_redirect_count)
+	    					max_redirect_count = data.fired_alerts_ja[x].sansbot_redirect_count;
 	    			}
 	    			
-	    			var plot1 = $.jqplot ('chart1', [fired_alert_counts, sansbot_redirect_counts, unabridged_redirect_counts],{
+	    			var plot1 = $.jqplot ('chart1', [fired_alert_counts, sansbot_redirect_counts],{
 	    				title: 'Fired Alerts & Clicks by Time Interval',
 	    				//series:[{showMarker:false}],
 	    				axes: {
@@ -496,14 +546,16 @@ function getUser(designation)
 	});
 }
 
-function getMostRecentAlerts(twitter_handle, twitter_access_token, station)
+function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
 	$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
 		data: {
-            method: "getMostRecentAlerts",
+            method: "getFiredAlerts",
+            begin: beginstring,
+            end: endstring,
             station: station,
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
@@ -517,14 +569,23 @@ function getMostRecentAlerts(twitter_handle, twitter_access_token, station)
         	}
         	else // getMostRecentAlerts was successful, meaning twitter_handle and twitter_access_token were OK
         	{
-        		var alerts_ja = data.alerts_ja;
+        		var alerts_ja = data.fired_alerts_ja;
         		var mds = "";
         		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
         		for(var x = 0; x < alerts_ja.length; x++)
         		{	
         			mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-weight:bold;font-size:20px\">";
-	        		mds = mds + "			<img src=\"" + alerts_ja[x].image_url + "\" style=\"width:400px;height:225px\">";
+	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:10px\">";
+	        		//mds = mds + JSON.stringify(alerts_ja[x]);
+	        		if(alerts_ja[x].social_type === "twitter")
+	        		{
+	        			//mds = mds + JSON.stringify(alerts_ja[x].tweet_jo.entities);
+	        			mds = mds + "			<img src=\"" + alerts_ja[x].tweet_jo.entities.media[0].media_url + "\" style=\"width:400px;height:225px\">";
+	        		}
+	        		else
+	        		{
+	        			mds = mds + "			<img src=\"" + alerts_ja[x].image_url + "\" style=\"width:400px;height:225px\">";
+	        		}
 	        		mds = mds + "		</td>";
 	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
 	        		mds = mds + "			" + alerts_ja[x].creation_timestamp + "<br>" +  alerts_ja[x].designation + "<br>" + alerts_ja[x].station + "<br>" + alerts_ja[x].social_type + "<br>" + alerts_ja[x].created_by;;

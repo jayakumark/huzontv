@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -46,7 +47,13 @@ public class Station implements java.lang.Comparable<Station> {
 	private int maw;
 	private double mamodifier;
 	private double delta;
-	
+	private String homepage_url;
+	private String clips_url;
+	private String recent_newscasts_url;
+	private String iphone_app_url;
+	private String android_app_url;
+	private String logo_filename;
+	private String short_display_name; // like "Local 12", "WKYT" or "LEX 18", whatever they are called
 	private DataSource datasource;
 	
 	public Station(String inc_call_letters)
@@ -76,6 +83,14 @@ public class Station implements java.lang.Comparable<Station> {
 				frame_rate = rs.getInt("frame_rate");
 				livestream_url = rs.getString("livestream_url");
 				livestream_url_alias = rs.getString("livestream_url_alias");
+				
+				logo_filename = rs.getString("logo_filename");
+				homepage_url = rs.getString("homepage_url");
+				clips_url = rs.getString("clips_url");
+				recent_newscasts_url = rs.getString("recent_newscasts_url");
+				iphone_app_url = rs.getString("iphone_app_url");
+				android_app_url = rs.getString("android_app_url");
+				short_display_name = rs.getString("short_display_name");
 				
 				alert_mode = rs.getString("alert_mode");
 				nrpst = rs.getInt("nrpst");
@@ -124,6 +139,41 @@ public class Station implements java.lang.Comparable<Station> {
 		}  	
 		
 	}
+	
+	// these 3 will never be null or empty.
+	public String getHomepageURL()
+	{
+		return homepage_url;
+	}
+	public String getLogoFilename()
+	{
+		return logo_filename;
+	}
+	public String getShortDisplayName()
+	{
+		return short_display_name;
+	}
+	// end 3 functions note
+	
+	// these 4 functions will never return null, but value may be empty. Calling function should check.
+	public String getRecentNewscastsURL()
+	{
+		return recent_newscasts_url;
+	}
+	public String getClipsURL()
+	{
+		return clips_url;
+	}
+	public String getiPhoneAppURL()
+	{
+		return iphone_app_url;
+	}
+	public String getAndroidAppURL()
+	{
+		return android_app_url;
+	}
+	// end 4 functions note
+	
 	
 	public String getAlertMode()
 	{
@@ -284,6 +334,38 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnset;
 	}
 	
+	
+	JSONArray getFiredAlertsAsJSONArray(String beginstring, String endstring)
+	{
+		if(beginstring.length() < 8)
+		{
+			System.out.println("Station.getFiredAlerts(beginstring, endstring): beginstring must be at least 8 char long");
+			return null;
+		}
+		if(endstring.length() < 8)
+		{
+			System.out.println("Station.getFiredAlerts(beginstring, endstring): endstring must be at least 8 char long");
+			return null;
+		}
+		long begin_in_ms = convertDateTimeStringToLong(beginstring);
+		long end_in_ms = convertDateTimeStringToLong(endstring);
+		return getFiredAlertsAsJSONArray(begin_in_ms, end_in_ms);
+	}
+	
+	JSONArray getFiredAlertsAsJSONArray(long begin_long, long end_long)
+	{
+		TreeSet<Alert> alertset = getFiredAlerts(begin_long, end_long);
+		JSONArray return_ja = new JSONArray();
+		Alert currentalert = null;
+		Iterator<Alert> alert_it = alertset.iterator();
+		while(alert_it.hasNext())
+		{
+			currentalert = alert_it.next();
+			return_ja.put(currentalert.getAsJSONObject());
+		}
+		return return_ja;
+	}
+	
 	// datestring convenience method
 	JSONArray getFiredAlertStatistics(String beginstring, String endstring, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
 	{
@@ -380,7 +462,7 @@ public class Station implements java.lang.Comparable<Station> {
 		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
 	}
 
-	JSONArray getMostRecentAlerts(int num_to_get)
+	/*JSONArray getMostRecentAlerts(int num_to_get)
 	{
 		JSONArray alerts_ja = new JSONArray();
 		ResultSet rs = null;
@@ -405,6 +487,11 @@ public class Station implements java.lang.Comparable<Station> {
 				else
 					jo.put("created_by", rs.getString("created_by"));
 				jo.put("social_type", rs.getString("social_type"));
+				if(social_type.equals("twitter"))
+				{
+					Twitter t = new Twitter();
+					t.
+				}
 				jo.put("station", rs.getString("station"));
 				jo.put("id", rs.getLong("id"));
 				alerts_ja.put(jo);
@@ -434,7 +521,7 @@ public class Station implements java.lang.Comparable<Station> {
 			}
 		}  	
 		return alerts_ja;
-	}
+	}*/
 	
 	// datestring convenience method
 	public JSONArray getFrameTimestamps(String beginstring, String endstring)
@@ -859,7 +946,88 @@ public class Station implements java.lang.Comparable<Station> {
 		}   		
 		return true;
 	}
+	
+	public boolean isLiveStreaming()
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = datasource.getConnection();
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " ORDER BY timestamp_in_ms DESC LIMIT 1"); // get the frames in the time range
+			if(rs.next())
+			{	
+				if((new Date().getTime() - rs.getLong("timestamp_in_ms")) < 30000) // last frame less than 30 seconds
+					returnval = true;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Station.isLiveStreaming: Error getting table row. message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				sqle.printStackTrace();
+			}
+		}   	
+		return returnval;
+	}
 
+	// value of alert_mode has already been validated by EndPoint. Maybe should do it here?
+	public boolean setAlertMode(String alert_mode)
+	{
+		boolean returnval = false;
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		String updateString = null;
+		try
+		{
+			con = datasource.getConnection();
+			updateString = "UPDATE stations SET `alert_mode`='" + alert_mode + "' WHERE call_letters='" + getCallLetters() + "' ";
+			//System.out.println("Executing statement: " + updateString);
+			pstmt = con.prepareStatement(updateString);
+			pstmt.executeUpdate();
+			//System.out.println(pstmt.getUpdateCount());
+			if(pstmt.getUpdateCount() == 1) // the update actually occurred
+				returnval = true; 
+			else
+			{
+				(new Platform()).addMessageToLog("Station.setAlertMode(): Tried to set station alert_mode to " + alert_mode + " but failed.");
+			}
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in Station.setAlertMode(): message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				(new Platform()).addMessageToLog("SQLException in Station.setAlertMode(): Error occurred when closing con. message=" +sqle.getMessage());
+			}
+		}   		
+		return returnval;
+	}
+	
 	boolean lock(String uuid, String lock_type)
 	{
 		boolean returnval = false;
@@ -976,7 +1144,7 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		else if(social_type.equals("twitter"))
 		{
-			returnval = "@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
+			returnval = ".@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
 		}
 		return returnval;
 	}
