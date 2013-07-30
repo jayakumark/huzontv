@@ -55,6 +55,7 @@ public class Station implements java.lang.Comparable<Station> {
 	private String logo_filename;
 	private String short_display_name; // like "Local 12", "WKYT" or "LEX 18", whatever they are called
 	private DataSource datasource;
+	private String test_designation;
 	
 	public Station(String inc_call_letters)
 	{
@@ -91,6 +92,7 @@ public class Station implements java.lang.Comparable<Station> {
 				iphone_app_url = rs.getString("iphone_app_url");
 				android_app_url = rs.getString("android_app_url");
 				short_display_name = rs.getString("short_display_name");
+				test_designation = rs.getString("test_designation");
 				
 				alert_mode = rs.getString("alert_mode");
 				nrpst = rs.getInt("nrpst");
@@ -140,7 +142,7 @@ public class Station implements java.lang.Comparable<Station> {
 		
 	}
 	
-	// these 3 will never be null or empty.
+	// these 4 will never be null or empty.
 	public String getHomepageURL()
 	{
 		return homepage_url;
@@ -153,7 +155,11 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		return short_display_name;
 	}
-	// end 3 functions note
+	public String getTestDesignation()
+	{
+		return test_designation;
+	}
+	// end 4 functions note
 	
 	// these 4 functions will never return null, but value may be empty. Calling function should check.
 	public String getRecentNewscastsURL()

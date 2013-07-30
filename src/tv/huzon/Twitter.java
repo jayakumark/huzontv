@@ -1368,7 +1368,6 @@ public class Twitter {
 	public static void main(String[] args) {
 
 		Twitter twitter = new Twitter();
-		//User user = new User("huzon_master", "designation");
 		System.out.println(twitter.getTweet("11p", "qFQCY", "360797811710779393"));
 		
 		/*Station station_object = new Station("wkyt");

@@ -6,7 +6,7 @@
 				username="huzon"
 				password="cTp88qLkS240y5x"
 				driverClassName="com.mysql.jdbc.Driver"
-				url="jdbc:mysql://aa13frlbuva60me.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb" 
+				url="jdbc:mysql://aa10d3b6eezvj0u.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?autoReconnect=true" 
 				maxActive="20"
 				maxIdle="10" 
 				factory="org.apache.commons.dbcp.BasicDataSourceFactory" />

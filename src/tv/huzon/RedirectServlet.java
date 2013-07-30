@@ -151,7 +151,7 @@ public class RedirectServlet extends HttpServlet {
 							out.println("		<td><img src=\"images/" + station_object.getLogoFilename() + "\"></td>");
 							out.println("	</tr>");
 							out.println("	<tr>");
-							out.println("		<td style=\"font-size:18px\"><span style=\"color:red\">NOTE: The live stream link you clicked is more than an hour old and the live newscast may be over. Where would you like to go?</span></td>");
+							out.println("		<td style=\"font-size:18px\"><span style=\"color:red\">NOTE: The link you clicked is old and the live stream is not currently active. Where would you like to go instead?</span></td>");
 							out.println("	</tr>");
 							out.println("	<tr>");
 							out.println("		<td><a href=\"" + station_object.getLiveStreamURLAlias() + "?id=" + id + "&redirect=homepage&redirect_id=" + redirect_id + "\">"+ station_object.getShortDisplayName() + " homepage</a></td>");

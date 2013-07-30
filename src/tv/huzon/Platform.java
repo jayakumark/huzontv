@@ -320,7 +320,8 @@ public class Platform {
 		try
 		{
 			con = datasource.getConnection();
-			updateString = "UPDATE redirects_" + station + " SET `ultimate_destination`='" + ultimate_destination + "' WHERE id='" + redirect_id + "' ";
+			// only update records where the ultimate_destination is not set. Otherwise, the original value could get wiped out.
+			updateString = "UPDATE redirects_" + station + " SET `ultimate_destination`='" + ultimate_destination + "' WHERE (id='" + redirect_id + "' AND ultimate_destination='')"; 
 			pstmt = con.prepareStatement(updateString);
 			pstmt.executeUpdate();
 			if(pstmt.getUpdateCount() == 1) // the update actually occurred
@@ -440,10 +441,6 @@ public class Platform {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Platform p = new Platform();
-		Station station_object = new Station("wkyt");
-		User postinguser = new User("huzon_master", "designation");
-		p.createAlertInDB(station_object, "test", "phil_pendleton", "test.png", postinguser);
-		//p.addMessageToLog("test message3");
 	}
 
 }

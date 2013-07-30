@@ -159,6 +159,18 @@ public class User implements java.lang.Comparable<User> {
 		}  	
 	}
 	
+	/*public boolean isStationAdmin()
+	{
+		return station_admin;
+	}*/
+	
+	public boolean appearsOnAir()
+	{
+		if(weather || sports || anchor || reporter)
+			return true;
+		return false;
+	}
+	
 	public boolean isWithinFacebookWindow(long frame_millis, String which_timers, int fb_wp_override_in_sec)
 	{
 		if(fb_wp_override_in_sec == -1) // use the db values
@@ -914,6 +926,7 @@ public class User implements java.lang.Comparable<User> {
 		boolean fb_call_successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
+			// must use huzon_master credentials because it is the application owner on Facebook
 			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookAccessToken() + "&access_token=" + (new User("huzon_master", "designation").getFacebookAccessToken()));
 			HttpResponse response = httpClient.execute(hg);
 			int statusCode = response.getStatusLine().getStatusCode();
@@ -985,6 +998,7 @@ public class User implements java.lang.Comparable<User> {
 		boolean fb_call_successful = false;
 		try {
 			HttpClient httpClient = new DefaultHttpClient();
+			// must use huzon_master credentials because it is the application owner on Facebook
 			HttpGet hg = new HttpGet("https://graph.facebook.com/debug_token?input_token=" + getFacebookPageAccessToken() + "&access_token=" + "&access_token=" + (new User("huzon_master", "designation").getFacebookAccessToken()));
 			HttpResponse response = httpClient.execute(hg);
 			int statusCode = response.getStatusLine().getStatusCode();
@@ -1170,6 +1184,7 @@ public class User implements java.lang.Comparable<User> {
 			response_jo.put("twitter_cooldown", twitter_cooldown);
 			response_jo.put("twitter_active", twitter_active);
 			response_jo.put("twitter_last_alert", twitter_last_alert);
+			response_jo.put("appears_on_air", appearsOnAir());
 			
 			if(return_tw_profile)
 				response_jo.put("twitter_jo", getProfileFromTwitter());

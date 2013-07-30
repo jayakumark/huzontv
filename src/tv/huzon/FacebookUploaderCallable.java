@@ -78,7 +78,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 			{
 				User postinguser = null;
 				if(station_object.getAlertMode().equals("test"))
-					postinguser = new User("huzon_master", "designation");
+					postinguser = new User(station_object.getTestDesignation(), "designation");
 				else
 					postinguser = reporter;
 								

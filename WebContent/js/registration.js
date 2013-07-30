@@ -249,193 +249,202 @@ document.addEventListener('DOMContentLoaded', function () {
 		        		mds = mds + "	</tr>";
 		        		mds = mds + "	<tr>";
 		        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:20px\" colspan=2>";
-		        		mds = mds + "1. Twitter linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.twitter_handle + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-		        		mds = mds + "2. Facebook linked? ";
-		        		var fb_toplevel_valid = false;
-		        		var fb_subaccounts_ja = null;
-		        		$.ajax({
-		        			type: 'GET',
-		        			url: endpoint,
-		        			data: {
-		        	            method: "verifyTopLevelFBCredentialsSelf",
-		        	            designation: data.user_jo.designation,
-		        	            twitter_handle: twitter_handle,
-		        	            twitter_access_token: twitter_access_token
-		        			},
-		        	        dataType: 'json',
-		        	        async: false,
-		        	        success: function (data, status) {
-		        	        	if (data.response_status === "error")
-		        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
-		        	        	else if(data.response_status === "success")
-		        	        	{
-		        	        		//alert(JSON.stringify(data));
-		        	        		if(data.valid === true)
-		        	        		{
-		        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-		        	        			fb_toplevel_valid = true;
-		        	        		}
-		        	        		else
-		        	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> click here <br>";
-		        	        	}
-		        	        }
-		        	        ,
-		        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-		        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-		        	            console.log(textStatus, errorThrown);
-		        	        }
-		        		});
-		        		
-		        		mds = mds + "3. Facebook <i>reporter page</i> linked? ";
-		        		var fb_page_valid = false;
-		        		var fb_page_id = data.user_jo.facebook_page_id;
-		        		$.ajax({
-		        			type: 'GET',
-		        			url: endpoint,
-		        			data: {
-		        	            method: "verifyPageFBCredentialsSelf",
-		        	            designation: data.user_jo.designation,
-		        	            twitter_handle: twitter_handle,
-		        	            twitter_access_token: twitter_access_token
-		        			},
-		        	        dataType: 'json',
-		        	        async: false,
-		        	        success: function (data, status) {
-		        	        	if (data.response_status === "error")
-		        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
-		        	        	else if(data.response_status === "success")
-		        	        	{
-		        	        		var valid_page_id = "";
-		        	        		if(data.valid === true)
-		        	        		{
-		        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
-		        	        			fb_page_valid = true;
-
-		        	        			// get the (determined to be valid) page information from the user object already retrieved
-		        	        			valid_page_id = fb_page_id;  			
-		        	        		}
-		        	        		else
-		        	        		{
-		        	        			if(fb_toplevel_valid === true)
-		        	        				mds = mds + "<span style=\"color:red\">NO</span> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> select a page below <br>";
-		        	        			else
-		        	        				mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
-		        	        		}
-
-		        	        		// in either case...
-	        	        			// get the page options from facebook so we can show user which one is currently selected (if any) and which other options are available.
-	        	        			$.ajax({
-	        	        				type: 'GET',
-	        	        				url: endpoint,
-	        							data: {
-	        					            method: "getFacebookSubAccountInfoFromFacebook",
-	        					            twitter_handle: twitter_handle,
-	        					            twitter_access_token: twitter_access_token
-	        							},
-	        					        dataType: 'json',
-	        					        async: false,
-	        					        success: function (data, status) {
-	        					        	if (data.response_status === "error")
-	        					        	{
-	        					        		// This is ok. Probably just means the user has not linked their top-level account yet. Fail silently
-	        					        	}
-	        					        	else
-	        					        	{
-	        					        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
-	        					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
-	        					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
-	        					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
-	        					        		{
-	        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
-	        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1)));
-	        					        			if(fb_page_valid === true && ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1))) // this is the checked option
-	        					        			{
-	        					        				//alert(fb_subaccounts_ja[x].name + "checked");
-	        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type='radio' CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
-	        					        			}
-	        					        			else
-	        					        			{
-	        					        				//alert(fb_subaccounts_ja[x].name + "not checked");
-	        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
-	        					        			}
-	        					        		}
-	        					        		mds = mds + "			</table>";
-	        					        	}
-	        					        }
-	        					        ,
-	        					        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        					        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-	        					            console.log(textStatus, errorThrown);
-	        					        }
-	        						});
-		        	        	}
-		        	        }
-		        	        ,
-		        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-		        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
-		        	            console.log(textStatus, errorThrown);
-		        	        }
-		        		});
-		        		
-		        		if(fb_toplevel_valid && fb_page_valid)
+		        		/*if(data.user_jo.appears_on_air == false) 
 		        		{
-		        			mds = mds + "<br><br>You're finished! Thanks!";
+		        			mds = mds + "Twitter linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.twitter_handle + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+		        			mds = mds + "<br><br>You're finished! Thanks! (Only on-air personalities need to link their Facebook accounts)";
+		        			$("#main_div").html(mds);
 		        		}	
-		        		else if(!fb_toplevel_valid && fb_page_valid)
-		        		{
-		        			mds = mds + "<br><br>You're finished! Thanks!<br>(Your main Facebook account has become unlinked, but that's ok. All huzon.tv needs is a connection to your FB reporter page.)";
-		        		}
-		        		
-		        		$("#main_div").html(mds);
-		        		
-		        		$("#facebook_link").click({value1: data.user_jo.designation},
-	        					function (event) {
-		        					var randomnumber=Math.floor(Math.random()*1000000);
-		        					var state = randomnumber+"";
-		        					docCookies.setItem("state", state, 300);
-		        					docCookies.setItem("designation", event.data.value1, 31536e3);
-		        					alert('Sending you to Facebook. Grant ALL permissions you are prompted for. Otherwise, huzon.tv will not work properly.');
-		        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
-		        					return false;
-	        					}
-	        				);
-		        		
-		        		if(fb_subaccounts_ja != null)
-		        		{	
-		        			for(var x=0; x < fb_subaccounts_ja.length; x++)
-			        		{
-		        				$("#" + fb_subaccounts_ja[x].id + "_radio").click({fb_subaccount_id: fb_subaccounts_ja[x].id},
-		            					function (event) {
-		        							//alert('setting facebook sub account info with ' + event.data.fb_subaccount_id);
-		        							$.ajax({
-		    	        						type: 'GET',
-		    	        						url: endpoint,
-		    	        						data: {
-		    	        				            method: "setFacebookSubAccountInfo",
-		    	        				            twitter_handle: twitter_handle,
-		    	    					            twitter_access_token: twitter_access_token,
-		    	    					            fb_subaccount_id: event.data.fb_subaccount_id
-		    	        						},
-		    	        				        dataType: 'json',
-		    	        				        async: false,
-		    	        				        success: function (data, status) {
-		    	        				        	if (data.response_status === "error")
-		    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
-		    	        				        	else
-		    	        				        	{
-		    	        				        		//alert('twitter_handle not null, fb code did not exist, getSelf was successful. Get get and setFBSubAccountInfo was successful. Reloading.');
-		    	        				        		window.location.href = "https://www.huzon.tv/registration.html";
-		    	        				        	}
-		    	        				        }
-		    	        				        ,
-		    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-		    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
-		    	        				            console.log(textStatus, errorThrown);
-		    	        				        }
-		    	        					});
+		        		else
+		        		{*/	
+		        			mds = mds + "1. Twitter linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.twitter_handle + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+			        		mds = mds + "2. Facebook linked? ";
+			        		var fb_toplevel_valid = false;
+			        		var fb_subaccounts_ja = null;
+			        		$.ajax({
+			        			type: 'GET',
+			        			url: endpoint,
+			        			data: {
+			        	            method: "verifyTopLevelFBCredentialsSelf",
+			        	            designation: data.user_jo.designation,
+			        	            twitter_handle: twitter_handle,
+			        	            twitter_access_token: twitter_access_token
+			        			},
+			        	        dataType: 'json',
+			        	        async: false,
+			        	        success: function (data, status) {
+			        	        	if (data.response_status === "error")
+			        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
+			        	        	else if(data.response_status === "success")
+			        	        	{
+			        	        		//alert(JSON.stringify(data));
+			        	        		if(data.valid === true)
+			        	        		{
+			        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+			        	        			fb_toplevel_valid = true;
+			        	        		}
+			        	        		else
+			        	        			mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> click here <br>";
+			        	        	}
+			        	        }
+			        	        ,
+			        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+			        	            console.log(textStatus, errorThrown);
+			        	        }
+			        		});
+			        		
+			        		mds = mds + "3. Facebook <i>reporter page</i> linked? ";
+			        		var fb_page_valid = false;
+			        		var fb_page_id = data.user_jo.facebook_page_id;
+			        		$.ajax({
+			        			type: 'GET',
+			        			url: endpoint,
+			        			data: {
+			        	            method: "verifyPageFBCredentialsSelf",
+			        	            designation: data.user_jo.designation,
+			        	            twitter_handle: twitter_handle,
+			        	            twitter_access_token: twitter_access_token
+			        			},
+			        	        dataType: 'json',
+			        	        async: false,
+			        	        success: function (data, status) {
+			        	        	if (data.response_status === "error")
+			        	        		mds = mds + "<span style=\"color:red\">ERROR</span> Please reload the page or contact huzon.tv support. Sorry.<br>";
+			        	        	else if(data.response_status === "success")
+			        	        	{
+			        	        		var valid_page_id = "";
+			        	        		if(data.valid === true)
+			        	        		{
+			        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+			        	        			fb_page_valid = true;
+
+			        	        			// get the (determined to be valid) page information from the user object already retrieved
+			        	        			valid_page_id = fb_page_id;  			
+			        	        		}
+			        	        		else
+			        	        		{
+			        	        			if(fb_toplevel_valid === true)
+			        	        				mds = mds + "<span style=\"color:red\">NO</span> <img src=\"images/leftarrow.png\" style=\"width:20px;height:20px\"> select a page below <br>";
+			        	        			else
+			        	        				mds = mds + "<a href=\"#\" id=\"facebook_link\" style=\"color:red\">NO</a><br>";
+			        	        		}
+
+			        	        		// in either case...
+		        	        			// get the page options from facebook so we can show user which one is currently selected (if any) and which other options are available.
+		        	        			$.ajax({
+		        	        				type: 'GET',
+		        	        				url: endpoint,
+		        							data: {
+		        					            method: "getFacebookSubAccountInfoFromFacebook",
+		        					            twitter_handle: twitter_handle,
+		        					            twitter_access_token: twitter_access_token
+		        							},
+		        					        dataType: 'json',
+		        					        async: false,
+		        					        success: function (data, status) {
+		        					        	if (data.response_status === "error")
+		        					        	{
+		        					        		// This is ok. Probably just means the user has not linked their top-level account yet. Fail silently
+		        					        	}
+		        					        	else
+		        					        	{
+		        					        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
+		        					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
+		        					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
+		        					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
+		        					        		{
+		        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
+		        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1)));
+		        					        			if(fb_page_valid === true && ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1))) // this is the checked option
+		        					        			{
+		        					        				//alert(fb_subaccounts_ja[x].name + "checked");
+		        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type='radio' CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
+		        					        			}
+		        					        			else
+		        					        			{
+		        					        				//alert(fb_subaccounts_ja[x].name + "not checked");
+		        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
+		        					        			}
+		        					        		}
+		        					        		mds = mds + "			</table>";
+		        					        	}
+		        					        }
+		        					        ,
+		        					        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		        					        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+		        					            console.log(textStatus, errorThrown);
+		        					        }
 		        						});
+			        	        	}
+			        	        }
+			        	        ,
+			        	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			        	        	$("#" + designation + "_fb_valid_td").html("<span style=\"color:red\">AJAX ERROR</span>");
+			        	            console.log(textStatus, errorThrown);
+			        	        }
+			        		});
+			        		
+			        		if(fb_toplevel_valid && fb_page_valid)
+			        		{
+			        			mds = mds + "<br><br>You're finished! Thanks!";
+			        		}	
+			        		else if(!fb_toplevel_valid && fb_page_valid)
+			        		{
+			        			mds = mds + "<br><br>You're finished! Thanks!<br>(Your main Facebook account has become unlinked, but that's ok. All huzon.tv needs is a connection to your FB reporter page.)";
 			        		}
-	    				}
+			        		
+			        		$("#main_div").html(mds);
+			        		
+			        		$("#facebook_link").click({value1: data.user_jo.designation},
+		        					function (event) {
+			        					var randomnumber=Math.floor(Math.random()*1000000);
+			        					var state = randomnumber+"";
+			        					docCookies.setItem("state", state, 300);
+			        					docCookies.setItem("designation", event.data.value1, 31536e3);
+			        					alert('Sending you to Facebook. Grant ALL permissions you are prompted for. Otherwise, huzon.tv will not work properly.');
+			        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
+			        					return false;
+		        					}
+		        				);
+			        		
+			        		if(fb_subaccounts_ja != null)
+			        		{	
+			        			for(var x=0; x < fb_subaccounts_ja.length; x++)
+				        		{
+			        				$("#" + fb_subaccounts_ja[x].id + "_radio").click({fb_subaccount_id: fb_subaccounts_ja[x].id},
+			            					function (event) {
+			        							//alert('setting facebook sub account info with ' + event.data.fb_subaccount_id);
+			        							$.ajax({
+			    	        						type: 'GET',
+			    	        						url: endpoint,
+			    	        						data: {
+			    	        				            method: "setFacebookSubAccountInfo",
+			    	        				            twitter_handle: twitter_handle,
+			    	    					            twitter_access_token: twitter_access_token,
+			    	    					            fb_subaccount_id: event.data.fb_subaccount_id
+			    	        						},
+			    	        				        dataType: 'json',
+			    	        				        async: false,
+			    	        				        success: function (data, status) {
+			    	        				        	if (data.response_status === "error")
+			    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
+			    	        				        	else
+			    	        				        	{
+			    	        				        		//alert('twitter_handle not null, fb code did not exist, getSelf was successful. Get get and setFBSubAccountInfo was successful. Reloading.');
+			    	        				        		window.location.href = "https://www.huzon.tv/registration.html";
+			    	        				        	}
+			    	        				        }
+			    	        				        ,
+			    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+			    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+			    	        				            console.log(textStatus, errorThrown);
+			    	        				        }
+			    	        					});
+			        						});
+				        		}
+		    				}
+		        		//}
 		        	}
 		        }
 		        ,
