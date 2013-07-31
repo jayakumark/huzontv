@@ -70,6 +70,9 @@ public class DBManipulator {
 					rs.updateRow();
 					x++;
 				} 
+				rs.close();
+				stmt.close();
+				con.close();
 			}
 			catch(SQLException sqle)
 			{

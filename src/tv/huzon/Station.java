@@ -467,68 +467,6 @@ public class Station implements java.lang.Comparable<Station> {
 		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
 		//JSONArray ja = s.getAlertFrames("20130705_230000", "20130705_231000", .8, 1, 3600, 2);
 	}
-
-	/*JSONArray getMostRecentAlerts(int num_to_get)
-	{
-		JSONArray alerts_ja = new JSONArray();
-		ResultSet rs = null;
-		Connection con = null;
-		Statement stmt = null;
-		try
-		{
-			con = datasource.getConnection();
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `deletion_timestamp` IS NULL) ORDER BY creation_timestamp DESC LIMIT 0," + num_to_get);
-			int x = 0;
-			JSONObject jo;
-			while(rs.next() && x < num_to_get)
-			{
-				jo = new JSONObject();
-				jo.put("image_url", rs.getString("image_url"));
-				jo.put("designation", rs.getString("designation"));
-				java.util.Date date = rs.getTimestamp("creation_timestamp");
-				jo.put("creation_timestamp", ((java.util.Date)rs.getTimestamp("creation_timestamp")).toLocaleString());
-				if(rs.getString("created_by").isEmpty())
-					jo.put("created_by", rs.getString("designation"));
-				else
-					jo.put("created_by", rs.getString("created_by"));
-				jo.put("social_type", rs.getString("social_type"));
-				if(social_type.equals("twitter"))
-				{
-					Twitter t = new Twitter();
-					t.
-				}
-				jo.put("station", rs.getString("station"));
-				jo.put("id", rs.getLong("id"));
-				alerts_ja.put(jo);
-				x++;
-			}
-			rs.close();
-			stmt.close();
-			con.close();
-		}
-		catch(SQLException sqle)
-		{
-			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: message=" +sqle.getMessage());
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		finally
-		{
-			try
-			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
-			}
-			catch(SQLException sqle)
-			{ 
-				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Platform.getMostRecentAlerts: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
-			}
-		}  	
-		return alerts_ja;
-	}*/
-	
 	// datestring convenience method
 	public JSONArray getFrameTimestamps(String beginstring, String endstring)
 	{
@@ -869,20 +807,20 @@ public class Station implements java.lang.Comparable<Station> {
 		try
 		{
 			con = datasource.getConnection();
-				stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				// get frames where this designation crosses the single frame threshold
-				rs = stmt.executeQuery(query);
-				while(rs.next())
-				{
-					rs.updateLong("facebook_last_alert", 0);
-					rs.updateLong("twitter_last_alert", 0);
-					rs.updateString("facebook_last_alert_hr", "");
-					rs.updateString("twitter_last_alert_hr", "");
-					rs.updateRow();
-				}
-				rs.close();
-				stmt.close();
-				con.close();
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			// get frames where this designation crosses the single frame threshold
+			rs = stmt.executeQuery(query);
+			while(rs.next())
+			{
+				rs.updateLong("facebook_last_alert", 0);
+				rs.updateLong("twitter_last_alert", 0);
+				rs.updateString("facebook_last_alert_hr", "");
+				rs.updateString("twitter_last_alert_hr", "");
+				rs.updateRow();
+			}
+			rs.close();
+			stmt.close();
+			con.close();
 		}
 		catch(SQLException sqle)
 		{
@@ -1013,6 +951,7 @@ public class Station implements java.lang.Comparable<Station> {
 			{
 				(new Platform()).addMessageToLog("Station.setAlertMode(): Tried to set station alert_mode to " + alert_mode + " but failed.");
 			}
+			pstmt.close();
 			con.close();
 		}
 		catch(SQLException sqle)
@@ -1024,7 +963,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			try
 			{
-				if (con != null) { con.close(); }
+				if (pstmt != null) { pstmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 
@@ -1057,6 +996,7 @@ public class Station implements java.lang.Comparable<Station> {
 			{
 				(new Platform()).addMessageToLog("Station.lock(): Tried to set " + lock_type + " lock but the existing value was not empty!");
 			}
+			pstmt.close();
 			con.close();
 		}
 		catch(SQLException sqle)
@@ -1068,7 +1008,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			try
 			{
-				if (con != null) { con.close(); }
+				if (pstmt != null) { pstmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 
@@ -1102,6 +1042,7 @@ public class Station implements java.lang.Comparable<Station> {
 			{
 				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock " + lock_type + " lock but the existing value did not match the specified UUID. Another process set this lock! BAD!");
 			}
+			pstmt.close();
 			con.close();
 		}
 		catch(SQLException sqle)
@@ -1113,7 +1054,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			try
 			{
-				if (con != null) { con.close(); }
+				if (pstmt != null) { pstmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 

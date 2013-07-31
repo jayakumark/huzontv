@@ -330,6 +330,7 @@ public class Platform {
 			{
 				addMessageToLog("Platform.updateRedirectUltimateDestinationValue(): Tried to set redirect ultimate destination to " + ultimate_destination + " but failed.");
 			}
+			pstmt.close();
 			con.close();
 		}
 		catch(SQLException sqle)
@@ -341,7 +342,7 @@ public class Platform {
 		{
 			try
 			{
-				if (con != null) { con.close(); }
+				if (pstmt != null) { pstmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 
@@ -392,6 +393,7 @@ public class Platform {
 			} else {
 				System.out.println("Endpoint.createAlertInDB(): error getting auto_increment value from row just entered.");
 			}
+			rs.close();
 			stmt.close();
 			con.close();
 		}

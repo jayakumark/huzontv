@@ -1206,9 +1206,6 @@ public class Frame implements Comparable<Frame> {
 				}
 				rs.updateRow();
 			}
-			
-			
-			
 			rs.close();
 			stmt.close();
 			con.close();

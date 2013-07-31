@@ -148,8 +148,7 @@ public class User implements java.lang.Comparable<User> {
 		{
 			try
 			{
-				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } 
-				if (con != null) { con.close(); }
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
 			}
 			catch(SQLException sqle)
 			{ 

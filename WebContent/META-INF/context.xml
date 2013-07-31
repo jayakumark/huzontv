@@ -1,14 +1,23 @@
 <Context>
 
-	<Resource 	name="jdbc/huzondb" 
-				auth="Container" 
-				type="javax.sql.DataSource"
+	<Resource 	type="javax.sql.DataSource"
+				name="jdbc/huzondb" 
+				factory="org.apache.commons.dbcp.BasicDataSourceFactory"
+				driverClassName="com.mysql.jdbc.Driver"
+				url="jdbc:mysql://aa10d3b6eezvj0u.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb" 
 				username="huzon"
 				password="cTp88qLkS240y5x"
-				driverClassName="com.mysql.jdbc.Driver"
-				url="jdbc:mysql://aa10d3b6eezvj0u.cvl3ft3gx3nx.us-east-1.rds.amazonaws.com:3306/ebdb?autoReconnect=true" 
-				maxActive="20"
-				maxIdle="10" 
-				factory="org.apache.commons.dbcp.BasicDataSourceFactory" />
+				
+			    initialSize="10"
+           	 	maxActive="100"
+            	maxIdle="50"
+            	minIdle="10"
+				
+				suspectTimeout="60"
+            	timeBetweenEvictionRunsMillis="30000"
+            	minEvictableIdleTimeMillis="60000"
+				
+				auth="Container" 
+				 />
 
 </Context>
