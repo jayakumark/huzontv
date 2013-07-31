@@ -1094,11 +1094,24 @@ public class Endpoint extends HttpServlet {
 										 else if (method.equals("getFiredAlerts"))
 										 {
 											 System.out.println("Ep.doGet.getFiredAlerts() called");
+											 String self_posted_only = request.getParameter("self_posted_only");
+											 boolean spo_bool = false;
+											 if(self_posted_only == null)
+											 {
+												 jsonresponse.put("message", "A self_posted_only value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An self_posted_only value is required.");
+											 }
+											 else
+											 {
+												 if(self_posted_only.toLowerCase().equals("true") || self_posted_only.toLowerCase().equals("yes"))
+													 spo_bool = true;
+											 }
 											 JSONArray fired_alerts_ja = null;
 											 if(use_long)
-												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin_long, end_long);
+												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin_long, end_long, spo_bool);
 											 else
-												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin, end);
+												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin, end, spo_bool);
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
 											 //(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
@@ -1107,11 +1120,24 @@ public class Endpoint extends HttpServlet {
 										 else if (method.equals("getFiredAlertStatistics"))
 										 {
 											 System.out.println("Ep.doGet.getFiredAlertStatistics() called");
+											 String self_posted_only = request.getParameter("self_posted_only");
+											 boolean spo_bool = false;
+											 if(self_posted_only == null)
+											 {
+												 jsonresponse.put("message", "A self_posted_only value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An self_posted_only value is required.");
+											 }
+											 else
+											 {
+												 if(self_posted_only.toLowerCase().equals("true") || self_posted_only.toLowerCase().equals("yes"))
+													 spo_bool = true;
+											 }
 											 JSONArray fired_alerts_ja = null;
 											 if(use_long)
-												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin_long, end_long, 86400000L, true, false);
+												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin_long, end_long, 86400000L, true, false, spo_bool);
 											 else
-												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin, end, 86400000L, true, false);
+												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin, end, 86400000L, true, false, spo_bool);
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
 											 //(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");

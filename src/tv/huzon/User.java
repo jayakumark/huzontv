@@ -655,7 +655,8 @@ public class User implements java.lang.Comparable<User> {
 		return jsonresponse;
 	}
 	
-	public JSONObject getSubAccountFromFacebook()
+	// object will have "is_published" if the page is published. Nothing if not.
+	public JSONObject getSubAccountFromFacebookWithCredentials()
 	{
 		JSONObject jsonresponse = new JSONObject();
 		
@@ -665,6 +666,40 @@ public class User implements java.lang.Comparable<User> {
 			HttpGet request = new HttpGet("https://graph.facebook.com/"+ facebook_page_id + "?access_token=" + facebook_page_access_token);
 			HttpResponse response;
 			
+			try 
+			{
+				response = client.execute(request);
+				// Get the response
+				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				String text = "";
+				String line = "";
+				while ((line = rd.readLine()) != null) {
+					text = text + line;
+				} 
+				System.out.println(text);
+				jsonresponse = new JSONObject(text);
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return jsonresponse;
+	}
+	
+	// if not published, will return error.
+	public JSONObject getSubAccountFromFacebookWithoutCredentials()
+	{
+		JSONObject jsonresponse = new JSONObject();
+		
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet request = new HttpGet("https://graph.facebook.com/"+ facebook_page_id);
+			HttpResponse response;
 			try 
 			{
 				response = client.execute(request);
@@ -1190,7 +1225,7 @@ public class User implements java.lang.Comparable<User> {
 			if(return_fb_profile)
 				response_jo.put("facebook_jo", getProfileFromFacebook());
 			if(return_fb_page)
-				response_jo.put("facebook_page_jo", getSubAccountFromFacebook());
+				response_jo.put("facebook_page_jo", getSubAccountFromFacebookWithCredentials());
 			
 			if(get_alert_history)
 			{

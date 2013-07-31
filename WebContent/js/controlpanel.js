@@ -38,6 +38,7 @@ var devel = true;
 //document.addEventListener('DOMContentLoaded', function () {
 $(window).load(function () {	
 	
+	docCookies.setItem("twitter_handle", "huzontv", 31536e3);
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = ""; 
@@ -122,17 +123,26 @@ $(window).load(function () {
 	        			else
 	        				station = data.user_jo.stations_as_admin_ja[0];
 	        			
+	        			$("#general_div").html("Loading general station information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	        			getStationInformation(twitter_handle, twitter_access_token, station);
     	        		
 	        			var d = new Date();
 	        			var end = d.getTime();
 	        			var endstring = end + "";
-	        			var begin = end - (2592000000/30*14); // 30 days
+	        			var begin = end - (86400000*14); // 14 days
 	        			var beginstring = begin + "";
+	        			$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	        			graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        			
+	        			$("#reporters_div").html("Loading reporter information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
     	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
 	        			
+    	        		var d = new Date();
+	        			var end = d.getTime();
+	        			var endstring = end + "";
+	        			var begin = end - (86400000*3); // 3 days
+	        			var beginstring = begin + "";
+    	        		$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
     	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        		}
 	        	}
@@ -148,7 +158,7 @@ $(window).load(function () {
 function getStationInformation(twitter_handle, twitter_access_token, station)
 {
 	var general_string = "";
-	$("#general_div").html("Loading general station information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -233,7 +243,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
 	var alert_stats_string = "";
-	$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -242,6 +252,7 @@ function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitt
 	        station: station,
 	        begin: beginstring,
 	        end: endstring,
+	        self_posted_only: true,
 	        twitter_handle: twitter_handle,
 	        twitter_access_token: twitter_access_token
 		},
@@ -325,7 +336,7 @@ function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitt
 function getActiveReporterDesignations(twitter_handle, twitter_access_token, station)
 {
 	var reporters_string = "";
-	$("#reporters_div").html("Loading reporter information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -517,10 +528,17 @@ function getUser(designation)
         		$("#" + designation + "_facebook_linked_td").html(facebook_linked);
         		
         		var facebook_page_linked = "";
-        		if(typeof data.user_jo.facebook_jo === undefined || data.user_jo.facebook_jo == null || data.user_jo.facebook_jo.error != null)
+        		if(typeof data.user_jo.facebook_page_jo === undefined || data.user_jo.facebook_page_jo == null || data.user_jo.facebook_page_jo.error != null)
         			facebook_page_linked = "<span style=\"color:red\">no</span>";
 				else
-					facebook_page_linked = "<span style=\"color:green\">yes</span>";
+				{
+					//alert('ispub=' + data.user_jo.facebook_page_jo.is_published);
+					//alert(JSON.stringify(data.user_jo.facebook_page_jo)); 
+					if(typeof data.user_jo.facebook_page_jo.is_published === undefined || data.user_jo.facebook_page_jo.is_published == null || data.user_jo.facebook_page_jo.is_published === "false")
+						facebook_page_linked = "<span style=\"color:green\">yes <a href=\"#\" onclick=\"alert('Page is not published!');return false;\" style=\"color:red;font-weight:bold\">NP!</a></span>";
+					else
+						facebook_page_linked = "<span style=\"color:green\">yes</span>";
+				}
         		$("#" + designation + "_facebook_page_linked_td").html(facebook_page_linked);
         	
         		var facebook_likes = "";
@@ -548,7 +566,7 @@ function getUser(designation)
 
 function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
-	$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -557,6 +575,7 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
             begin: beginstring,
             end: endstring,
             station: station,
+            self_posted_only: false,
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
 		},
@@ -575,12 +594,43 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
         		for(var x = 0; x < alerts_ja.length; x++)
         		{	
         			mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:top;text-align:center;font-size:10px\">";
+	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-size:10px\">";
 	        		//mds = mds + JSON.stringify(alerts_ja[x]);
 	        		if(alerts_ja[x].social_type === "twitter")
 	        		{
-	        			//mds = mds + JSON.stringify(alerts_ja[x].tweet_jo.entities);
-	        			mds = mds + "			<img src=\"" + alerts_ja[x].tweet_jo.entities.media[0].media_url + "\" style=\"width:400px;height:225px\">";
+	        			if(typeof alerts_ja[x].tweet_jo === "undefined")
+	        				mds = mds + "This tweet doesn't exist or has been deleted.";
+	        			else if(alerts_ja[x].tweet_jo == null)
+	        				mds = mds + "tweet_jo == null";
+	        			else if(typeof alerts_ja[x].tweet_jo.entities === "undefined")
+	        				mds = mds + "tweet_jo.entities is undefined";
+	        			else if(alerts_ja[x].tweet_jo.entities == null)
+	        				mds = mds + "tweet_jo.entities == null";
+	        			else if(typeof alerts_ja[x].tweet_jo.entities.media[0] === "undefined")
+	        				mds = mds + "tweet_jo.entities.media[0] is undefined";
+	        			else if(alerts_ja[x].tweet_jo.entities.media[0] == null)
+	        				mds = mds + "tweet_jo.entities.media[0] == null";
+	        			else if(typeof alerts_ja[x].tweet_jo.entities.media[0].media_url === "undefined")
+	        				mds = mds + "tweet_jo.entities.media[0].media_url is undefined";
+	        			else if(alerts_ja[x].tweet_jo.entities.media[0].media_url == null)
+	        				mds = mds + "tweet_jo.entities.media[0].media_url == null";
+	        			else
+	        				mds = mds + "			<img src=\"" + alerts_ja[x].tweet_jo.entities.media[0].media_url + "\" style=\"width:400px;height:225px\">";
+	        		}
+	        		else if(alerts_ja[x].social_type === "facebook")
+	        		{
+	        			if(typeof alerts_ja[x].fbpost_jo === "undefined")
+	        				mds = mds + "This fbpost doesn't exist or has been deleted.";
+	        			else if(alerts_ja[x].fbpost_jo == null)
+	        				mds = mds + "fbpost_jo == null";
+	        			else if(typeof alerts_ja[x].fbpost_jo.source === "undefined")
+	        				mds = mds + "This fbpost doesn't exist or has been deleted.";
+	        			else if(alerts_ja[x].fbpost_jo.source == null)
+	        				mds = mds + "fbpost_jo.source == null";
+	        			else
+	        			{
+	        				mds = mds + "<img src=\"" + alerts_ja[x].fbpost_jo.source + "\" style=\"width:400px;height:225px\">";
+	        			}
 	        		}
 	        		else
 	        		{

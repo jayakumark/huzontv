@@ -1,6 +1,8 @@
 package tv.huzon;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,11 +20,16 @@ import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
+
+import facebook4j.Facebook;
+import facebook4j.FacebookFactory;
+import facebook4j.auth.AccessToken;
 
 public class Alert implements java.lang.Comparable<Alert> {
 
@@ -317,12 +324,43 @@ public class Alert implements java.lang.Comparable<Alert> {
 			if(getSocialType().equals("twitter"))
 			{
 				Twitter t = new Twitter();
-				User reporter = new User(getDesignation(), "designation");
-				JSONObject twitter_object_response_jo = t.getTweet(reporter.getTwitterAccessToken(), reporter.getTwitterAccessTokenSecret(), getSocialItemID());
+				User user = new User(getCreatedByUser().getDesignation(), "designation");
+				JSONObject twitter_object_response_jo = t.getTweet(user.getTwitterAccessToken(), user.getTwitterAccessTokenSecret(), getSocialItemID());
 				if(!twitter_object_response_jo.has("response_status")) // no error returned from twitter, just the object itself
 				{
 					response_jo.put("tweet_jo", twitter_object_response_jo);
 				}
+			}
+			if(getSocialType().equals("facebook"))
+			{
+				JSONObject jsonresponse = new JSONObject();
+				try
+				{
+					HttpClient client = new DefaultHttpClient();
+					HttpGet request = new HttpGet("https://graph.facebook.com/"+ getSocialItemID());
+					HttpResponse response;
+					try 
+					{
+						response = client.execute(request);
+						// Get the response
+						BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+						String text = "";
+						String line = "";
+						while ((line = rd.readLine()) != null) {
+							text = text + line;
+						} 
+						System.out.println(text);
+						jsonresponse = new JSONObject(text);
+					} catch (ClientProtocolException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}	
+				catch (JSONException e) {
+					e.printStackTrace();
+				}
+				response_jo.put("fbpost_jo", jsonresponse);
 			}
 			response_jo.put("image_url", getImageURL());
 			response_jo.put("creation_timestamp", getTimestamp());

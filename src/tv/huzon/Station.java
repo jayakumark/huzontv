@@ -281,8 +281,9 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	// datestring convenience method
-	TreeSet<Alert> getFiredAlerts(String beginstring, String endstring)
+	TreeSet<Alert> getFiredAlerts(String beginstring, String endstring, boolean self_posted_only)
 	{
+		System.out.println("Station.getFiredAlerts(" + beginstring + "," + endstring + ", " + self_posted_only);
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFiredAlerts(beginstring, endstring): beginstring must be at least 8 char long");
@@ -295,11 +296,12 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getFiredAlerts(begin_in_ms, end_in_ms);
+		return getFiredAlerts(begin_in_ms, end_in_ms, self_posted_only);
 	}
 	
-	TreeSet<Alert> getFiredAlerts(long begin_long, long end_long)
+	TreeSet<Alert> getFiredAlerts(long begin_long, long end_long, boolean self_posted_only)
 	{
+		System.out.println("Station.getFiredAlerts(" + begin_long + "(long)," + end_long + "(long), " + self_posted_only);
 		TreeSet<Alert> returnset = new TreeSet<Alert>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -308,10 +310,18 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			con = datasource.getConnection();
 			stmt = con.createStatement();
-			System.out.println("Station.getFiredAlerts(long,long): SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
+			if(self_posted_only)
+			{	
+				System.out.println("Station.getFiredAlerts(long,long): SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
 					" timestamp_in_ms >= " + begin_long +" AND timestamp_in_ms <= " + end_long + ")");
-			rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
+				rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
 					" timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
+			}
+			else
+			{
+				System.out.println("Station.getFiredAlerts(long,long): SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND " + " timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
+				rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND " + " timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
+			}
 			while(rs.next())
 			{
 				returnset.add(new Alert(rs.getLong("id")));
@@ -341,8 +351,9 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	
-	JSONArray getFiredAlertsAsJSONArray(String beginstring, String endstring)
+	JSONArray getFiredAlertsAsJSONArray(String beginstring, String endstring, boolean self_posted_only)
 	{
+		System.out.println("Station.getFiredAlertsAsJSONArray(" + beginstring + "," + endstring + ", " + self_posted_only);
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFiredAlerts(beginstring, endstring): beginstring must be at least 8 char long");
@@ -355,12 +366,13 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getFiredAlertsAsJSONArray(begin_in_ms, end_in_ms);
+		return getFiredAlertsAsJSONArray(begin_in_ms, end_in_ms, self_posted_only);
 	}
 	
-	JSONArray getFiredAlertsAsJSONArray(long begin_long, long end_long)
+	JSONArray getFiredAlertsAsJSONArray(long begin_long, long end_long, boolean self_posted_only)
 	{
-		TreeSet<Alert> alertset = getFiredAlerts(begin_long, end_long);
+		System.out.println("Station.getFiredAlertsAsJSONArray(" + begin_long + "(long)," + end_long + "(long), " + self_posted_only);
+		TreeSet<Alert> alertset = getFiredAlerts(begin_long, end_long, self_posted_only);
 		JSONArray return_ja = new JSONArray();
 		Alert currentalert = null;
 		Iterator<Alert> alert_it = alertset.iterator();
@@ -373,8 +385,10 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	// datestring convenience method
-	JSONArray getFiredAlertStatistics(String beginstring, String endstring, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
+	JSONArray getFiredAlertStatistics(String beginstring, String endstring, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
+		System.out.println("Station.getFiredAlertStatistics(" + beginstring + "," + endstring + ", " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only);
+		
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFiredAlertStatistics(beginstring,endstring,interval, incl_redir_count, incl_sansbot_count): beginstring must be at least 8 char long");
@@ -387,17 +401,17 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getFiredAlertStatistics(begin_in_ms, end_in_ms, interval_in_ms, include_unabridged_redirect_count, include_sansbot_redirect_count);
+		return getFiredAlertStatistics(begin_in_ms, end_in_ms, interval_in_ms, include_unabridged_redirect_count, include_sansbot_redirect_count, self_posted_only);
 	}
 	
-	JSONArray getFiredAlertStatistics(long begin_long, long end_long, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
+	JSONArray getFiredAlertStatistics(long begin_long, long end_long, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatistics(): entering");
+		System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only);
 		JSONArray return_ja = new JSONArray();
 		long x = begin_long;
 		while(x < end_long)
 		{
-			return_ja.put(getFiredAlertStatisticsForInterval(x, x+interval_in_ms, false, false));
+			return_ja.put(getFiredAlertStatisticsForInterval(x, x+interval_in_ms, false, false, self_posted_only));
 			x = x + interval_in_ms;
 		}
 		return return_ja;
@@ -405,11 +419,10 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	// this gets the results for one specific period in time, an hour, a day, week, month, etc and should be called multiple times for long time periods with many intervals
 	// begin_long and end_long are set to this one, specific interval
-	JSONObject getFiredAlertStatisticsForInterval(long begin_long, long end_long, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count)
+	JSONObject getFiredAlertStatisticsForInterval(long begin_long, long end_long, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatisticsForInterval(): entering");
-		
-		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long); // get the fired alerts for just this interval
+		System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only);
+		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long, self_posted_only); // get the fired alerts for just this interval
 		long unabridged_redirect_count = 0; long sansbot_redirect_count = 0;
 		Iterator<Alert> alert_it = fired_alert_set.iterator();
 		Alert currentalert = null;
