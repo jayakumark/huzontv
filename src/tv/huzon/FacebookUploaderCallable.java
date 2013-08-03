@@ -200,7 +200,7 @@ public class FacebookUploaderCallable implements Callable<JSONObject> {
 								
 								String facebookresponse = "";
 								try {
-									facebookresponse = facebook.postPhoto(new Long(postinguser.getFacebookPageID()).toString(), new Media(composite_file), message, "33684860765", false); // FIXME hardcode to wkyt station
+									facebookresponse = facebook.postPhoto(new Long(postinguser.getFacebookPageID()).toString(), new Media(composite_file), message, null, false); // FIXME hardcode to wkyt station "33684860765"
 									
 									facebook_successful = true;
 									//return_jo.put("facebook_successful", true); // if no exception thrown above, we get to this statement and assume post was successful, regardless of two db updates below

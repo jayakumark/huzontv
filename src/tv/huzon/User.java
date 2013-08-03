@@ -1184,7 +1184,7 @@ public class User implements java.lang.Comparable<User> {
 	}
 	
 	
-	public JSONObject getAsJSONObject(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, boolean get_alert_history) 
+	public JSONObject getAsJSONObject(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, int alert_history_in_hours) 
 	{
 		JSONObject response_jo = new JSONObject();
 		try {
@@ -1227,10 +1227,10 @@ public class User implements java.lang.Comparable<User> {
 			if(return_fb_page)
 				response_jo.put("facebook_page_jo", getSubAccountFromFacebookWithCredentials());
 			
-			if(get_alert_history)
+			if(alert_history_in_hours != -1 && alert_history_in_hours <= 2160) // no more than 90 days
 			{
-				response_jo.put("twitter_alert_history_ja", getFiredAlertsAsJSONArray(720, "twitter")); // 30 days in hours 
-				response_jo.put("facebook_alert_history_ja", getFiredAlertsAsJSONArray(720, "facebook")); // 30 days in hours
+				response_jo.put("twitter_alert_history_ja", getFiredAlertsAsJSONArray(alert_history_in_hours, "twitter")); 
+				response_jo.put("facebook_alert_history_ja", getFiredAlertsAsJSONArray(alert_history_in_hours, "facebook"));
 			}
 						
 			TreeSet<Station> stations_ts = getStationsAsAdmin();

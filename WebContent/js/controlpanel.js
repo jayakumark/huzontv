@@ -123,7 +123,7 @@ $(window).load(function () {
 	        			else
 	        				station = data.user_jo.stations_as_admin_ja[0];
 	        			
-	        			$("#general_div").html("Loading general station information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	        			
 	        			getStationInformation(twitter_handle, twitter_access_token, station);
     	        		
 	        			var d = new Date();
@@ -131,10 +131,9 @@ $(window).load(function () {
 	        			var endstring = end + "";
 	        			var begin = end - (86400000*14); // 14 days
 	        			var beginstring = begin + "";
-	        			$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	        			graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        			
-	        			$("#reporters_div").html("Loading reporter information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	        			
     	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
 	        			
     	        		var d = new Date();
@@ -142,7 +141,6 @@ $(window).load(function () {
 	        			var endstring = end + "";
 	        			var begin = end - (86400000*3); // 3 days
 	        			var beginstring = begin + "";
-    	        		$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
     	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        		}
 	        	}
@@ -158,7 +156,7 @@ $(window).load(function () {
 function getStationInformation(twitter_handle, twitter_access_token, station)
 {
 	var general_string = "";
-	
+	$("#general_div").html("Loading general station information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -243,7 +241,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
 	var alert_stats_string = "";
-	
+	$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -272,23 +270,27 @@ function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitt
 	    			// looping through all frames gathered to graph
 	    			var max_redirect_count = 0;
 	    			var xticks = [];
+	    			var days = [];
 	    			for(var x = 0; x < data.fired_alerts_ja.length; x++)
 	    			{
+	    				days.push((x+1)+"");
 	    				xticks.push(data.fired_alerts_ja[x].day+"");
-	    				fired_alert_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].fired_alert_count]);
-	    				sansbot_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].sansbot_redirect_count]);
+	    				fired_alert_counts.push(data.fired_alerts_ja[x].fired_alert_count);
+	    				sansbot_redirect_counts.push(data.fired_alerts_ja[x].sansbot_redirect_count);
+	    				//fired_alert_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].fired_alert_count]);
+	    				//sansbot_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].sansbot_redirect_count]);
 	    				//unabridged_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].unabridged_redirect_count]);
 	    				if(data.fired_alerts_ja[x].sansbot_redirect_count > max_redirect_count)
 	    					max_redirect_count = data.fired_alerts_ja[x].sansbot_redirect_count;
 	    			}
 	    			
 	    			var plot1 = $.jqplot ('chart1', [fired_alert_counts, sansbot_redirect_counts],{
-	    				title: 'Fired Alerts & Clicks by Time Interval',
+	    				title: 'Fired Alerts ' + xticks[0] + " - " + xticks[xticks.length-1],
 	    				//series:[{showMarker:false}],
 	    				axes: {
 	    					xaxis:{
-	    						ticks: xticks,
-	  	    		            label:'Time interval (hour, day, week, etc)',
+	    						ticks: days,
+	  	    		            label:'Days',
 	  	    		            labelRenderer: $.jqplot.CanvasAxisLabelRenderer
 	  	    		        },
 	    					yaxis: {
@@ -336,7 +338,7 @@ function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitt
 function getActiveReporterDesignations(twitter_handle, twitter_access_token, station)
 {
 	var reporters_string = "";
-	
+	$("#reporters_div").html("Loading reporter information <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -357,6 +359,20 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "<table style=\"width:100%\">";
 				reporters_string = reporters_string + "	<tr>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td colspan=8 style=\"background-color:#CCFFFF;text-align:center;font-weight:bold\">";
+				reporters_string = reporters_string + "			Twitter settings";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td colspan=6 style=\"background-color:#A9CAEB;text-align:center;font-weight:bold\">";
+				reporters_string = reporters_string + "			Facebook settings";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "	</tr>";
+				reporters_string = reporters_string + "	<tr>";
+				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			h.tv designation";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
@@ -365,41 +381,47 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
 				reporters_string = reporters_string + "			Roles";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			TW handle";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			handle";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			TW active";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			link";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			TW linked";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			on";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			TW CD (hrs)";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			CD";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			TW followers";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			followers";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			Tweets<br>30 days";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			30d";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB linked";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			clx 30d";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB page<br>linked";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			clx/alrt";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB active";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
+				reporters_string = reporters_string + "			link";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB CD (hrs)";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
+				reporters_string = reporters_string + "			pg link";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB likes";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
+				reporters_string = reporters_string + "			on";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"font-weight:bold\">";
-				reporters_string = reporters_string + "			FB 30 days";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
+				reporters_string = reporters_string + "			CD";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
+				reporters_string = reporters_string + "			likes";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
+				reporters_string = reporters_string + "			30d";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "	</tr>";
 				var cooldown_in_hours = 0;
@@ -411,11 +433,13 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_display_name_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_roles_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_handle_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
-					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_active_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_linked_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_active_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_cooldown_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_followers_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_alert_count_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_click_count_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_twitter_click_rate_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_linked_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_page_linked_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_active_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
@@ -462,7 +486,7 @@ function getUser(designation)
             return_tw_profile: true,
             return_fb_profile: true, 
             return_fb_page: true, 
-            return_alerts: true,
+            alert_history_in_hours: 720, // one month (-1 for none)
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
 		},
@@ -513,6 +537,22 @@ function getUser(designation)
         		$("#" + designation + "_twitter_cooldown_td").html(Math.round(data.user_jo.twitter_cooldown/360)/10);
         		
         		$("#" + designation + "_twitter_alert_count_td").html(data.user_jo.twitter_alert_history_ja.length);
+        		
+        		var sansbot_clicks = 0;
+        		for(var a = 0; a < data.user_jo.twitter_alert_history_ja.length; a++)
+        		{	
+        			sansbot_clicks = sansbot_clicks + data.user_jo.twitter_alert_history_ja[a].sansbot_redirect_count;
+        		}
+        		$("#" + designation + "_twitter_click_count_td").html(sansbot_clicks);
+        		var click_rate = 0;
+        		if(data.user_jo.twitter_alert_history_ja.length != 0 )
+        		{
+        			click_rate = sansbot_clicks / data.user_jo.twitter_alert_history_ja.length;
+        			click_rate = click_rate * 10;
+        			click_rate = Math.floor(click_rate);
+        			click_rate = click_rate/10;
+        		}
+        		$("#" + designation + "_twitter_click_rate_td").html(click_rate);
         		
         		if(data.user_jo.facebook_active)
         			$("#" + designation + "_facebook_active_td").html("yes");
@@ -566,7 +606,7 @@ function getUser(designation)
 
 function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
-	
+	$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
@@ -580,7 +620,7 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
             twitter_access_token: twitter_access_token
 		},
         dataType: 'json',
-        async: false,
+        async: true,
         success: function (data, status) {
         	if (data.response_status == "error")
         	{
@@ -593,9 +633,10 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
         		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
         		for(var x = 0; x < alerts_ja.length; x++)
         		{	
-        			mds = mds + "	<tr>";
-	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-size:10px\">";
-	        		//mds = mds + JSON.stringify(alerts_ja[x]);
+        			if(x%2 == 0)
+        				mds = mds + "	<tr>";
+        			mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-size:10px\">";
+        			//mds = mds + JSON.stringify(alerts_ja[x]);
 	        		if(alerts_ja[x].social_type === "twitter")
 	        		{
 	        			if(typeof alerts_ja[x].tweet_jo === "undefined")
@@ -615,7 +656,7 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
 	        			else if(alerts_ja[x].tweet_jo.entities.media[0].media_url == null)
 	        				mds = mds + "tweet_jo.entities.media[0].media_url == null";
 	        			else
-	        				mds = mds + "			<img src=\"" + alerts_ja[x].tweet_jo.entities.media[0].media_url + "\" style=\"width:400px;height:225px\">";
+	        				mds = mds + "			<img src=\"" + alerts_ja[x].tweet_jo.entities.media[0].media_url + "\" style=\"width:300px;height:169px\">";
 	        		}
 	        		else if(alerts_ja[x].social_type === "facebook")
 	        		{
@@ -629,21 +670,25 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
 	        				mds = mds + "fbpost_jo.source == null";
 	        			else
 	        			{
-	        				mds = mds + "<img src=\"" + alerts_ja[x].fbpost_jo.source + "\" style=\"width:400px;height:225px\">";
+	        				mds = mds + "<img src=\"" + alerts_ja[x].fbpost_jo.source + "\" style=\"width:300px;height:169px\">";
 	        			}
 	        		}
 	        		else
 	        		{
-	        			mds = mds + "			<img src=\"" + alerts_ja[x].image_url + "\" style=\"width:400px;height:225px\">";
+	        			mds = mds + "			<img src=\"" + alerts_ja[x].image_url + "\" style=\"width:300px;height:169px\">";
 	        		}
 	        		mds = mds + "		</td>";
-	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
-	        		mds = mds + "			" + alerts_ja[x].creation_timestamp + "<br>" +  alerts_ja[x].designation + "<br>" + alerts_ja[x].station + "<br>" + alerts_ja[x].social_type + "<br>" + alerts_ja[x].created_by;;
+	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-size:14px\">";
+	        		mds = mds + "			" + alerts_ja[x].local_timestamp_hr;
+	        		mds = mds + "			<br><b>id:</b> " +  alerts_ja[x].designation;
+	        		mds = mds + "			<br><b>social type:</b> " + alerts_ja[x].social_type;
+	        		mds = mds + "			<br><b>posted acct:</b> " + alerts_ja[x].created_by;
+	        		mds = mds + "			<br><b>human clicks:</b> " + alerts_ja[x].sansbot_redirect_count;
+	        		mds = mds + "			<br><b>all clicks (+bots):</b> " +  alerts_ja[x].unabridged_redirect_count;
+	        		mds = mds + "			<br><a href=\"#\" id=\"delete_link_" + x + "\">DELETE</a>";
 	        		mds = mds + "		</td>";
-	        		mds = mds + "		<td style=\"vertical-align:middle;text-align:center;font-weight:bold;font-size:20px\">";
-	        		mds = mds + "			<a href=\"#\" id=\"delete_link_" + x + "\">DELETE</a>";
-	        		mds = mds + "		</td>";
-	        		mds = mds + "	</tr>";
+	        		if(x%2 == 1)
+        				mds = mds + "	</tr>";
         		}
         		mds = mds + "</table>";
         		$("#alerts_div").html(mds);
@@ -669,7 +714,7 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
 	        				        	else
 	        				        	{
 	        				        		if(data.social_response === true)
-	        				        			getMostRecentAlerts(twitter_handle, twitter_access_token, station);
+	        				        			getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
 	        				        	}
 	        				        }
 	        				        ,

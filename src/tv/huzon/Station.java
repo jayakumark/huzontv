@@ -56,6 +56,7 @@ public class Station implements java.lang.Comparable<Station> {
 	private String short_display_name; // like "Local 12", "WKYT" or "LEX 18", whatever they are called
 	private DataSource datasource;
 	private String test_designation;
+	private String java_timezone_string;
 	
 	public Station(String inc_call_letters)
 	{
@@ -93,6 +94,7 @@ public class Station implements java.lang.Comparable<Station> {
 				android_app_url = rs.getString("android_app_url");
 				short_display_name = rs.getString("short_display_name");
 				test_designation = rs.getString("test_designation");
+				java_timezone_string = rs.getString("java_timezone_string");				
 				
 				alert_mode = rs.getString("alert_mode");
 				nrpst = rs.getInt("nrpst");
@@ -142,7 +144,7 @@ public class Station implements java.lang.Comparable<Station> {
 		
 	}
 	
-	// these 4 will never be null or empty.
+	// these 5 will never be null or empty.
 	public String getHomepageURL()
 	{
 		return homepage_url;
@@ -159,7 +161,11 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		return test_designation;
 	}
-	// end 4 functions note
+	public String getJavaTimezoneString()
+	{
+		return java_timezone_string;
+	}
+	// end 5 functions note
 	
 	// these 4 functions will never return null, but value may be empty. Calling function should check.
 	public String getRecentNewscastsURL()
@@ -236,7 +242,7 @@ public class Station implements java.lang.Comparable<Station> {
 		return reporters;
 	}
 	
-	public JSONArray getReportersAsJSONArray(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, boolean return_alerts)
+	public JSONArray getReportersAsJSONArray(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, int alert_history_in_hours) 
 	{
 		JSONArray return_ja = new JSONArray();
 		TreeSet<String> localset = reporters;
@@ -245,7 +251,7 @@ public class Station implements java.lang.Comparable<Station> {
 		while(reporter_it.hasNext())
 		{
 			currentreporter = new User(reporter_it.next(), "designation");
-			return_ja.put(currentreporter.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
+			return_ja.put(currentreporter.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, alert_history_in_hours));
 		}
 		return return_ja;
 	}
@@ -312,14 +318,14 @@ public class Station implements java.lang.Comparable<Station> {
 			stmt = con.createStatement();
 			if(self_posted_only)
 			{	
-				System.out.println("Station.getFiredAlerts(long,long): SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
+				System.out.println("Station.getFiredAlerts(long,long) self_posted_only=true: SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
 					" timestamp_in_ms >= " + begin_long +" AND timestamp_in_ms <= " + end_long + ")");
 				rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND `created_by`=`designation` AND " +
 					" timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
 			}
 			else
 			{
-				System.out.println("Station.getFiredAlerts(long,long): SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND " + " timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
+				System.out.println("Station.getFiredAlerts(long,long) self_posted_only=false: SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND " + " timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
 				rs = stmt.executeQuery("SELECT * FROM alerts WHERE (`station`='" + getCallLetters() + "' AND `social_item_id`!='' AND " + " timestamp_in_ms >= " + begin_long + " AND timestamp_in_ms <= " + end_long + ")");
 			}
 			while(rs.next())
@@ -387,7 +393,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method
 	JSONArray getFiredAlertStatistics(String beginstring, String endstring, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatistics(" + beginstring + "," + endstring + ", " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only);
+		System.out.println("Station.getFiredAlertStatistics(" + beginstring + "," + endstring + ", " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
 		
 		if(beginstring.length() < 8)
 		{
@@ -406,7 +412,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	JSONArray getFiredAlertStatistics(long begin_long, long end_long, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only);
+		System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
 		JSONArray return_ja = new JSONArray();
 		long x = begin_long;
 		while(x < end_long)
@@ -421,7 +427,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// begin_long and end_long are set to this one, specific interval
 	JSONObject getFiredAlertStatisticsForInterval(long begin_long, long end_long, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only);
+		System.out.print("Station.getFiredAlertStatisticsForInterval(" + begin_long + "(long)," + end_long + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
 		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long, self_posted_only); // get the fired alerts for just this interval
 		long unabridged_redirect_count = 0; long sansbot_redirect_count = 0;
 		Iterator<Alert> alert_it = fired_alert_set.iterator();
@@ -435,8 +441,8 @@ public class Station implements java.lang.Comparable<Station> {
 		
 		JSONObject return_jo = new JSONObject();
 		try {
-			String intervalstring = toDateString(begin_long);
-			return_jo.put("day", new Integer(intervalstring).intValue());
+			String intervalstring = toDateString(end_long);
+			return_jo.put("day", intervalstring);
 			return_jo.put("fired_alert_count", fired_alert_set.size());
 			return_jo.put("unabridged_redirect_count", unabridged_redirect_count);
 			return_jo.put("sansbot_redirect_count", sansbot_redirect_count);
@@ -444,6 +450,7 @@ public class Station implements java.lang.Comparable<Station> {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("Station.getFiredAlertStatisticsForInterval(): return_jo=" + return_jo);
 		return return_jo;
 	}
 	

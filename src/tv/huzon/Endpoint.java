@@ -496,8 +496,8 @@ public class Endpoint extends HttpServlet {
 					if (method.equals("getSelf")) // used for getting oneself, no admin priviliges required
 					{
 						jsonresponse.put("response_status", "success");
-						 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; boolean return_alerts = false;
-						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
+						 boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; int alert_history_in_hours = -1;
+						jsonresponse.put("user_jo", user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, alert_history_in_hours));
 						//(new Platform()).addMessageToLog("Endpoint.getSelf(): successful for " + twitter_handle);
 					}
 					else if (method.equals("verifyTopLevelFBCredentialsSelf"))
@@ -759,8 +759,8 @@ public class Endpoint extends HttpServlet {
 									String return_tw_profile_param = request.getParameter("return_tw_profile");
 									String return_fb_profile_param = request.getParameter("return_fb_profile");
 									String return_fb_page_param = request.getParameter("return_fb_page");
-									String return_alerts_param = request.getParameter("return_alerts");
-									boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; boolean return_alerts = false;
+									String alert_history_in_hours_param = request.getParameter("alert_history_in_hours");
+									boolean return_tokens = false; boolean return_tw_profile = false; boolean return_fb_profile = false; boolean return_fb_page = false; int alert_history_in_hours = -1;
 									if(return_tokens_param != null && (return_tokens_param.equals("yes") || return_tokens_param.equals("true")))
 										return_tokens = true;
 									if(return_tw_profile_param != null && (return_tw_profile_param.equals("yes") || return_tw_profile_param.equals("true")))
@@ -769,10 +769,10 @@ public class Endpoint extends HttpServlet {
 										return_fb_profile = true;
 									if(return_fb_page_param != null && (return_fb_page_param.equals("yes") || return_fb_page_param.equals("true")))
 										return_fb_page = true;
-									if(return_alerts_param != null && (return_alerts_param.equals("yes") || return_alerts_param.equals("true")))
-										return_alerts = true;
+									if(alert_history_in_hours_param != null && (new Platform()).isNumeric(alert_history_in_hours_param))
+										alert_history_in_hours = Integer.parseInt(alert_history_in_hours_param);
 									jsonresponse.put("response_status", "success");
-									jsonresponse.put("user_jo", target_user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, return_alerts));
+									jsonresponse.put("user_jo", target_user.getAsJSONObject(return_tokens, return_tw_profile, return_fb_profile, return_fb_page, alert_history_in_hours));
 									// commenting this out due to message log spam. Fires once for each reporter on a page load of controlpanel. Too much.
 									// (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 								}
@@ -1135,9 +1135,15 @@ public class Endpoint extends HttpServlet {
 											 }
 											 JSONArray fired_alerts_ja = null;
 											 if(use_long)
+											 {
+												 System.out.println("Ep.doGet.getFiredAlertStatistics("+ begin_long + ", " + end_long + ") called. uselong=true");
 												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin_long, end_long, 86400000L, true, false, spo_bool);
+											 }
 											 else
+											 {
+												 System.out.println("Ep.doGet.getFiredAlertStatistics("+ begin + ", " + end + ") called. uselong=false");
 												 fired_alerts_ja = station_object.getFiredAlertStatistics(begin, end, 86400000L, true, false, spo_bool);
+											 }
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
 											 //(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
