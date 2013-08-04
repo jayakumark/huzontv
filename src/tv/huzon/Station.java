@@ -57,6 +57,7 @@ public class Station implements java.lang.Comparable<Station> {
 	private DataSource datasource;
 	private String test_designation;
 	private String java_timezone_string;
+	private String master_designation;
 	
 	public Station(String inc_call_letters)
 	{
@@ -94,7 +95,8 @@ public class Station implements java.lang.Comparable<Station> {
 				android_app_url = rs.getString("android_app_url");
 				short_display_name = rs.getString("short_display_name");
 				test_designation = rs.getString("test_designation");
-				java_timezone_string = rs.getString("java_timezone_string");				
+				java_timezone_string = rs.getString("java_timezone_string");
+				master_designation = rs.getString("master_designation");
 				
 				alert_mode = rs.getString("alert_mode");
 				nrpst = rs.getInt("nrpst");
@@ -144,7 +146,7 @@ public class Station implements java.lang.Comparable<Station> {
 		
 	}
 	
-	// these 5 will never be null or empty.
+	// these 6 will never be null or empty.
 	public String getHomepageURL()
 	{
 		return homepage_url;
@@ -165,7 +167,11 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		return java_timezone_string;
 	}
-	// end 5 functions note
+	public String getMasterDesignation()
+	{
+		return master_designation;
+	}
+	// end 6 functions note
 	
 	// these 4 functions will never return null, but value may be empty. Calling function should check.
 	public String getRecentNewscastsURL()
