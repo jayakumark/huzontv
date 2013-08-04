@@ -261,11 +261,26 @@ public class User implements java.lang.Comparable<User> {
 		return twitter_handle;
 	}
 	
+	public boolean isSocialActive(String social_type)
+	{
+		if(social_type.equals("twitter"))
+			return twitter_active;
+		else if(social_type.equals("facebook"))
+			return facebook_active;
+		else
+		{
+			(new Platform()).addMessageToLog("User.isSocialActive(): ERROR: Invalid social_type=" + social_type);
+			return false;
+		}
+	}
+	
+	// deprecated
 	public boolean isTwitterActive()
 	{
 		return twitter_active;
 	}
 
+	// deprecated
 	public boolean isFacebookActive()
 	{
 		return facebook_active;

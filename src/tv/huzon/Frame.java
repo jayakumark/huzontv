@@ -926,12 +926,12 @@ public class Frame implements Comparable<Frame> {
 										if(twitter_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											twittertask = executor.submit(new TwitterUploaderCallable(this, reporter, station_object)); 
+											twittertask = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual")); 
 										}
 										if(facebook_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											facebooktask = executor.submit(new FacebookUploaderCallable(this, reporter, station_object));
+											facebooktask = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual"));
 										}
 									}
 									// else if simulation do do not perform any actual twitter or facebook postings.
