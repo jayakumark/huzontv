@@ -79,7 +79,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 				
 				// the mode is live or test, we will either be firing a social alert OR sending an email about missing or invalid credentials. Both actions need a lock to prevent doubles.
 				String uuid = UUID.randomUUID().toString();
-				boolean successfullylocked = station_object.lock(uuid, "twitter");
+				boolean successfullylocked = station_object.lock(uuid, "twitter", "individual");
 				if(successfullylocked)
 				{	
 					if(postinguser.getTwitterAccessToken() == null || postinguser.getTwitterAccessToken().equals("") || postinguser.getTwitterAccessTokenSecret() == null || postinguser.getTwitterAccessTokenSecret().equals(""))
@@ -240,7 +240,7 @@ public class TwitterUploaderCallable implements Callable<JSONObject> {
 							}
 						}
 					}
-					station_object.unlock(uuid, "twitter");		
+					station_object.unlock(uuid, "twitter", "individual");		
 				}
 				else
 				{

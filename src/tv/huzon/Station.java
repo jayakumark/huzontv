@@ -993,19 +993,24 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnval;
 	}
 	
-	boolean lock(String uuid, String lock_type)
+	boolean lock(String uuid, String social_type, String which_lock)
 	{
 		boolean returnval = false;
+		if(!(which_lock.equals("master") || which_lock.equals("individual")))
+		{
+			(new Platform()).addMessageToLog("Station.lock(): Tried to lock with incorrect which_lock value=" + which_lock + ". Aborted.");
+			return returnval;
+		}
 		Connection con = null;
 		PreparedStatement pstmt = null;
 		String updateString = null;
 		try
 		{
 			con = datasource.getConnection();
-			if(lock_type.equals("twitter"))
-				updateString = "UPDATE stations SET `twitter_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='') ";
-			else if (lock_type.equals("facebook"))
-				updateString = "UPDATE stations SET `facebook_lock`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock`='')";
+			if(social_type.equals("twitter"))
+				updateString = "UPDATE stations SET `twitter_lock_" + which_lock + "`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock_" + which_lock + "`='') ";
+			else if (social_type.equals("facebook"))
+				updateString = "UPDATE stations SET `facebook_lock_" + which_lock + "`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock_" + which_lock + "`='')";
 			System.out.println("Executing statement: " + updateString);
 			pstmt = con.prepareStatement(updateString);
 			pstmt.executeUpdate();
@@ -1014,7 +1019,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("Station.lock(): Tried to set " + lock_type + " lock but the existing value was not empty!");
+				(new Platform()).addMessageToLog("Station.lock(): Tried to set " + social_type + " lock but the existing value was not empty!");
 			}
 			pstmt.close();
 			con.close();
@@ -1039,19 +1044,24 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 
-	boolean unlock(String uuid, String lock_type)
+	boolean unlock(String uuid, String social_type, String which_lock)
 	{
 		boolean returnval = false;
+		if(!(which_lock.equals("master") || which_lock.equals("individual")))
+		{
+			(new Platform()).addMessageToLog("Station.lock(): Tried to lock with incorrect which_lock value=" + which_lock + ". Aborted.");
+			return returnval;
+		}
 		Connection con = null;
 		PreparedStatement pstmt = null;
 		String updateString = null;
 		try
 		{
 			con = datasource.getConnection();
-			if(lock_type.equals("twitter"))
-				updateString = "UPDATE stations SET `twitter_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock`='" + uuid + "') ";
-			else if (lock_type.equals("facebook"))
-				updateString = "UPDATE stations SET `facebook_lock`='' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock`='" + uuid + "')";
+			if(social_type.equals("twitter"))
+				updateString = "UPDATE stations SET `twitter_lock_" + which_lock + "`='' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock_" + which_lock + "`='" + uuid + "') ";
+			else if (social_type.equals("facebook"))
+				updateString = "UPDATE stations SET `facebook_lock_" + which_lock + "`='' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock_" + which_lock + "`='" + uuid + "')";
 			System.out.println("Executing statement: " + updateString);
 			pstmt = con.prepareStatement(updateString);
 			pstmt.executeUpdate();
@@ -1060,7 +1070,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock " + lock_type + " lock but the existing value did not match the specified UUID. Another process set this lock! BAD!");
+				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock " + social_type + " lock but the existing value did not match the specified UUID. Another process set this lock! BAD!");
 			}
 			pstmt.close();
 			con.close();
