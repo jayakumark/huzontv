@@ -89,7 +89,7 @@ public class Endpoint extends HttpServlet {
 					else
 					{
 						JSONObject jsonpostbody = new JSONObject(jsonpostbody_str);
-						boolean simulation = false;
+						//boolean simulation = false;
 						if(!jsonpostbody.has("password") || !jsonpostbody.getString("password").equals("Xri47Q00EIY70S4t5l02637371g2V"))
 						{	
 							jsonresponse.put("message", "password was missing or incorrect");
@@ -104,7 +104,7 @@ public class Endpoint extends HttpServlet {
 						{	
 							Station station_object = new Station(jsonpostbody.getString("station"));
 							boolean process = true;
-							if(jsonpostbody.has("simulation") && (jsonpostbody.getString("simulation").equals("yes") || jsonpostbody.getString("simulation").equals("true")))
+							/*if(jsonpostbody.has("simulation") && (jsonpostbody.getString("simulation").equals("yes") || jsonpostbody.getString("simulation").equals("true")))
 							{ 
 								System.out.println("Endpoint.commitFrameDataAndAlert(): This is a simulation. Looking up existing frame....");
 								simulation = true;
@@ -112,7 +112,7 @@ public class Endpoint extends HttpServlet {
 							}
 							else // treat as real commit
 							{	
-								
+								*/
 								Connection con = null;
 								Statement stmt = null;
 								ResultSet rs = null;
@@ -243,7 +243,7 @@ public class Endpoint extends HttpServlet {
 										(new Platform()).addMessageToLog("SQLException in Endpoint commitFrameDataAndAlert: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 									}
 								}  
-							}
+							//}
 
 							if(process)
 							{
@@ -252,13 +252,12 @@ public class Endpoint extends HttpServlet {
 								{	
 									newframe.calculateAndSetMAs();
 									JSONObject jo2 = null;
-									if(simulation)
+									/*if(simulation)
 										jo2 = newframe.process(station_object.getMAModifier(), station_object.getNRPST(), station_object.getDelta(), 
 												"test", "silent", jsonpostbody.getInt("awp_int"), jsonpostbody.getInt("awp_int"), jsonpostbody.getInt("maw_int")); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
-									else
-										jo2 = newframe.process(station_object.getMAModifier(), station_object.getNRPST(), station_object.getDelta(), 
-												"production", station_object.getAlertMode(), -1, -1, station_object.getMAWindow()); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
-
+									else*/
+									jo2 = newframe.process(station_object.getMAModifier(), station_object.getNRPST(), station_object.getDelta(), 
+											"production", "live", -1, -1, station_object.getMAWindow()); // last 4 are which_timers, alert_mode and tw/fb overrides (-1 = use database vals)
 									// {
 									// 		alert_triggered: true or false,                         // means the user passed/failed the metric thresholds to fire an alert
 									//		(if alert_triggered==true)
@@ -279,7 +278,7 @@ public class Endpoint extends HttpServlet {
 
 									jsonresponse = jo2;
 									jsonresponse.put("response_status", "success"); // just means the insertion was received and a response is coming back. Means nothing in terms of alerts
-									if(simulation) // then return additional info to the simulator. If not, don't.
+								/*	if(simulation) // then return additional info to the simulator. If not, don't.
 									{	
 										if(jsonpostbody.has("designation"))
 										{
@@ -288,7 +287,7 @@ public class Endpoint extends HttpServlet {
 										}
 										else
 											jsonresponse.put("frame_jo", newframe.getAsJSONObject(true, null));
-									}
+									}*/
 								}
 								else
 								{
@@ -870,22 +869,35 @@ public class Endpoint extends HttpServlet {
 								 }
 								 else if (method.equals("setAlertMode"))
 								 {	
-									 String alert_mode = request.getParameter("alert_mode");
-									 if(alert_mode == null)
+									 String which = request.getParameter("which"); // twitter_active_individual, twitter_active_master, facebook_active_individual, facebook_active_master
+									 String on_or_off = request.getParameter("on_or_off");
+									 if(which == null)
 									 {
-										 jsonresponse.put("message", "This method (" + method + ") requires an alert_mode value.");
+										 jsonresponse.put("message", "This method (" + method + ") requires a which value.");
 										 jsonresponse.put("response_status", "error");
-										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing alert_mode value.");
+										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing which value.");
 									 }
-									 else if(!(alert_mode.equals("live") || alert_mode.equals("test") || alert_mode.equals("silent")))
+									 if(on_or_off == null)
 									 {
-										 jsonresponse.put("message", "Invalid alert_mode value.");
+										 jsonresponse.put("message", "This method (" + method + ") requires a on_or_off value.");
 										 jsonresponse.put("response_status", "error");
-										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to invalid alert_mode value.");
+										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to missing on_or_off value.");
+									 }
+									 else if(!(which.equals("twitter_active_individual") || which.equals("twitter_active_master") || which.equals("facebook_active_individual") || which.equals("facebook_active_master")))
+									 {
+										 jsonresponse.put("message", "Invalid which value.");
+										 jsonresponse.put("response_status", "error");
+										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to invalid which value.");
+									 }
+									 else if(!(on_or_off.equals("on") || on_or_off.equals("off")))
+									 {
+										 jsonresponse.put("message", "Invalid on_or_off value.");
+										 jsonresponse.put("response_status", "error");
+										 (new Platform()).addMessageToLog("Ep.doGet(): method (" + method + ") requested by twitter_handle=" + twitter_handle + " rejected due to invalid on_or_off value.");
 									 }
 									 else
 									 {	 
-										 boolean successful = station_object.setAlertMode(alert_mode);
+										 boolean successful = station_object.setAlertMode(which, on_or_off);
 										 if(!successful)
 										 {	 
 											 jsonresponse.put("response_status", "error");

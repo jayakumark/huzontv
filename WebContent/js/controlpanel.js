@@ -170,7 +170,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    async: true,
 	    success: function (data, status) {
 	    	if (data.response_status == "error")
-	    		general_string = general_string + "<div style=\"font-size:16;color:red\">getStationInformation error: " + data.message + "</div>";
+	    		general_string = general_string + "<div style=\"font-size:16;color:red;padding-left:15px;\">getStationInformation error: " + data.message + "</div>";
 	    	else
 	    	{
 	    		general_string = general_string + "<b>station:</b> " + data.station_jo.call_letters;
@@ -181,26 +181,51 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    		general_string = general_string + "<br><b>ma modifier:</b> " + data.station_jo.mamodifier;
 	    		general_string = general_string + "<br><b>delta:</b> " + data.station_jo.delta;
 	    		general_string = general_string + "<br><b>frame rate:</b> " + data.station_jo.frame_rate;
-	    		general_string = general_string + "<br><b>alert mode:</b>";
-	    		general_string = general_string + "<select id=\"alert_mode_select\">";
-	    		general_string = general_string + "	<option SELECTED id=\"alert_mode_live_option\" value=\"live\">live</option>";
-	    		general_string = general_string + "	<option id=\"alert_mode_test_option\" value=\"test\">test</option>";
-	    		general_string = general_string + "	<option id=\"alert_mode_silent_option\" value=\"silent\">silent</option>";
-	    		general_string = general_string + "</select> <span id=\"alert_mode_change_span\"></span>";
+	    		general_string = general_string + "<br><b>TW indiv alerts:</b>";
+	    		general_string = general_string + "<select id=\"twitter_individual_select\">";
+	    		general_string = general_string + "	<option SELECTED id=\"twitter_individual_on_option\" value=\"on\">on</option>";
+	    		general_string = general_string + "	<option id=\"twitter_individual_off_option\" value=\"off\">off</option>";
+	    		general_string = general_string + "</select> <span id=\"twitter_individual_change_span\"></span>";
+	    		general_string = general_string + "<br><b>TW master alerts:</b>";
+	    		general_string = general_string + "<select id=\"twitter_master_select\">";
+	    		general_string = general_string + "	<option SELECTED id=\"twitter_master_on_option\" value=\"on\">on</option>";
+	    		general_string = general_string + "	<option id=\"twitter_master_off_option\" value=\"off\">off</option>";
+	    		general_string = general_string + "</select> <span id=\"twitter_master_change_span\"></span>";
+	    		general_string = general_string + "<br><b>FB indiv alerts:</b>";
+	    		general_string = general_string + "<select id=\"facebook_individual_select\">";
+	    		general_string = general_string + "	<option SELECTED id=\"facebook_individual_on_option\" value=\"on\">on</option>";
+	    		general_string = general_string + "	<option id=\"facebook_individual_off_option\" value=\"off\">off</option>";
+	    		general_string = general_string + "</select> <span id=\"facebook_individual_change_span\"></span>";
+	    		general_string = general_string + "<br><b>FB master alerts:</b>";
+	    		general_string = general_string + "<select id=\"facebook_master_select\">";
+	    		general_string = general_string + "	<option SELECTED id=\"facebook_master_on_option\" value=\"on\">on</option>";
+	    		general_string = general_string + "	<option id=\"facebook_master_off_option\" value=\"off\">off</option>";
+	    		general_string = general_string + "</select> <span id=\"facebook_master_change_span\"></span>";
 	    		$("#general_div").html(general_string);
-	    		if(data.station_jo.alert_mode === "live")
-	    			$("#alert_mode_live_option").prop('selected', true);
-	    		else if(data.station_jo.alert_mode === "test")
-	    			$("#alert_mode_test_option").prop('selected', true);
-	    		else if(data.station_jo.alert_mode === "silent")
-	    			$("#alert_mode_silent_option").prop('selected', true);
-	    		$("#alert_mode_select").change(function () {
+	    		if(data.station_jo.twitter_active_individual)
+	    			$("#twitter_individual_on_option").prop('selected', true);
+	    		else
+	    			$("#twitter_individual_off_option").prop('selected', true);
+	    		if(data.station_jo.twitter_active_master)
+	    			$("#twitter_master_on_option").prop('selected', true);
+	    		else
+	    			$("#twitter_master_off_option").prop('selected', true);
+	    		if(data.station_jo.facebook_active_individual)
+	    			$("#facebook_individual_on_option").prop('selected', true);
+	    		else
+	    			$("#facebook_individual_off_option").prop('selected', true);
+	    		if(data.station_jo.facebook_active_master)
+	    			$("#facebook_master_on_option").prop('selected', true);
+	    		else
+	    			$("#facebook_master_off_option").prop('selected', true);
+	    		$("#twitter_individual_select").change(function () {
 					$.ajax({
 						type: 'GET',
 						url: endpoint,
 						data: {
 				            method: "setAlertMode",
-				            alert_mode: $("#alert_mode_select").val(), 
+				            which: "twitter_active_individual",
+				            on_or_off: $("#twitter_individual_select").val(), 
 				            station: station,
 					        twitter_handle: twitter_handle,
 					        twitter_access_token: twitter_access_token
@@ -210,20 +235,125 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 				        success: function (data, status) {
 				        	if (data.response_status === "error")
 				        	{
-				        		$("#alert_mode_change_span").css("color", "red");
-				        		$("#alert_mode_change_span").html("error");
+				        		$("#twitter_individual_change_span").css("color", "red");
+				        		$("#twitter_individual_change_span").html("error");
 				        	}
 				        	else
 				        	{
-				        		$("#alert_mode_change_span").css("color", "green");
-				        		$("#alert_mode_change_span").html("updated");
+				        		$("#twitter_individual_change_span").css("color", "green");
+				        		$("#twitter_individual_change_span").html("updated");
 				        	}
-				        	var int=self.setInterval(function(){$("#alert_mode_change_span").html("");},5000); // clear it out after 5 seconds
+				        	var int=self.setInterval(function(){$("#twitter_individual_change_span").html("");},5000); // clear it out after 5 seconds
 				        }
 				        ,
 				        error: function (XMLHttpRequest, textStatus, errorThrown) {
-				        	$("#alert_mode_change_span").html("ajax error");
-				        	$("#alert_mode_change_span").css("color", "red");
+				        	$("#twitter_individual_change_span").html("ajax error");
+				        	$("#twitter_individual_change_span").css("color", "red");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+            	});	
+	    		$("#twitter_master_select").change(function () {
+					$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "setAlertMode",
+				            which: "twitter_active_master",
+				            on_or_off: $("#twitter_master_select").val(), 
+				            station: station,
+					        twitter_handle: twitter_handle,
+					        twitter_access_token: twitter_access_token
+				        },
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status === "error")
+				        	{
+				        		$("#twitter_master_change_span").css("color", "red");
+				        		$("#twitter_master_change_span").html("error");
+				        	}
+				        	else
+				        	{
+				        		$("#twitter_master_change_span").css("color", "green");
+				        		$("#twitter_master_change_span").html("updated");
+				        	}
+				        	var int=self.setInterval(function(){$("#twitter_master_change_span").html("");},5000); // clear it out after 5 seconds
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#twitter_master_change_span").html("ajax error");
+				        	$("#twitter_master_change_span").css("color", "red");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+            	});	
+	    		$("#facebook_individual_select").change(function () {
+					$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "setAlertMode",
+				            which: "facebook_active_individual",
+				            on_or_off: $("#facebook_individual_select").val(), 
+				            station: station,
+					        twitter_handle: twitter_handle,
+					        twitter_access_token: twitter_access_token
+				        },
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status === "error")
+				        	{
+				        		$("#facebook_individual_change_span").css("color", "red");
+				        		$("#facebook_individual_change_span").html("error");
+				        	}
+				        	else
+				        	{
+				        		$("#facebook_individual_change_span").css("color", "green");
+				        		$("#facebook_individual_change_span").html("updated");
+				        	}
+				        	var int=self.setInterval(function(){$("#facebook_individual_change_span").html("");},5000); // clear it out after 5 seconds
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#facebook_individual_change_span").html("ajax error");
+				        	$("#facebook_individual_change_span").css("color", "red");
+				            console.log(textStatus, errorThrown);
+				        }
+					});
+            	});	
+	    		$("#facebook_master_select").change(function () {
+					$.ajax({
+						type: 'GET',
+						url: endpoint,
+						data: {
+				            method: "setAlertMode",
+				            which: "facebook_active_master",
+				            on_or_off: $("#facebook_master_select").val(), 
+				            station: station,
+					        twitter_handle: twitter_handle,
+					        twitter_access_token: twitter_access_token
+				        },
+				        dataType: 'json',
+				        async: true,
+				        success: function (data, status) {
+				        	if (data.response_status === "error")
+				        	{
+				        		$("#facebook_master_change_span").css("color", "red");
+				        		$("#facebook_master_change_span").html("error");
+				        	}
+				        	else
+				        	{
+				        		$("#facebook_master_change_span").css("color", "green");
+				        		$("#facebook_master_change_span").html("updated");
+				        	}
+				        	var int=self.setInterval(function(){$("#facebook_master_change_span").html("");},5000); // clear it out after 5 seconds
+				        }
+				        ,
+				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+				        	$("#facebook_master_change_span").html("ajax error");
+				        	$("#facebook_master_change_span").css("color", "red");
 				            console.log(textStatus, errorThrown);
 				        }
 					});

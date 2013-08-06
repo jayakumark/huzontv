@@ -784,11 +784,15 @@ public class Frame implements Comparable<Frame> {
 		boolean alert_triggered = false;
 		String alert_triggered_failure_message = "";
 		boolean twitter_triggered = false;
-		boolean twitter_successful = false;
-		String twitter_failure_message = "";
 		boolean facebook_triggered = false;
-		boolean facebook_successful = false;
-		String facebook_failure_message = "";
+		boolean twitter_individual_successful = false;
+		boolean facebook_individual_successful = false;
+		String twitter_individual_failure_message = "";
+		String facebook_individual_failure_message = "";
+		boolean twitter_master_successful = false;
+		boolean facebook_master_successful = false;
+		String twitter_master_failure_message = "";
+		String facebook_master_failure_message = "";
 		
 		 double[] reporter_mas = null;
 		 double highest_ma = 0;
@@ -906,8 +910,10 @@ public class Frame implements Comparable<Frame> {
 									
 									alert_triggered = true; // <---------------
 									ExecutorService executor = Executors.newFixedThreadPool(300);
-									Future<JSONObject> twittertask = null;
-									Future<JSONObject> facebooktask = null;
+									Future<JSONObject> twittertask_individual = null;
+									Future<JSONObject> facebooktask_individual = null;
+									Future<JSONObject> twittertask_master = null;
+									Future<JSONObject> facebooktask_master = null;
 									
 									if(!reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers, tw_wp_override_in_sec))
 									{	
@@ -926,32 +932,65 @@ public class Frame implements Comparable<Frame> {
 										if(twitter_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											twittertask = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual")); 
+											if(station_object.isTwitterActiveIndividual())
+												twittertask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual"));
+											else
+												(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_individual");
+											
+											if(station_object.isTwitterActiveMaster())
+												twittertask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "master"));
+											else
+												(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_master");
 										}
 										if(facebook_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											facebooktask = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual"));
+											if(station_object.isFacebookActiveIndividual())
+												facebooktask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual"));
+											else
+												(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_individual");
+											
+											if(station_object.isFacebookActiveMaster())
+												facebooktask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "master"));
+											else
+												(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_master");
 										}
 									}
 									// else if simulation do do not perform any actual twitter or facebook postings.
 									
 									// CHECK THE RESULTS OF THE CALLABLE THREADS
-									JSONObject twittertask_jo = null;
-									JSONObject facebooktask_jo = null;
-									if(twittertask != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+									JSONObject twittertask_individual_jo = null;
+									JSONObject facebooktask_individual_jo = null;
+									if(twittertask_individual != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
 									{
-										twittertask_jo = twittertask.get();
-										twitter_successful = twittertask_jo.getBoolean("twitter_successful"); 
-										if(!twitter_successful)																// only need failure message if twitter not successful
-											twitter_failure_message = twittertask_jo.getString("twitter_failure_message");
+										twittertask_individual_jo = twittertask_individual.get();
+										twitter_individual_successful = twittertask_individual_jo.getBoolean("twitter_successful");  // returning from social uploader, there is no "individual" or "master"
+										if(!twitter_individual_successful)																// only need failure message if twitter not successful
+											twitter_individual_failure_message = twittertask_individual_jo.getString("twitter_failure_message"); // returning from social uploader, there is no "individual" or "master"
 									}
-									if(facebooktask != null)
+									if(facebooktask_individual != null)
 									{
-										facebooktask_jo = facebooktask.get();
-										facebook_successful = facebooktask_jo.getBoolean("facebook_successful");
-										if(!facebook_successful)
-											facebook_failure_message = facebooktask_jo.getString("facebook_failure_message");
+										facebooktask_individual_jo = facebooktask_individual.get();
+										facebook_individual_successful = facebooktask_individual_jo.getBoolean("facebook_successful"); // returning from social uploader, there is no "individual" or "master"
+										if(!facebook_individual_successful)
+											facebook_individual_failure_message = facebooktask_individual_jo.getString("facebook_failure_message"); // returning from social uploader, there is no "individual" or "master"
+									}
+									
+									JSONObject twittertask_master_jo = null;
+									JSONObject facebooktask_master_jo = null;
+									if(twittertask_master != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+									{
+										twittertask_master_jo = twittertask_master.get();
+										twitter_master_successful = twittertask_master_jo.getBoolean("twitter_successful");  // returning from social uploader, there is no "master" or "master"
+										if(!twitter_master_successful)																// only need failure message if twitter not successful
+											twitter_master_failure_message = twittertask_master_jo.getString("twitter_failure_message"); // returning from social uploader, there is no "master" or "master"
+									}
+									if(facebooktask_master != null)
+									{
+										facebooktask_master_jo = facebooktask_master.get();
+										facebook_master_successful = facebooktask_master_jo.getBoolean("facebook_successful"); // returning from social uploader, there is no "master" or "master"
+										if(!facebook_master_successful)
+											facebook_master_failure_message = facebooktask_master_jo.getString("facebook_failure_message"); // returning from social uploader, there is no "master" or "master"
 									}
 								}
 									
@@ -967,17 +1006,23 @@ public class Frame implements Comparable<Frame> {
 				return_jo.put("twitter_triggered", twitter_triggered);
 				if(twitter_triggered)
 				{
-					return_jo.put("twitter_successful", twitter_successful);
-					if(!twitter_successful)
-						return_jo.put("twitter_failure_message", twitter_failure_message);
+					return_jo.put("twitter_individual_successful", twitter_individual_successful);
+					if(!twitter_individual_successful)
+						return_jo.put("twitter_individual_failure_message", twitter_individual_failure_message);
+					return_jo.put("twitter_master_successful", twitter_master_successful);
+					if(!twitter_master_successful)
+						return_jo.put("twitter_master_failure_message", twitter_master_failure_message);
 				}
 				
 				return_jo.put("facebook_triggered", facebook_triggered);
 				if(facebook_triggered)
 				{	
-					return_jo.put("facebook_successful", facebook_successful);
-					if(!facebook_successful)
-						return_jo.put("facebook_failure_message", facebook_failure_message);
+					return_jo.put("facebook_individual_successful", facebook_individual_successful);
+					if(!facebook_individual_successful)
+						return_jo.put("facebook_individual_failure_message", facebook_individual_failure_message);
+					return_jo.put("facebook_master_successful", facebook_master_successful);
+					if(!facebook_master_successful)
+						return_jo.put("facebook_master_failure_message", facebook_master_failure_message);
 				}
 			}
 			else

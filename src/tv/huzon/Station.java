@@ -42,7 +42,6 @@ public class Station implements java.lang.Comparable<Station> {
 	private String s3_bucket_public_hostname;
 	private String livestream_url;
 	private String livestream_url_alias;
-	private String alert_mode;
 	private int nrpst;
 	private int maw;
 	private double mamodifier;
@@ -55,9 +54,12 @@ public class Station implements java.lang.Comparable<Station> {
 	private String logo_filename;
 	private String short_display_name; // like "Local 12", "WKYT" or "LEX 18", whatever they are called
 	private DataSource datasource;
-	private String test_designation;
 	private String java_timezone_string;
 	private String master_designation;
+	private boolean twitter_active_individual;
+	private boolean twitter_active_master;
+	private boolean facebook_active_individual;
+	private boolean facebook_active_master;
 	
 	public Station(String inc_call_letters)
 	{
@@ -94,11 +96,13 @@ public class Station implements java.lang.Comparable<Station> {
 				iphone_app_url = rs.getString("iphone_app_url");
 				android_app_url = rs.getString("android_app_url");
 				short_display_name = rs.getString("short_display_name");
-				test_designation = rs.getString("test_designation");
 				java_timezone_string = rs.getString("java_timezone_string");
 				master_designation = rs.getString("master_designation");
+				twitter_active_individual = rs.getBoolean("twitter_active_individual");
+				twitter_active_master = rs.getBoolean("twitter_active_master");
+				facebook_active_individual = rs.getBoolean("facebook_active_individual");
+				facebook_active_master = rs.getBoolean("facebook_active_master");
 				
-				alert_mode = rs.getString("alert_mode");
 				nrpst = rs.getInt("nrpst");
 				maw = rs.getInt("maw");
 				mamodifier = rs.getDouble("mamodifier");
@@ -146,7 +150,7 @@ public class Station implements java.lang.Comparable<Station> {
 		
 	}
 	
-	// these 6 will never be null or empty.
+	// these 5 will never be null or empty.
 	public String getHomepageURL()
 	{
 		return homepage_url;
@@ -159,10 +163,6 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		return short_display_name;
 	}
-	public String getTestDesignation()
-	{
-		return test_designation;
-	}
 	public String getJavaTimezoneString()
 	{
 		return java_timezone_string;
@@ -171,7 +171,7 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		return master_designation;
 	}
-	// end 6 functions note
+	// end 5 functions note
 	
 	// these 4 functions will never return null, but value may be empty. Calling function should check.
 	public String getRecentNewscastsURL()
@@ -192,11 +192,30 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	// end 4 functions note
 	
+	public boolean isTwitterActiveIndividual()
+	{
+		return twitter_active_individual;
+	}
+
+	public boolean isTwitterActiveMaster()
+	{
+		return twitter_active_master;
+	}	
 	
-	public String getAlertMode()
+	public boolean isFacebookActiveIndividual()
+	{
+		return facebook_active_individual;
+	}
+
+	public boolean isFacebookActiveMaster()
+	{
+		return facebook_active_master;
+	}
+	
+	/*public String getAlertMode()
 	{
 		return alert_mode;
-	}
+	}*/
 	
 	public double getMAModifier()
 	{
@@ -957,25 +976,27 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 
 	// value of alert_mode has already been validated by EndPoint. Maybe should do it here?
-	public boolean setAlertMode(String alert_mode)
+	public boolean setAlertMode(String which, String on_or_off)
 	{
 		boolean returnval = false;
 		Connection con = null;
 		PreparedStatement pstmt = null;
 		String updateString = null;
+		boolean onoffbool = false;
+		if(on_or_off.equals("on"))
+			onoffbool = true;
 		try
 		{
 			con = datasource.getConnection();
-			updateString = "UPDATE stations SET `alert_mode`='" + alert_mode + "' WHERE call_letters='" + getCallLetters() + "' ";
-			//System.out.println("Executing statement: " + updateString);
+			
+			updateString = "UPDATE stations SET `" + which + "`=" + onoffbool + " WHERE call_letters='" + getCallLetters() + "' ";
 			pstmt = con.prepareStatement(updateString);
 			pstmt.executeUpdate();
-			//System.out.println(pstmt.getUpdateCount());
 			if(pstmt.getUpdateCount() == 1) // the update actually occurred
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("Station.setAlertMode(): Tried to set station alert_mode to " + alert_mode + " but failed.");
+				(new Platform()).addMessageToLog("Station.setAlertMode(): Tried to set station which to " + onoffbool + " but failed.");
 			}
 			pstmt.close();
 			con.close();
@@ -1314,7 +1335,10 @@ public class Station implements java.lang.Comparable<Station> {
 			return_jo.put("maw", maw);
 			return_jo.put("mamodifier", mamodifier);
 			return_jo.put("delta", delta);
-			return_jo.put("alert_mode", alert_mode);
+			return_jo.put("twitter_active_individual", twitter_active_individual);
+			return_jo.put("facebook_active_individual", facebook_active_individual);
+			return_jo.put("twitter_active_master", twitter_active_master);
+			return_jo.put("facebook_active_master", facebook_active_master);
 			return_jo.put("nrpst", nrpst);
 		}	
 		catch (JSONException e) {
