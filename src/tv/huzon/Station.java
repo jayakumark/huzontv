@@ -60,6 +60,11 @@ public class Station implements java.lang.Comparable<Station> {
 	private boolean twitter_active_master;
 	private boolean facebook_active_individual;
 	private boolean facebook_active_master;
+	private String private_ip;
+	private String public_ip;
+	private int ssh_port;
+	private int web_port; 
+	private boolean use_s3_for_images;
 	
 	public Station(String inc_call_letters)
 	{
@@ -107,6 +112,12 @@ public class Station implements java.lang.Comparable<Station> {
 				maw = rs.getInt("maw");
 				mamodifier = rs.getDouble("mamodifier");
 				delta = rs.getDouble("delta");
+				
+				private_ip = rs.getString("private_ip");
+				public_ip = rs.getString("public_ip");
+				ssh_port = rs.getInt("ssh_port");
+				web_port = rs.getInt("web_port");
+				use_s3_for_images = rs.getBoolean("use_s3_for_images");
 				
 				reporters = new TreeSet<String>();
 				StringTokenizer st = new StringTokenizer(rs.getString("reporters")," ");
@@ -212,10 +223,26 @@ public class Station implements java.lang.Comparable<Station> {
 		return facebook_active_master;
 	}
 	
-	/*public String getAlertMode()
+	public String getPublicIP()
 	{
-		return alert_mode;
-	}*/
+		return public_ip;
+	}
+	public String getPrivateIP()
+	{
+		return private_ip;
+	}
+	public int getSSHPort()
+	{
+		return ssh_port;
+	}
+	public int getWebPort()
+	{
+		return web_port;
+	}
+	public boolean useS3ForImages()
+	{
+		return use_s3_for_images;
+	}
 	
 	public double getMAModifier()
 	{
