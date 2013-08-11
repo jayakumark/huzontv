@@ -187,10 +187,16 @@ public class Endpoint extends HttpServlet {
 									String valuesstring = " (";
 									fieldsstring = fieldsstring + "`" + "image_name" + "`, ";
 									valuesstring = valuesstring + "'" + jsonpostbody.getString("image_name") + "', ";
-									fieldsstring = fieldsstring + "`" + "s3_location" + "`, ";
-									valuesstring = valuesstring + "'s3://huzon-frames-" + station_object.getCallLetters() + "/" + jsonpostbody.getString("image_name") + "', ";
 									fieldsstring = fieldsstring + "`" + "url" + "`, ";
-									valuesstring = valuesstring + "'http://" + station_object.getS3BucketPublicHostname() + "/" + jsonpostbody.getString("image_name") + "', ";
+									if(jsonpostbody.getBoolean("use_s3"))
+										valuesstring = valuesstring + "'http://" + station_object.getS3BucketPublicHostname() + "/" + jsonpostbody.getString("image_name") + "', ";
+									else
+									{
+										if(station_object.getWebPort() != -1 && station_object.getWebPort() == 80)
+											valuesstring = valuesstring + "'http://" + station_object.getPublicIP() + "/" + jsonpostbody.getString("image_name") + "', ";
+										else
+											valuesstring = valuesstring + "'http://" + station_object.getPublicIP() + ":" + station_object.getWebPort() + "/" + jsonpostbody.getString("image_name") + "', ";
+									}
 									fieldsstring = fieldsstring + "`" + "timestamp_in_ms" + "`, ";
 									valuesstring = valuesstring + "'" + jsonpostbody.getLong("timestamp_in_ms") + "', ";
 									fieldsstring = fieldsstring + "`" + "frame_rate" + "`, ";

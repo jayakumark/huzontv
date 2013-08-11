@@ -27,7 +27,6 @@ public class Frame implements Comparable<Frame> {
 
 	long timestamp_in_ms;
 	String image_name;
-	String s3_location;
 	String url;
 	int frame_rate;
 	String station;
@@ -70,7 +69,7 @@ public class Frame implements Comparable<Frame> {
 	
 	// to be used when another process has gotten a bunch of rows from the frames table 
 	// and we want to build a bunch of frame objects without calling the database a zillion times.
-	public Frame(long inc_timestamp_in_ms, String inc_image_name, String inc_s3_location,
+	public Frame(long inc_timestamp_in_ms, String inc_image_name, 
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
 			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma3s, double[] inc_reporter_ma4s, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
 	{
@@ -85,14 +84,12 @@ public class Frame implements Comparable<Frame> {
 		
 		timestamp_in_ms = inc_timestamp_in_ms;
 		image_name = inc_image_name;
-		s3_location = inc_s3_location;
 		url = inc_url;
 		frame_rate = inc_frame_rate;
 		station = inc_station;
 		station_object = new Station(station);
 		reporter_designations = inc_reporter_designations;
 		reporter_scores = inc_reporter_scores;
-		//reporter_score_arrays = inc_reporter_score_arrays;
 		reporter_nums = inc_reporter_nums;
 		reporter_ma3s = inc_reporter_ma3s;
 		reporter_ma4s = inc_reporter_ma4s;
@@ -166,7 +163,6 @@ public class Frame implements Comparable<Frame> {
 			if(rs.next())
 			{	
 				image_name = rs.getString("image_name");
-				s3_location = rs.getString("s3_location");
 				url = rs.getString("url");
 				frame_rate = rs.getInt("frame_rate");
 				x = 1; 
@@ -393,11 +389,6 @@ public class Frame implements Comparable<Frame> {
 		return image_name;
 	}
 
-	String getS3Location()
-	{
-		return s3_location;
-	}
-	
 	String getURLString()
 	{
 		return url;
@@ -672,7 +663,6 @@ public class Frame implements Comparable<Frame> {
 	 * 
 	 * {
 	 * 		image_name : image_name,
-	 * 		s3_location: s3_location,
 	 * 		...
 	 * 		reporters:[
 	 * 			designation: {
@@ -701,7 +691,6 @@ public class Frame implements Comparable<Frame> {
 		try
 		{
 			jo.put("image_name", image_name);
-			jo.put("s3_location", s3_location); 
 			jo.put("url", url);
 			jo.put("timestamp_in_ms", timestamp_in_ms);
 			jo.put("frame_rate", frame_rate);

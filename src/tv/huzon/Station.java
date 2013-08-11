@@ -64,7 +64,6 @@ public class Station implements java.lang.Comparable<Station> {
 	private String public_ip;
 	private int ssh_port;
 	private int web_port; 
-	private boolean use_s3_for_images;
 	
 	public Station(String inc_call_letters)
 	{
@@ -117,7 +116,6 @@ public class Station implements java.lang.Comparable<Station> {
 				public_ip = rs.getString("public_ip");
 				ssh_port = rs.getInt("ssh_port");
 				web_port = rs.getInt("web_port");
-				use_s3_for_images = rs.getBoolean("use_s3_for_images");
 				
 				reporters = new TreeSet<String>();
 				StringTokenizer st = new StringTokenizer(rs.getString("reporters")," ");
@@ -239,11 +237,7 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		return web_port;
 	}
-	public boolean useS3ForImages()
-	{
-		return use_s3_for_images;
-	}
-	
+
 	public double getMAModifier()
 	{
 		return mamodifier;
@@ -1321,7 +1315,7 @@ public class Station implements java.lang.Comparable<Station> {
 					x++;
 				}
 				//System.out.println("Adding Frame object to treeset and going to next...");
-				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), rs.getString("s3_location"),
+				returnframes.add(new Frame(rs.getLong("timestamp_in_ms"), rs.getString("image_name"), 
 						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
 						reporter_scores, reporter_score_arrays, reporter_nums, reporter_ma3s, reporter_ma4s, reporter_ma5s, reporter_ma6s));
 				//System.out.println("... frame added");
