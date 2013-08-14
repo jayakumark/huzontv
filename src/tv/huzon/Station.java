@@ -1097,7 +1097,7 @@ public class Station implements java.lang.Comparable<Station> {
 		boolean returnval = false;
 		if(!(which_lock.equals("master") || which_lock.equals("individual")))
 		{
-			(new Platform()).addMessageToLog("Station.lock(): Tried to lock with incorrect which_lock value=" + which_lock + ". Aborted.");
+			(new Platform()).addMessageToLog("Station.lock(): Tried to unlock with incorrect which_lock value=" + which_lock + ". Aborted.");
 			return returnval;
 		}
 		Connection con = null;
@@ -1118,7 +1118,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("ERROR in Station.unlock(): Tried to unlock " + social_type + " lock but the existing value did not match the specified UUID. Another process set this lock! BAD!");
+				(new Platform()).addMessageToLog("Station.unlock(): Tried to unlock " + social_type + " but UUID mismatch (or UUID was empty). Attempting an unlock when the lock was unsuccesful is ok. Overkill, but no big deal.");
 			}
 			pstmt.close();
 			con.close();

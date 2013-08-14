@@ -70,33 +70,34 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 		SimpleEmailer se = new SimpleEmailer();
 		boolean social_successful = false;
 		String social_failure_message = "Message not set.";
-		try
-		{
-			(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " and station is " + social_abbrev + " active " + which_lock);
-			if(!reporter.isSocialActive(social_type))
+		
+		User postinguser = null;
+		if(which_lock.equals("master"))
+			postinguser = new User(station_object.getMasterDesignation(), "designation");
+		else
+			postinguser = reporter;
+		
+		String uuid = UUID.randomUUID().toString();
+		boolean successfullylocked = station_object.lock(uuid, social_type, which_lock);
+		if(successfullylocked)
+		{	
+			try
 			{
-				social_successful = false;
-				social_failure_message = "Reporter is not " + social_type + "_active";
-				(new Platform()).addMessageToLog("" + social_abbrev + " triggered but suppressed for " + reporter.getDesignation() + ". " + social_type + "_active=false");
-			}
-			else // station is active and reporter is active for this social_type. 
-			{
-				User postinguser = null;
-				if(which_lock.equals("master"))
-					postinguser = new User(station_object.getMasterDesignation(), "designation");
-				else
-					postinguser = reporter;
-
-				// the mode is live or test, we will either be firing a social alert OR sending an email about missing or invalid credentials. Both actions need a lock to prevent doubles.
-				String uuid = UUID.randomUUID().toString();
-				boolean successfullylocked = station_object.lock(uuid, social_type, which_lock);
-				if(successfullylocked)
-				{	
+				(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " and station is " + social_abbrev + " active " + which_lock);
+				if(!reporter.isSocialActive(social_type))
+				{
+					social_successful = false;
+					social_failure_message = "Reporter is not " + social_type + "_active";
+					(new Platform()).addMessageToLog("" + social_abbrev + " triggered but suppressed for " + reporter.getDesignation() + ". " + social_type + "_active=false");
+				}
+				else // station is active and reporter is active for this social_type. 
+				{
+					// the mode is live or test, we will either be firing a social alert OR sending an email about missing or invalid credentials. Both actions need a lock to prevent doubles.
 					if(postinguser.getTwitterAccessToken() == null || postinguser.getTwitterAccessToken().equals("") || postinguser.getTwitterAccessTokenSecret() == null || postinguser.getTwitterAccessTokenSecret().equals(""))
 					{
 						social_successful = false;
 						social_failure_message = "user " + postinguser.getDesignation() + " has no " + social_abbrev + " credentials";
-						(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " but failed due to lack of tw credentials. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
+						(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " but failed due to lack of credentials. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 						if(which_lock.equals("individual"))
 						{
 							String emailmessage = getMissingCredentialsEmailMessage();
@@ -294,47 +295,49 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 							}
 						}
 					}
-					station_object.unlock(uuid, social_type, which_lock);		
-				}
-				else
-				{
-					social_successful = false;
-					social_failure_message = "Failed to set " + social_abbrev + " " + which_lock + " lock for this station. It seems to be in use already.";
-					(new Platform()).addMessageToLog("Skipped " + social_abbrev + " action (post or email) for " + reporter.getDesignation() + ". Tried to set " + which_lock + " lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
-				}
-			}// end else (i.e. mode is live or test"
+				
+				}// end else (i.e. mode is live or test"
+			}
+			catch(MalformedURLException murle)
+			{
+				social_successful = false;
+				social_failure_message = "MalformedURLException " + murle.getMessage();
+				murle.printStackTrace();
+			}
+			catch (FileNotFoundException e) 
+			{
+				social_successful = false;
+				social_failure_message = "FileNotFoundException " + e.getMessage();
+				e.printStackTrace();
+			} 
+			catch (IOException e) 
+			{
+				social_successful = false;
+				social_failure_message = "IOException " + e.getMessage();
+				e.printStackTrace();
+			} 
+			catch (JSONException e) 
+			{
+				social_successful = false;
+				social_failure_message = "JSONException " + e.getMessage();
+				e.printStackTrace();
+			} 
+			catch (MessagingException e) 
+			{
+				social_successful = false;
+				social_failure_message = "MessagingException " + e.getMessage();
+				e.printStackTrace();
+			}
+			
+			station_object.unlock(uuid, social_type, which_lock);		
 		}
-		catch(MalformedURLException murle)
+		else
 		{
 			social_successful = false;
-			social_failure_message = "MalformedURLException " + murle.getMessage();
-			murle.printStackTrace();
+			social_failure_message = "Failed to set " + social_abbrev + " " + which_lock + " lock for this station. It seems to be in use already.";
+			(new Platform()).addMessageToLog("Skipped " + social_abbrev + " action (post or email) for " + reporter.getDesignation() + ". Tried to set " + which_lock + " lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 		}
-		catch (FileNotFoundException e) 
-		{
-			social_successful = false;
-			social_failure_message = "FileNotFoundException " + e.getMessage();
-			e.printStackTrace();
-		} 
-		catch (IOException e) 
-		{
-			social_successful = false;
-			social_failure_message = "IOException " + e.getMessage();
-			e.printStackTrace();
-		} 
-		catch (JSONException e) 
-		{
-			social_successful = false;
-			social_failure_message = "JSONException " + e.getMessage();
-			e.printStackTrace();
-		} 
-		catch (MessagingException e) 
-		{
-			social_successful = false;
-			social_failure_message = "MessagingException " + e.getMessage();
-			e.printStackTrace();
-		}
-
+		
 		JSONObject return_jo = new JSONObject();
 		try
 		{
