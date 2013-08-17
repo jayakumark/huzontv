@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -1142,6 +1143,12 @@ public class Station implements java.lang.Comparable<Station> {
 		return returnval;
 	}
 	
+	// I've tried spicing the automated messages up, but always fail. It's very difficult to come up with a message that is applicable to all 
+	// reporters/anchors/etc in all situations. Randomizing greetings just comes off as cheesy. Randomizing small bits of language like "Tune in!" vs "Live stream:" vs "Tune in or stream here: " 
+	// creates message structure problems. If, for instance, you have a "" option for tune_in, then you could have "I'm on the air. http://www.blah" which is too short and weird.
+	// Speaking of "I'm", third person seems so much better to me. "I'm seems self serving."
+	// the only safe option is to keep it standard and simple. I think the public will appreciate the straightforwardness of "Third Person is on the air (time). Tune in or stream here: " every time.
+	
 	String getMessage(String social_type, long timestamp_in_ms, long redirect_id, User reporter)
 	{
 		String returnval = "";
@@ -1162,15 +1169,95 @@ public class Station implements java.lang.Comparable<Station> {
 			am_or_pm_string = " PM";
 		String ts_string = hour + ":" + minutestring + am_or_pm_string;
 		
+		/*	String tune_in_string = "";
+		Random random = new Random();
+		int randomint = random.nextInt(6);
+		if(randomint == 0 || randomint == 1)
+			tune_in_string = "Tune in or stream here: ";
+		else if(randomint == 2)
+			tune_in_string = "";
+		else if(randomint == 3)
+			tune_in_string = "Tune in! ";
+		else if(randomint == 4)
+			tune_in_string = "Live stream: ";
+		else if(randomint == 5)
+			tune_in_string = "Live feed: ";
 		
-		if(social_type.equals("facebook"))
+		String meat_string = "";
+		randomint = random.nextInt(6);
+		if(randomint == 0)
+			tune_in_string = "Hello, everyone. I'm on the air right now ";
+		else if(randomint == 1)
+			tune_in_string = "I'm live on the air. ";
+		else if(randomint == 2)
+			tune_in_string = "";
+		else if(randomint == 3)
+			tune_in_string = "Tune in! ";
+		else if(randomint == 4)
+			tune_in_string = "Live stream: ";
+		else if(randomint == 5)
+			tune_in_string = "Live feed: ";
+		
+		boolean include_timestamp = false;
+		boolean include_tune_in = false;
+		boolean include_station_hashtag = false;
+		
+		String[] fp_generic_text = {
+				"I'm on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(),
+				"I'm on the air right now. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(),
+				"I'm live on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(),
+				"I'm live on the air. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(), 
+				"The newscast is on. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(), 
+				getShortDisplayName() + " news is on. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(),
+				getShortDisplayName() + " news is on. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(), 
+				getShortDisplayName() + " news is on the air. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(),
+				getShortDisplayName() + " news is on. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters() 
+				};
+		
+		String[] tp_generic_text = {
+				reporter.getDisplayName() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(), 
+				"The newscast is on. Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters(),
+				};
+		
+		String[] weather_text = {
+				"I'm on the air with the latest weather. Tune in!", 
+				getShortDisplayName() + " weather is on right now. Tune in or stream here:",
+				"Catch my weather report on the air right now. "
+				};		
+		
+		String[] sports_text = {
+				"option1", 
+				"option2"
+				};
+		
+		String[] anchor_text = {
+				"option1", 
+				"option2"
+				};	
+		
+		String[] generic_text = {
+				"option1", 
+				"option2"
+				};	*/
+		
+		/*if(social_type.equals("facebook"))
 		{
 			returnval = reporter.getDisplayName() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
 		}
 		else if(social_type.equals("twitter"))
 		{
 			returnval = ".@" + reporter.getTwitterHandle() + " is on the air right now (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
-		}
+		}*/
+		
+		//if(first_or_third_person.equals("third"))
+			returnval = reporter.getDisplayName() + " is on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
+		/*else if(first_or_third_person.equals("first"))
+			returnval = "I'm on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
+		else
+		{
+			// shouldn't happen
+			returnval = reporter.getDisplayName() + " is on the air (" + ts_string + "). Tune in or stream here: " + getLiveStreamURLAlias() + "?id=" + redirect_id + " #" + getCallLetters();
+		}*/
 		return returnval;
 	}
 	
