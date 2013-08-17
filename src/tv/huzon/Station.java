@@ -1067,7 +1067,7 @@ public class Station implements java.lang.Comparable<Station> {
 				returnval = true; 
 			else
 			{
-				(new Platform()).addMessageToLog("Station.lock(): Tried to set " + social_type + " lock but the existing value was not empty!");
+				(new Platform()).addMessageToLog("Station.lock(): Tried to set " + social_type + "-" + which_lock + " lock but the existing value was not empty!");
 			}
 			pstmt.close();
 			con.close();

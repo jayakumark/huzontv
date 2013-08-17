@@ -37,17 +37,19 @@ var devel = true;
 
 //document.addEventListener('DOMContentLoaded', function () {
 $(window).load(function () {	
+	//alert("window loaded");
 	
-	docCookies.setItem("twitter_handle", "huzontv", 31536e3);
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = ""; 
 	if(location.protocol !== "https:")
 	{
+		//alert("protocol not https");
 		$("#message_div").html("<span style=\"font-size:18;color:red\">This page must be accessed securely. Please visit <a href=\"https://www.huzon.tv/controlpanel.html\">https://www.huzon.tv/controlpanel.html</a> instead.</span>");
 	}
 	else if(twitter_handle === null)
 	{
+		//alert("twitter handle = null");
 		$("#message_div").html("<span style=\"font-size:16;color:red\">Please log in with your Twitter account.</span>");
 		$("#main_div").html("<a href=\"#\" id=\"sign_in_with_twitter_link\">Sign in with Twitter</a>");
 		$("#sign_in_with_twitter_link").click(
@@ -83,74 +85,85 @@ $(window).load(function () {
 				}
 			);	
 	}	
-	else if(twitter_handle !== null && twitter_access_token !== null)
+	else if(twitter_handle !== null)
 	{
-		$.ajax({
-			type: 'GET',
-			url: endpoint,
-			data: {
-	            method: "getSelf",
-	            twitter_handle: twitter_handle,
-	            twitter_access_token: twitter_access_token
-			},
-	        dataType: 'json',
-	        async: true,
-	        success: function (data, status) {
-	        	if (data.response_status == "error")
-	        	{
-	        		$("#message_div").html("<span style=\"font-size:16;color:red\">getSelf error: " + data.message + "</span>");
-	        		if(data.error_code && data.error_code == "07734") // the twitter cookie credentials were invalid. Delete them and reload page (start over).
-	        		{
-	        			docCookies.removeItem("twitter_access_token");
-	        			docCookies.removeItem("twitter_handle");
-	        			window.location.href = "https://www.huzon.tv/registration.html";
-	        		}
-	        	}
-	        	else // getSelf was successful, meaning twitter_handle and twitter_access_token were OK
-	        	{
-	        		
-	        		if(data.user_jo.stations_as_admin_ja.length <= 0)
-	        		{
-	        			$("#message_div").html("Sorry, you do not have admin privileges.");
-	        		}
-	        		else
-	        		{	
-	        			if(data.user_jo.stations_as_admin_ja.length > 1)
+		if(twitter_access_token === null)
+		{
+			//alert("twitter_handle !== null but tat === null");
+			docCookies.removeItem("twitter_handle");
+			window.location.reload();
+		}	
+		else
+		{
+			//alert("twitter_handle !== null && tat !== null");
+			$.ajax({
+				type: 'GET',
+				url: endpoint,
+				data: {
+		            method: "getSelf",
+		            twitter_handle: twitter_handle,
+		            twitter_access_token: twitter_access_token
+				},
+		        dataType: 'json',
+		        async: true,
+		        success: function (data, status) {
+		        	if (data.response_status == "error")
+		        	{
+		        		$("#message_div").html("<span style=\"font-size:16;color:red\">getSelf error: " + data.message + "</span>");
+		        		if(data.error_code && data.error_code == "07734") // the twitter cookie credentials were invalid. Delete them and reload page (start over).
 		        		{
-		        			//$("#message_div").html("Multiple stations as admin. Using administering_station cookie.");
-		        			station = docCookies.getItem("administering_station");
-		        		}	
-	        			else
-	        				station = data.user_jo.stations_as_admin_ja[0];
-	        			
-	        			
-	        			getStationInformation(twitter_handle, twitter_access_token, station);
-    	        		
-	        			var d = new Date();
-	        			var end = d.getTime();
-	        			var endstring = end + "";
-	        			var begin = end - (86400000*14); // 14 days
-	        			var beginstring = begin + "";
-	        			graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station);
-	        			
-	        			
-    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
-	        			
-    	        		var d = new Date();
-	        			var end = d.getTime();
-	        			var endstring = end + "";
-	        			var begin = end - (86400000*3); // 3 days
-	        			var beginstring = begin + "";
-    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
-	        		}
-	        	}
-	        },
-	        error: function (XMLHttpRequest, textStatus, errorThrown) {
-	        	$("#message_div").html("<span style=\"font-size:16;color:red\">getSelf ajax error</span>");
-	            console.log(textStatus, errorThrown);
-	        }
-		});
+		        			docCookies.removeItem("twitter_access_token");
+		        			docCookies.removeItem("twitter_handle");
+		        			window.location.href = "https://www.huzon.tv/registration.html";
+		        		}
+		        	}
+		        	else // getSelf was successful, meaning twitter_handle and twitter_access_token were OK
+		        	{
+		        		
+		        		if(data.user_jo.stations_as_admin_ja.length <= 0)
+		        		{
+		        			$("#message_div").html("Sorry, you do not have admin privileges.");
+		        		}
+		        		else
+		        		{	
+		        			if(data.user_jo.stations_as_admin_ja.length > 1)
+			        		{
+			        			//$("#message_div").html("Multiple stations as admin. Using administering_station cookie.");
+			        			station = docCookies.getItem("administering_station");
+			        		}	
+		        			else
+		        				station = data.user_jo.stations_as_admin_ja[0];
+		        			
+		        			
+		        			getStationInformation(twitter_handle, twitter_access_token, station);
+	    	        		
+		        			var d = new Date();
+		        			var end = d.getTime();
+		        			var endstring = end + "";
+		        			var begin = end - (86400000*14); // 14 days
+		        			var beginstring = begin + "";
+		        			graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station);
+		        			
+		        			
+	    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
+		        			
+	    	        		var d = new Date();
+		        			var end = d.getTime();
+		        			var endstring = end + "";
+		        			var begin = end - (86400000*3); // 3 days
+		        			var beginstring = begin + "";
+	    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
+		        		}
+		        	}
+		        },
+		        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		        	$("#message_div").html("<span style=\"font-size:16;color:red\">getSelf ajax error</span>");
+		            console.log(textStatus, errorThrown);
+		        }
+			});
+		}
 	}
+	//alert("end window loaded");
 });
 
 function getStationInformation(twitter_handle, twitter_access_token, station)

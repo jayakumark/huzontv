@@ -92,8 +92,11 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 				}
 				else // station is active and reporter is active for this social_type. 
 				{
+					//if(postinguser.getFacebookPageAccessToken() == null || postinguser.getFacebookPageAccessToken().equals(""))
+					
 					// the mode is live or test, we will either be firing a social alert OR sending an email about missing or invalid credentials. Both actions need a lock to prevent doubles.
-					if(postinguser.getTwitterAccessToken() == null || postinguser.getTwitterAccessToken().equals("") || postinguser.getTwitterAccessTokenSecret() == null || postinguser.getTwitterAccessTokenSecret().equals(""))
+					if((social_type.equals("twitter") && (postinguser.getTwitterAccessToken() == null || postinguser.getTwitterAccessToken().equals("") || postinguser.getTwitterAccessTokenSecret() == null || postinguser.getTwitterAccessTokenSecret().equals(""))) ||
+							(social_type.equals("facebook") && (postinguser.getFacebookPageAccessToken() == null || postinguser.getFacebookPageAccessToken().equals(""))))
 					{
 						social_successful = false;
 						social_failure_message = "user " + postinguser.getDesignation() + " has no " + social_abbrev + " credentials";
