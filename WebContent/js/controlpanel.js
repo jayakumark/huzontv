@@ -137,20 +137,19 @@ $(window).load(function () {
 		        			
 		        			getStationInformation(twitter_handle, twitter_access_token, station);
 	    	        		
-		        			var d = new Date();
-		        			var end = d.getTime();
-		        			var endstring = end + "";
-		        			var begin = end - (86400000*14); // 14 days
-		        			var beginstring = begin + "";
-		        			graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station);
-		        			
+		        			var numdays = docCookies.getItem("num_days_for_statistics");
+		        			if(numdays == null)
+		        				numdays = 14;
+		        			else
+		        				numdays = numdays * 1;
+		        			graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, station);
 		        			
 	    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
 		        			
 	    	        		var d = new Date();
 		        			var end = d.getTime();
 		        			var endstring = end + "";
-		        			var begin = end - (86400000*3); // 3 days
+		        			var begin = end - (86400000*2); // 2 days
 		        			var beginstring = begin + "";
 	    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
 		        		}
@@ -186,6 +185,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    		general_string = general_string + "<div style=\"font-size:16;color:red;padding-left:15px;\">getStationInformation error: " + data.message + "</div>";
 	    	else
 	    	{
+	    		general_string = general_string + "<div style=\"font-weight:bold;font-size:12px\">STATION INFO</div>";
 	    		general_string = general_string + "<b>station:</b> " + data.station_jo.call_letters;
 	    		general_string = general_string + "<br><b>city:</b> " + data.station_jo.city;
 	    		general_string = general_string + "<br><b>state:</b> " + data.station_jo.state;
@@ -381,8 +381,13 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	});
 }
 
-function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitter_access_token, station)
+function graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, station)
 {
+	var d = new Date();
+	var end = d.getTime();
+	var endstring = end + "";
+	var begin = end - (86400000*numdays);
+	var beginstring = begin + "";
 	var alert_stats_string = "";
 	$("#graph_div").html("Loading fired alert statistics <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
@@ -407,67 +412,94 @@ function graphFiredAlertStatistics(beginstring, endstring, twitter_handle, twitt
 	    	}
 	    	else
 	    	{
-	    			var fired_alert_counts = []; 
-	    			//var unabridged_redirect_counts = [];
-	    			var sansbot_redirect_counts = [];
-	    			// looping through all frames gathered to graph
-	    			var max_redirect_count = 0;
-	    			var xticks = [];
-	    			var days = [];
-	    			for(var x = 0; x < data.fired_alerts_ja.length; x++)
-	    			{
-	    				days.push((x+1)+"");
-	    				xticks.push(data.fired_alerts_ja[x].day+"");
-	    				fired_alert_counts.push(data.fired_alerts_ja[x].fired_alert_count);
-	    				sansbot_redirect_counts.push(data.fired_alerts_ja[x].sansbot_redirect_count);
-	    				//fired_alert_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].fired_alert_count]);
-	    				//sansbot_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].sansbot_redirect_count]);
-	    				//unabridged_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].unabridged_redirect_count]);
-	    				if(data.fired_alerts_ja[x].sansbot_redirect_count > max_redirect_count)
-	    					max_redirect_count = data.fired_alerts_ja[x].sansbot_redirect_count;
-	    			}
-	    			
-	    			var plot1 = $.jqplot ('chart1', [fired_alert_counts, sansbot_redirect_counts],{
-	    				title: 'Fired Alerts ' + xticks[0] + " - " + xticks[xticks.length-1],
-	    				//series:[{showMarker:false}],
-	    				axes: {
-	    					xaxis:{
-	    						ticks: days,
-	  	    		            label:'Days',
-	  	    		            labelRenderer: $.jqplot.CanvasAxisLabelRenderer
-	  	    		        },
-	    					yaxis: {
-	    						label:'# alerts and clicks',
-	    						labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-	    			            min:0,max: (max_redirect_count + 20) // spacer
-	    			        }
-	    				}
-	    				,
-	    				canvasOverlay: {
-	    					show: true
-	    			        /*objects: [
-	    			                  {horizontalLine: {
-	    		    			            name: 'pebbles',
-	    		    			            y: (reporter_homogeneity),
-	    		    			            lineWidth: 3,
-	    		    			            color: 'rgb(100, 55, 124)',
-	    		    			            shadow: true,
-	    		    			            lineCap: 'butt',
-	    		    			            xOffset: 0
-	    		    			          }},  
-	    			          {dashedHorizontalLine: {
-	    			            name: 'bam-bam',
-	    			            y: (reporter_homogeneity * mamodifier),
-	    			            lineWidth: 4,
-	    			            dashPattern: [8, 16],
-	    			            lineCap: 'round',
-	    			            xOffset: '25',
-	    			            color: 'rgb(66, 98, 144)',
-	    			            shadow: false
-	    			          }}
-	    			        ]*/
-	    			      }
-	    			    });
+	    		var fired_alert_counts = []; 
+    			//var unabridged_redirect_counts = [];
+    			var sansbot_redirect_counts = [];
+    			// looping through all frames gathered to graph
+    			var max_redirect_count = 0;
+    			var xticks = [];
+    			var days = [];
+    			var total_fired_alerts = 0;
+    			var total_sansbot_redirects = 0;
+    			for(var x = 0; x < data.fired_alerts_ja.length; x++)
+    			{
+    				days.push((x+1)+"");
+    				xticks.push(data.fired_alerts_ja[x].day+"");
+    				fired_alert_counts.push(data.fired_alerts_ja[x].fired_alert_count);
+    				sansbot_redirect_counts.push(data.fired_alerts_ja[x].sansbot_redirect_count);
+    				//fired_alert_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].fired_alert_count]);
+    				//sansbot_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].sansbot_redirect_count]);
+    				//unabridged_redirect_counts.push([data.fired_alerts_ja[x].day, data.fired_alerts_ja[x].unabridged_redirect_count]);
+    				if(data.fired_alerts_ja[x].sansbot_redirect_count > max_redirect_count)
+    					max_redirect_count = data.fired_alerts_ja[x].sansbot_redirect_count;
+    				total_sansbot_redirects = total_sansbot_redirects + data.fired_alerts_ja[x].sansbot_redirect_count;
+    				total_fired_alerts = total_fired_alerts + data.fired_alerts_ja[x].fired_alert_count;
+    			}
+    			
+    			var plot1 = $.jqplot ('chart1', [fired_alert_counts, sansbot_redirect_counts],{
+    				title: 'Fired Alerts ' + xticks[0] + " - " + xticks[xticks.length-1],
+    				//series:[{showMarker:false}],
+    				axes: {
+    					xaxis:{
+    						ticks: days,
+  	    		            label:'Days',
+  	    		            labelRenderer: $.jqplot.CanvasAxisLabelRenderer
+  	    		        },
+    					yaxis: {
+    						label:'# alerts and clicks',
+    						labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+    			            min:0,max: (max_redirect_count + 20) // spacer
+    			        }
+    				}
+    				,
+    				canvasOverlay: {
+    					show: true
+    			        /*objects: [
+    			                  {horizontalLine: {
+    		    			            name: 'pebbles',
+    		    			            y: (reporter_homogeneity),
+    		    			            lineWidth: 3,
+    		    			            color: 'rgb(100, 55, 124)',
+    		    			            shadow: true,
+    		    			            lineCap: 'butt',
+    		    			            xOffset: 0
+    		    			          }},  
+    			          {dashedHorizontalLine: {
+    			            name: 'bam-bam',
+    			            y: (reporter_homogeneity * mamodifier),
+    			            lineWidth: 4,
+    			            dashPattern: [8, 16],
+    			            lineCap: 'round',
+    			            xOffset: '25',
+    			            color: 'rgb(66, 98, 144)',
+    			            shadow: false
+    			          }}
+    			        ]*/
+    			      }
+    			    });
+    		
+    			var chartinfo_str = "<div style=\"font-weight:bold;font-size:12px\">STATISTICS</div>";
+    			chartinfo_str = chartinfo_str + "<b>Total alerts:</b> " + total_fired_alerts;
+    			chartinfo_str = chartinfo_str + "<br><b>Total sansbot redirects:</b> " + total_sansbot_redirects;
+    			chartinfo_str = chartinfo_str + "<br><b>Redirects per alert: </b> " + (Math.floor((total_sansbot_redirects/total_fired_alerts)*10)/10);
+    			chartinfo_str = chartinfo_str + "<br><b># days to show:</b> ";
+    			chartinfo_str = chartinfo_str + "<select id=\"days_select\">";
+    			for(var x = 1; x <= 30; x++)
+    			{	
+    				chartinfo_str = chartinfo_str + "	<option id=\"days_select_" + x + "\" value=\"" + x + "\">" + x + "</option>";
+    			}
+	    		chartinfo_str = chartinfo_str + "</select> <span id=\"days_select_change_span\"></span>";
+	    		
+	    		$("#chartinfo_div").html(chartinfo_str);
+	    		//alert("setting #days_select_" + numdays + " to true");
+	    		$("#days_select_" + numdays).prop('selected', true);
+	    		$("#days_select").change(function () {
+	    			docCookies.setItem("num_days_for_statistics", $("#days_select").val(), 30000000);
+	    			$("#chart1").html("");
+	    			$("#days_select_change_span").html("Reloading...");
+	    			$("#days_select_change_span").css("color", "blue");
+	    			graphFiredAlertStatistics($("#days_select").val(), twitter_handle, twitter_access_token, station);
+            	});	
 	    	}
 	    }
 	    ,
