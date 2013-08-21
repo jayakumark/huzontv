@@ -83,12 +83,12 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 		{	
 			try
 			{
-				(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " and station is " + social_abbrev + " active " + which_lock);
+				(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered for " + reporter.getDesignation() + " and station is " + social_abbrev + " active " + which_lock);
 				if(!reporter.isSocialActive(social_type))
 				{
 					social_successful = false;
 					social_failure_message = "Reporter is not " + social_type + "_active";
-					(new Platform()).addMessageToLog("" + social_abbrev + " triggered but suppressed for " + reporter.getDesignation() + ". " + social_type + "_active=false");
+					(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered but suppressed for " + reporter.getDesignation() + ". " + social_type + "_active=false");
 				}
 				else // station is active and reporter is active for this social_type. 
 				{
@@ -100,12 +100,12 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 					{
 						social_successful = false;
 						social_failure_message = "user " + postinguser.getDesignation() + " has no " + social_abbrev + " credentials";
-						(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " but failed due to lack of credentials. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
+						(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered for " + reporter.getDesignation() + " but failed due to lack of credentials. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 						if(which_lock.equals("individual"))
 						{
 							String emailmessage = getMissingCredentialsEmailMessage();
 							se.sendMail("Action required: huzon.tv " + social_abbrev + " alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
-							(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of MISSING " + social_abbrev + " credentials.");
+							(new Platform()).addMessageToLog("SocUpCall: " + reporter.getDesignation() + " was notified of MISSING " + social_abbrev + " credentials.");
 						}
 					}
 					else // postinguser appears to have social credentials
@@ -114,12 +114,13 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 						URL[] image_urls = frame2upload.get2x2CompositeURLs(faces_only, reporter.getDesignation());
 						if(image_urls == null)
 						{
+							(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered for " + reporter.getDesignation() + " cred exist, but 2x2 failed. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 							social_successful = false;
 							social_failure_message = "image_urls was null coming back from Frame.get2x2CompositeURLs()";
-							(new Platform()).addMessageToLog("" + social_abbrev + " triggered for " + reporter.getDesignation() + " with cred. but 2x2 failed. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 						}
 						else
 						{
+							(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered for " + reporter.getDesignation() + " cred exist, 2x2 successful. s_t=" + social_type + " user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 							File[] image_files = new File[4];
 							String tmpdir = System.getProperty("java.io.tmpdir");
 							String[] image_filenames = new String[4];
@@ -128,28 +129,28 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 							image_filenames[2] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
 							image_filenames[3] = tmpdir + "/" + UUID.randomUUID() + ".jpg";
 
-							System.out.println("SocialUploaderCallable.call(): downloading " + image_urls[0] + " and saving to " + image_filenames[0]);
+							System.out.println("SocUpCall: downloading " + image_urls[0] + " and saving to " + image_filenames[0]);
 							ReadableByteChannel rbc0 = Channels.newChannel(image_urls[0].openStream());
 							FileOutputStream fos0 = new FileOutputStream(image_filenames[0]); // FIXME this might have conflicts with multiple stations
 							fos0.getChannel().transferFrom(rbc0, 0, Long.MAX_VALUE);
 							image_files[0] = new File(image_filenames[0]);
 							fos0.close();
 
-							System.out.println("SocialUploaderCallable.call(): downloading " + image_urls[1] + " and saving to " + image_filenames[1]);
+							System.out.println("SocUpCall: downloading " + image_urls[1] + " and saving to " + image_filenames[1]);
 							ReadableByteChannel rbc1 = Channels.newChannel(image_urls[1].openStream());
 							FileOutputStream fos1 = new FileOutputStream(image_filenames[1]); // FIXME this might have conflicts with multiple stations
 							fos1.getChannel().transferFrom(rbc1, 0, Long.MAX_VALUE);
 							image_files[1] = new File(image_filenames[1]);
 							fos1.close();
 
-							System.out.println("SocialUploaderCallable.call(): downloading " + image_urls[2] + " and saving to " + image_filenames[2]);
+							System.out.println("SocUpCall: downloading " + image_urls[2] + " and saving to " + image_filenames[2]);
 							ReadableByteChannel rbc2 = Channels.newChannel(image_urls[2].openStream());
 							FileOutputStream fos2 = new FileOutputStream(image_filenames[2]); // FIXME this might have conflicts with multiple stations
 							fos2.getChannel().transferFrom(rbc2, 0, Long.MAX_VALUE);
 							image_files[2] = new File(image_filenames[2]);
 							fos2.close();
 
-							System.out.println("SocialUploaderCallable.call(): downloading " + image_urls[3] + " and saving to " + image_filenames[3]);				
+							System.out.println("SocUpCall: downloading " + image_urls[3] + " and saving to " + image_filenames[3]);				
 							ReadableByteChannel rbc3 = Channels.newChannel(image_urls[3].openStream());
 							FileOutputStream fos3 = new FileOutputStream(image_filenames[3]); // FIXME this might have conflicts with multiple stations
 							fos3.getChannel().transferFrom(rbc3, 0, Long.MAX_VALUE);
@@ -184,7 +185,7 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 
 								// Save as new image
 								String composite_filename = tmpdir + "/" + UUID.randomUUID() + ".png";
-								System.out.println("SocialUploaderCallable.call(): writing composite image.");
+								System.out.println("SocUpCall: writing composite image.");
 								ImageIO.write(after, "PNG", new File(composite_filename));
 								File composite_file = new File(composite_filename);
 
@@ -196,9 +197,9 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 								Platform p = new Platform();
 								long redirect_id = p.createAlertInDB(station_object, social_type, reporter.getDesignation(), frame2upload.getURLString(), postinguser);
 								String message = station_object.getMessage(social_type, frame2upload.getTimestampInMillis(), redirect_id, reporter);
-
 								if(social_type.equals("twitter"))
 								{	
+									(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered for " + reporter.getDesignation() + " cred exist, 2x2 successful. twitter post block entered. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 									Twitter twitter = new Twitter();
 									JSONObject twit_jo = null;
 									twit_jo = twitter.updateStatusWithMedia(postinguser.getTwitterAccessToken(), postinguser.getTwitterAccessTokenSecret(), message, composite_file);
@@ -246,6 +247,7 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 								}
 								else if(social_type.equals("facebook"))
 								{
+									(new Platform()).addMessageToLog("SocUpCall: " + social_abbrev + " triggered for " + reporter.getDesignation() + " cred exist, 2x2 successful. facebook post block entered. user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
 									Facebook facebook = new FacebookFactory().getInstance();
 									facebook.setOAuthAppId("176524552501035", "dbf442014759e75f2f93f2054ac319a0");
 									facebook.setOAuthPermissions("publish_stream,manage_page");
@@ -331,7 +333,6 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 				social_failure_message = "MessagingException " + e.getMessage();
 				e.printStackTrace();
 			}
-			
 			station_object.unlock(uuid, social_type, which_lock);		
 		}
 		else

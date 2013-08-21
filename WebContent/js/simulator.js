@@ -264,7 +264,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "		<td style=\"vertical-align:top;text-align:left\">";
 	fds = fds + "			<table style=\"border-spacing:3px\">";
 	fds = fds + "				<tr>";
-	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=3>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left;font-size:15px\" colspan=4>";
 	fds = fds + "						<b>Function 1:</b> Get all still frames in a range (inclusive).";
 	fds = fds + "					</td>";
 	fds = fds + "				</tr>";
@@ -274,6 +274,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "						End: <input type=\"text\" id=\"function1_end_input\" value=\"20130707_235900\" size=13> ";
+	fds = fds + "					</td>";
+	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
+	fds = fds + "						Show every <input type=\"text\" id=\"function1_increment_input\" value=\"5\" size=1 maxlength=2> frames";
 	fds = fds + "					</td>";
 	fds = fds + "					<td style=\"vertical-align:middle;text-align:left\">";
 	fds = fds + "  						<input id=\"function1_go_button\" type=button value=\"GO\">";
@@ -472,7 +475,7 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	
 	$("#function1_go_button").click(
 			function () {
-				$("#results_div").html("");
+				$("#results_div").html("Loading frames...");
 				$("#chart1").html("");
 				var rds = "";
 				/*var datestring = $('#function1_begin_input').val();
@@ -507,7 +510,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 				        		}	
 				        		else
 				        		{
-				        			for(var x = 0; x < data.frames_ja.length; x++)
+				        			var increment = $("#function1_increment_input").val() * 1;
+				        			rds = rds + "<div>Showing " + data.frames_ja.length + " results</div>";
+				        			for(var x = 0; x < data.frames_ja.length; x = x + increment)
 				        			{
 				        				rds = rds + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
 				        				rds = rds + "<img src=\"" + data.frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
