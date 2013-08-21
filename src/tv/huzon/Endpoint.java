@@ -217,8 +217,8 @@ public class Endpoint extends HttpServlet {
 										//valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").toString() + "', ";
 										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_score" + "`, ";
 										valuesstring = valuesstring + "'" + currentavgscore + "', ";
-										fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_num" + "`, ";
-										valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").length() + "', ";
+										//fieldsstring = fieldsstring + "`" + ja.getJSONObject(x).getString("designation")+"_num" + "`, ";
+										//valuesstring = valuesstring + "'" + ja.getJSONObject(x).getJSONArray("scores").length() + "', ";
 									}
 									fieldsstring = fieldsstring.substring(0,fieldsstring.length() - 2) + ")";
 									valuesstring = valuesstring.substring(0,valuesstring.length() - 2) + ")";

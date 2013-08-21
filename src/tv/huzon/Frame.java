@@ -34,7 +34,7 @@ public class Frame implements Comparable<Frame> {
 	String[] reporter_designations;
 	double[] reporter_scores;
 	//JSONArray[] reporter_score_arrays;
-	int[] reporter_nums;
+	//int[] reporter_nums;
 	//double[] reporter_ma5s;
 	double[] reporter_ma6s;
 	double[] reporter_ma5s;
@@ -71,7 +71,7 @@ public class Frame implements Comparable<Frame> {
 	// and we want to build a bunch of frame objects without calling the database a zillion times.
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, 
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
-			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
+			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
 	{
 		
 		try {
@@ -90,7 +90,7 @@ public class Frame implements Comparable<Frame> {
 		station_object = new Station(station);
 		reporter_designations = inc_reporter_designations;
 		reporter_scores = inc_reporter_scores;
-		reporter_nums = inc_reporter_nums;
+		//reporter_nums = inc_reporter_nums;
 	//	reporter_ma3s = inc_reporter_ma3s;
 		//reporter_ma4s = inc_reporter_ma4s;
 		reporter_ma5s = inc_reporter_ma5s;
@@ -175,7 +175,7 @@ public class Frame implements Comparable<Frame> {
 				reporter_ma5s = new double[reportercount];
 				reporter_ma6s = new double[reportercount];
 				//reporter_score_arrays = new JSONArray[reportercount];
-				reporter_nums = new int[reportercount];
+				//reporter_nums = new int[reportercount];
 				boolean db_has_ma6_data = true; // assume true until proven false
 				boolean db_has_ma5_data = true;
 				boolean db_has_ma4_data = true;
@@ -187,10 +187,10 @@ public class Frame implements Comparable<Frame> {
 						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_score"));
 						reporter_scores[reporter_index] = rs.getDouble(x);
 					}
-					else if(rsmd.getColumnName(x).endsWith("_num"))
+					/*else if(rsmd.getColumnName(x).endsWith("_num"))
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
-					}
+					}*/
 					/*else if(rsmd.getColumnName(x).endsWith("_ma3"))
 					{
 						if(db_has_ma3_data == true) // it could either be true or assumed to be true at this point
@@ -717,7 +717,7 @@ public class Frame implements Comparable<Frame> {
 					jo2 = new JSONObject();
 					jo2.put("designation", reporter_designations[x]);
 					jo2.put("score", reporter_scores[x]);
-					jo2.put("num", reporter_nums[x]);
+					//jo2.put("num", reporter_nums[x]);
 					jo2.put("ma6", reporter_ma6s[x]);
 					reporter_jo.put(reporter_designations[x],jo2);
 					x++;
