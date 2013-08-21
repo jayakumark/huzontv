@@ -38,8 +38,8 @@ public class Frame implements Comparable<Frame> {
 	//double[] reporter_ma5s;
 	double[] reporter_ma6s;
 	double[] reporter_ma5s;
-	double[] reporter_ma4s;
-	double[] reporter_ma3s;
+	//double[] reporter_ma4s;
+	//double[] reporter_ma3s;
 	
 	//boolean highest_and_second_highest_values_set;
 	boolean has_moving_averages = false;
@@ -47,18 +47,18 @@ public class Frame implements Comparable<Frame> {
 	double highest_ma6;
 	String highest_ma5_designation;
 	double highest_ma5;
-	String highest_ma4_designation;
+	/*String highest_ma4_designation;
 	double highest_ma4;
 	String highest_ma3_designation;
-	double highest_ma3;
+	double highest_ma3;*/
 	String second_highest_ma6_designation;
 	double second_highest_ma6;
 	String second_highest_ma5_designation;
 	double second_highest_ma5;
-	String second_highest_ma4_designation;
+/*	String second_highest_ma4_designation;
 	double second_highest_ma4;
 	String second_highest_ma3_designation;
-	double second_highest_ma3;
+	double second_highest_ma3;*/
 	String highest_score_designation;
 	double highest_score;
 	String second_highest_score_designation;
@@ -71,7 +71,7 @@ public class Frame implements Comparable<Frame> {
 	// and we want to build a bunch of frame objects without calling the database a zillion times.
 	public Frame(long inc_timestamp_in_ms, String inc_image_name, 
 			String inc_url, int inc_frame_rate, String inc_station, String[] inc_reporter_designations, 
-			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double[] inc_reporter_ma3s, double[] inc_reporter_ma4s, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
+			double[] inc_reporter_scores, JSONArray[] inc_reporter_score_arrays, int[] inc_reporter_nums, double inc_reporter_ma5s[], double inc_reporter_ma6s[])
 	{
 		
 		try {
@@ -91,11 +91,12 @@ public class Frame implements Comparable<Frame> {
 		reporter_designations = inc_reporter_designations;
 		reporter_scores = inc_reporter_scores;
 		reporter_nums = inc_reporter_nums;
-		reporter_ma3s = inc_reporter_ma3s;
-		reporter_ma4s = inc_reporter_ma4s;
+	//	reporter_ma3s = inc_reporter_ma3s;
+		//reporter_ma4s = inc_reporter_ma4s;
 		reporter_ma5s = inc_reporter_ma5s;
 		reporter_ma6s = inc_reporter_ma6s;
-		if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0 && reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
+		if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0)
+			//&& reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
 		{
 			has_moving_averages = true;
 			setHighestAndSecondHighestValues();
@@ -169,8 +170,8 @@ public class Frame implements Comparable<Frame> {
 				int reporter_index = 0;
 				reporter_designations = new String[reportercount];
 				reporter_scores = new double[reportercount];
-				reporter_ma3s = new double[reportercount];
-				reporter_ma4s = new double[reportercount];
+				//reporter_ma3s = new double[reportercount];
+				//reporter_ma4s = new double[reportercount];
 				reporter_ma5s = new double[reportercount];
 				reporter_ma6s = new double[reportercount];
 				//reporter_score_arrays = new JSONArray[reportercount];
@@ -190,7 +191,7 @@ public class Frame implements Comparable<Frame> {
 					{
 						reporter_nums[reporter_index] = rs.getInt(x);
 					}
-					else if(rsmd.getColumnName(x).endsWith("_ma3"))
+					/*else if(rsmd.getColumnName(x).endsWith("_ma3"))
 					{
 						if(db_has_ma3_data == true) // it could either be true or assumed to be true at this point
 						{	
@@ -215,7 +216,7 @@ public class Frame implements Comparable<Frame> {
 							}
 						}
 						// else skip. We already know there is no ma4 data in this row
-					}
+					}*/
 					else if(rsmd.getColumnName(x).endsWith("_ma5"))
 					{
 						if(db_has_ma5_data == true) // it could either be true or assumed to be true at this point
@@ -247,7 +248,8 @@ public class Frame implements Comparable<Frame> {
 				}
 				
 				// if there was moving average data, set the flag and set highest and second highest data
-				if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0 && reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
+				if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0)
+					//&& reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
 				{
 					has_moving_averages = true;
 					setHighestAndSecondHighestValues();
@@ -310,7 +312,7 @@ public class Frame implements Comparable<Frame> {
 		second_highest_ma5_designation = null;
 		second_highest_ma5 = -1;
 		
-		highest_ma4_designation = null;
+		/*highest_ma4_designation = null;
 		highest_ma4 = -1;
 		second_highest_ma4_designation = null;
 		second_highest_ma4 = -1;
@@ -318,7 +320,7 @@ public class Frame implements Comparable<Frame> {
 		highest_ma3_designation = null;
 		highest_ma3 = -1;
 		second_highest_ma3_designation = null;
-		second_highest_ma3 = -1;
+		second_highest_ma3 = -1;*/
 		
 		int x = 0;
 		while(x < reporter_designations.length)
@@ -349,7 +351,7 @@ public class Frame implements Comparable<Frame> {
 				second_highest_ma5_designation = reporter_designations[x];
 			}
 			
-			if(reporter_ma4s[x] > highest_ma4) // is this the highest? if so, bump highest and second highest.
+			/*if(reporter_ma4s[x] > highest_ma4) // is this the highest? if so, bump highest and second highest.
 			{
 				second_highest_ma4 = highest_ma4;
 				highest_ma4 = reporter_ma4s[x];
@@ -373,7 +375,7 @@ public class Frame implements Comparable<Frame> {
 			{
 				second_highest_ma3 = reporter_ma3s[x];
 				second_highest_ma3_designation = reporter_designations[x];
-			}
+			}*/
 			x++;
 		}
 	}
@@ -437,7 +439,7 @@ public class Frame implements Comparable<Frame> {
 		return 0;
 	}
 	
-	double getMovingAverage3(String designation)
+/*	double getMovingAverage3(String designation)
 	{
 		if(reporter_ma3s == null)  // reporter_ma3s was never populated or was invalid
 		{
@@ -473,7 +475,7 @@ public class Frame implements Comparable<Frame> {
 			x++;
 		}
 		return -1;
-	}
+	}*/
 	
 	double getMovingAverage5(String designation)
 	{
@@ -789,12 +791,12 @@ public class Frame implements Comparable<Frame> {
 		 double second_highest_ma = 0;
 		 String second_highest_ma_designation = "";
 		 switch (maw_int) {
-		 	case 3:  
+		 /*	case 3:  
 		 		reporter_mas = reporter_ma3s;
 		 		break;
 			case 4: 
 				reporter_mas = reporter_ma4s;
-	 			break;
+	 			break;*/
 			case 5:
 				reporter_mas = reporter_ma5s;
 	 			break;
@@ -802,7 +804,7 @@ public class Frame implements Comparable<Frame> {
 				reporter_mas = reporter_ma6s;
 	 			break;
 			default: 
-				System.out.println("Frame.process():error: maw_int has to be 3,4,5 or 6. It is " + maw_int);
+				System.out.println("Frame.process():error: maw_int has to be 5 or 6. It is " + maw_int);
 				reporter_mas = reporter_ma6s;
 	 			break;
 		 }
@@ -818,12 +820,12 @@ public class Frame implements Comparable<Frame> {
 			else
 			{	
 				 switch (maw_int) {
-				 	case 3:  
+				 /*	case 3:  
 				 		highest_ma = highest_ma3; highest_ma_designation = highest_ma3_designation; second_highest_ma = second_highest_ma3; second_highest_ma_designation = second_highest_ma3_designation;
 				 		break;
 					case 4: 
 						highest_ma = highest_ma4; highest_ma_designation = highest_ma4_designation; second_highest_ma = second_highest_ma4; second_highest_ma_designation = second_highest_ma4_designation;
-			 			break;
+			 			break;*/
 					case 5:
 						highest_ma = highest_ma5; highest_ma_designation = highest_ma5_designation; second_highest_ma = second_highest_ma5; second_highest_ma_designation = second_highest_ma5_designation;
 			 			break;
@@ -1046,8 +1048,8 @@ public class Frame implements Comparable<Frame> {
 	{
 		reporter_ma6s = new double[reporter_designations.length];
 		reporter_ma5s = new double[reporter_designations.length];
-		reporter_ma4s = new double[reporter_designations.length];
-		reporter_ma3s = new double[reporter_designations.length];
+		//reporter_ma4s = new double[reporter_designations.length];
+		//reporter_ma3s = new double[reporter_designations.length];
 		
 		long ma6_window_begin_ts = getTimestampInMillis()-(6 * 1000);
 		long ma5_window_begin_ts = getTimestampInMillis()-(5 * 1000);
@@ -1133,7 +1135,7 @@ public class Frame implements Comparable<Frame> {
 			}
 		}
 		
-		if(num_frames_in_m4_window < 4) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
+	/*	if(num_frames_in_m4_window < 4) // not enough frames in window, set all reporter moving averages to -1 so they get put into the database as null
 		{
 			reporter_ma4s = null; // just set it to null
 		}
@@ -1185,10 +1187,11 @@ public class Frame implements Comparable<Frame> {
 				reporter_ma3s[x] = reporter_totals_3[x] / num_frames_in_m3_window;
 				x++;
 			}
-		}
+		}*/
 		
 		// now that this object has moving average data, set the highest and second_highest ma values and designations
-		if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0 && reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
+		if(reporter_ma6s != null && reporter_ma6s.length > 0 && reporter_ma5s != null && reporter_ma5s.length > 0)
+			//&& reporter_ma4s != null && reporter_ma4s.length > 0 && reporter_ma3s != null && reporter_ma3s.length > 0)
 		{
 			has_moving_averages = true;
 			setHighestAndSecondHighestValues();
@@ -1228,7 +1231,7 @@ public class Frame implements Comparable<Frame> {
 					else
 						rs.updateDouble(reporter_designations[x] + "_ma5", reporter_ma5s[x]);
 					
-					if(reporter_ma4s == null)
+					/*if(reporter_ma4s == null)
 						rs.updateNull(reporter_designations[x] + "_ma4");
 					else
 						rs.updateDouble(reporter_designations[x] + "_ma4", reporter_ma4s[x]);
@@ -1236,7 +1239,7 @@ public class Frame implements Comparable<Frame> {
 					if(reporter_ma3s == null)
 						rs.updateNull(reporter_designations[x] + "_ma3");
 					else
-						rs.updateDouble(reporter_designations[x] + "_ma3", reporter_ma3s[x]);
+						rs.updateDouble(reporter_designations[x] + "_ma3", reporter_ma3s[x]);*/
 				}
 				rs.updateRow();
 			}
@@ -1347,7 +1350,7 @@ public class Frame implements Comparable<Frame> {
 			return second_highest_ma5_designation;
 	}
 	
-	double getHighestMA4()
+/*	double getHighestMA4()
 	{
 		if(!has_moving_averages)
 			return -1;
@@ -1409,5 +1412,5 @@ public class Frame implements Comparable<Frame> {
 			return null;
 		else
 			return second_highest_ma3_designation;
-	}
+	}*/
 }

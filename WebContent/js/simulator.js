@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	//docCookies.setItem("twitter_access_token", "", 3000000);
 	//docCookies.setItem("twitter_handle", "huzontv", 3000000);
 	//docCookies.setItem("pass", "", 3000000);
-	
+	var administering_station = docCookies.getItem("administering_station");
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	if(location.protocol !== "https:")
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 	else if(twitter_handle !== null && twitter_access_token !== null)
 	{
-		var administering_station = docCookies.getItem("administering_station");
+		/*var administering_station = docCookies.getItem("administering_station");
 		if(administering_station == null) // need to prompt the user for the station they want to administer.
 		{	
 			$.ajax({
@@ -210,7 +210,70 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 		}
 		else
-		{
+		{*/
+		
+		$.ajax({
+			type: 'GET',
+			url: endpoint,
+			data: {
+	            method: "getStations",
+	            twitter_handle: twitter_handle,
+	            twitter_access_token: twitter_access_token
+			},
+	        dataType: 'json',
+	        async: false,
+	        success: function (data, status) {
+	        	if(data.response_status === 'success')
+	        	{
+	        		/*var mds = "";
+	        		mds = mds + "<div style=\"font-size:16;color:green\">Select a station:</div>";
+	        		for(var x = 0; x < data.stations_ja.length; x++)
+	        		{
+	        			mds = mds + "<div style=\"font-size:16\"><a href=\"#\" id=\"" + data.stations_ja[x].call_letters  + "_link\">" + data.stations_ja[x].call_letters  + "</a></div>";
+	        		}	
+	        		$("#message_div").html(mds);
+	        		for(var x = 0; x < data.stations_ja.length; x++)
+	        		{
+	        			$("#" + data.stations_ja[x].call_letters  + "_link").click({value: data.stations_ja[x].call_letters},
+	        					function (event) {
+	        						docCookies.setItem("administering_station", event.data.value, 3000000);
+	        						window.location.reload();
+	        					});
+	        		}*/
+	        		
+	        		var station_select_str = "";
+	        		station_select_str = station_select_str + "<select id=\"station_select\">";
+	        		for(var x = 0; x < data.stations_ja.length; x++)
+	        		{	
+	        			station_select_str = station_select_str + "	<option id=\"station_select_" + data.stations_ja[x].call_letters + "\" value=\"" + data.stations_ja[x].call_letters + "\">" + data.stations_ja[x].call_letters + "</option>";
+	        		}
+	        		station_select_str = station_select_str + "</select> <span id=\"station_select_change_span\"></span>";
+	        		$("#station_select_td").html(station_select_str);
+	        		
+	        		if(administering_station == null)
+	        		{
+	        			administering_station = "wkyt";
+	        			docCookies.setItem("administering_station", "wkyt");
+	        		}
+	        		
+	        		$("#station_select_" + administering_station).prop('selected', true);
+		    		$("#station_select").change(function () {
+		    			docCookies.setItem("administering_station", $("#station_select").val(), 30000000);
+		    			$("#station_select_change_span").html("reloading page");
+		    			window.location.reload();
+	            	});	
+	        	}
+	        	else
+	        	{
+	        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: message=" + data.message  + "</span>");
+	        	}
+	        },
+	        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+	            console.log(textStatus, errorThrown);
+	        }
+		});
+		
 			var mds = "";
     	//	mds = mds + "<div style=\"font-size:16;color:green\">You are administering " + administering_station + "</div>";
     		
@@ -219,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
     			url: endpoint,
     			data: {
     	            method: "getActiveReporterDesignations",
-    	            station: "wkyt",
+    	            station: administering_station,
     	            twitter_handle: twitter_handle,
 		            twitter_access_token: twitter_access_token
     			},
@@ -243,7 +306,6 @@ document.addEventListener('DOMContentLoaded', function () {
     		});
     		
 			$("#message_div").html(mds);
-		}
 	}
 });
 
@@ -255,6 +317,9 @@ function displayAvailableFunctions() // user should have twitter_handle, twitter
 	
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = docCookies.getItem("administering_station");
+	
+	
+	
 	var fds = "";
 	fds = fds + "<div style=\"font-size:16px;font-weight:bold\">";
 	fds = fds + "	Available functions:";
