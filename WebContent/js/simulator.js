@@ -1253,22 +1253,41 @@ function getAlertFramesClosure(begin_in_ms, end_in_ms, mamodifier, nrpst, awp, d
         			
     				for(var x = 0; x < data.alert_frames_ja.length; x++)
     				{
+    					/*
+    					 * 			
+    					 * 			return_jo.put("image_name", getImageName());
+    					 * 			return_jo.put("designation", highest_ma_designation);
+									return_jo.put("single_threshold", homogeneity);
+									return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
+									return_jo.put("trigger_timestamp_in_ms", trigger_timestamp_in_ms);
+									return_jo.put("trigger_score", trigger_score);
+									return_jo.put("trigger_maw_int", trigger_maw_int);
+									return_jo.put("trigger_ma5", trigger_ma5);
+									return_jo.put("trigger_ma6", trigger_ma6);
+									return_jo.put("trigger_numframes", trigger_numframes);
+									return_jo.put("trigger_delta", trigger_delta);
+									return_jo.put("trigger_npst", trigger_npst);
+									return_jo.put("second_highest_designation", second_highest_ma_designation);
+									return_jo.put("second_highest_ma", second_highest_ma);
+									return_jo.put("second_highest_score", second_highest_score); // FIXME this isn't necessarily the score of the second_highest_ma_designation
+    					 */
     					rowstring = rowstring + "<div style=\"border: 1px black solid;width:250px;display:inline-block;\">";
         				rowstring = rowstring + "<img src=\"" + data.alert_frames_ja[x].url + "\" style=\"width:250px;height:141px\">";
         				rowstring = rowstring + "<br>image_name:" + data.alert_frames_ja[x].image_name;
         				rowstring = rowstring + "<br>designation:" + data.alert_frames_ja[x].designation;
-        				rowstring = rowstring + "<br>score_for_alert_frame:" + data.alert_frames_ja[x].score_for_alert_frame;
-        				//rowstring = rowstring + "<br>score_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].score_for_frame_that_passed_ma_thresh;
-        				rowstring = rowstring + "<br>ma_for_alert_frame:" + data.alert_frames_ja[x].ma_for_alert_frame;
-        				//rowstring = rowstring + "<br>ma_for_frame_that_passed_ma_thresh:" + data.alert_frames_ja[x].ma_for_frame_that_passed_ma_thresh;
-        				//rowstring = rowstring + "<br>image_name_for_frame_that_passed_ma_thresh:<br>" + data.alert_frames_ja[x].image_name_for_frame_that_passed_ma_thresh;
-        				rowstring = rowstring + "<br>des homogeneity:" + data.alert_frames_ja[x].homogeneity;
-        				rowstring = rowstring + "<br>des single thresh:" + data.alert_frames_ja[x].single_threshold;
-        				rowstring = rowstring + "<br>des ma thres:" + data.alert_frames_ja[x].ma_threshold;
+        				rowstring = rowstring + "<br>single_threshold:" + data.alert_frames_ja[x].single_threshold;
+        				rowstring = rowstring + "<br>ma_threshold:" + data.alert_frames_ja[x].ma_threshold;
+        				rowstring = rowstring + "<br>trigger_timestamp_in_ms:" + data.alert_frames_ja[x].trigger_timestamp_in_ms;
+        				rowstring = rowstring + "<br>trigger_score:" + data.alert_frames_ja[x].trigger_score;
+        				rowstring = rowstring + "<br>trigger_maw_int:" + data.alert_frames_ja[x].trigger_maw_int;
+        				rowstring = rowstring + "<br>trigger_ma5:" + data.alert_frames_ja[x].trigger_ma5;
+        				rowstring = rowstring + "<br>trigger_ma6:" + data.alert_frames_ja[x].trigger_ma6;
+        				rowstring = rowstring + "<br>trigger_numframes:" + data.alert_frames_ja[x].trigger_numframes;
+        				rowstring = rowstring + "<br>trigger_delta:" + data.alert_frames_ja[x].trigger_delta;
+        				rowstring = rowstring + "<br>trigger_npst:" + data.alert_frames_ja[x].trigger_npst;
         				rowstring = rowstring + "<br>2nd highest des:" + data.alert_frames_ja[x].second_highest_designation;
         				rowstring = rowstring + "<br>2nd highest ma:" + data.alert_frames_ja[x].second_highest_ma;
         				rowstring = rowstring + "<br>2nd highest score:" + data.alert_frames_ja[x].second_highest_score;
-        				//rowstring = rowstring + "<br><a href=\"#\" id=\"" + data.alert_frames_ja[x].timestamp_in_ms + "_graphthis_link\">Graph this</a>";
         				rowstring = rowstring + "</div>";
     				}
     				

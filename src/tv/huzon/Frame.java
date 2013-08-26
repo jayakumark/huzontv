@@ -847,7 +847,7 @@ public class Frame implements Comparable<Frame> {
 				 }
 				
 				System.out.println("Station.getAlertFrames(): Analyzing frame for " + highest_ma_designation + " which had highest_ma==" + highest_ma);
-				// SECOND, check to see that highest ma6 passes the smell test threshold of .5
+				// SECOND, check to see that highest_ma passes the smell test threshold of .4
 				if(highest_ma < .4)
 				{	
 					System.out.println("Station.getAlertFrames(): (2) skipping timestamp " + getTimestampInMillis() + " because the highest ma was less than .4 (highest_ma=" + highest_ma + ")");
@@ -872,144 +872,158 @@ public class Frame implements Comparable<Frame> {
 						else
 						{	
 							User reporter = new User(highest_ma_designation, "designation");
-							// FIFTH, is the highest reporter within the waiting period for both social outlets? If so skip, if not, continue processing.
-							if(reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec) && reporter.isWithinTwitterWindow(getTimestampInMillis(), which_timers, tw_wp_override_in_sec))
+							double homogeneity = reporter.getHomogeneity();
+							double ma_threshold = homogeneity * ma_modifier_double;
+							// FIFTH does the highest reporter pass the ma_threshold?
+							// (The reason for doing this check #5 in addition to #2 is that by delaying the ma_threshold calculation, we don't have to create a reporter object (and hit the db) for steps 2-4 (which the majority of frames never pass))
+							if(highest_ma < ma_threshold)
 							{
-								System.out.println("Station.getAlertFrames(): (5) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma_designation + " because it's within the last alert window of both Facebook and Twitter");
-								alert_triggered_failure_message = "Reporter is on FB and TW cooldown. (This does not mean an alert would have necessarily triggered.)";
+								System.out.println("Station.getAlertFrames(): (5) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma_designation + " because it does not pass the full ma threshold");
+								alert_triggered_failure_message = "highest_ma was less than the full ma threshold of " + ma_threshold;
 							}
 							else
 							{
-								if(frames_in_window == null)
-									populateFramesInWindow();
-								// SIXTH, are there enough frames in the window above the single threshold?
-								// this check comes as late as possible to avoid going to the database for frames
-								//TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
-								int npst = getNumFramesInWindowAboveSingleThresh(highest_ma_designation, reporter.getHomogeneity());
-								if(npst < nrpst_int) // number past single thresh < number REQUIRED past single thresh
+								// SIXTH, is the highest reporter within the waiting period for both social outlets? If so skip, if not, continue processing.
+								if(reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec) && reporter.isWithinTwitterWindow(getTimestampInMillis(), which_timers, tw_wp_override_in_sec))
 								{
-									System.out.println("Station.getAlertFrames(): (6) skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
-									alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
+									System.out.println("Station.getAlertFrames(): (6) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma_designation + " because it's within the last alert window of both Facebook and Twitter");
+									alert_triggered_failure_message = "Reporter is on FB and TW cooldown. (This does not mean an alert would have necessarily triggered.)";
 								}
 								else
-								{	
-									System.out.println("Station.getAlertFrames(): (!) adding (not skipping) timestamp " + getTimestampInMillis());
-									return_jo = getAsJSONObject(true, null); // no designation specified
-									return_jo.put("designation", highest_ma_designation);
-									return_jo.put("ma_for_alert_frame", getMovingAverage6(highest_ma_designation));
-									return_jo.put("ma_for_frame_that_passed_ma_thresh", getMovingAverage6(highest_ma_designation));
-									return_jo.put("score_for_alert_frame", getScore(highest_ma_designation));
-									return_jo.put("score_for_frame_that_passed_ma_thresh", getScore(highest_ma_designation));
-									return_jo.put("image_name_for_frame_that_passed_ma_thresh", getImageName());
-									double homogeneity = reporter.getHomogeneity();
-									return_jo.put("homogeneity", homogeneity);
-									return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
-									return_jo.put("single_threshold", homogeneity);
-									return_jo.put("second_highest_designation", second_highest_ma_designation);
-									return_jo.put("second_highest_ma", second_highest_ma);
-									return_jo.put("second_highest_score", second_highest_score); // FIXME this isn't necessarily the score of the second_highest_ma_designation
-									return_jo.put("num_frames_in_window", frames_in_window.size()); // i.e. how many frames were used to make this decision?
-									
-									alert_triggered = true; // <---------------
-									ExecutorService executor = Executors.newFixedThreadPool(300);
-									Future<JSONObject> twittertask_individual = null;
-									Future<JSONObject> facebooktask_individual = null;
-									Future<JSONObject> twittertask_master = null;
-									Future<JSONObject> facebooktask_master = null;
-									
-									if(!reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers, tw_wp_override_in_sec))
+								{
+									if(frames_in_window == null)
+										populateFramesInWindow();
+									// SEVENTH, are there enough frames in the window above the single threshold?
+									// this check comes as late as possible to avoid going to the database for frames
+									//TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
+									int npst = getNumFramesInWindowAboveSingleThresh(highest_ma_designation, reporter.getHomogeneity());
+									if(npst < nrpst_int) // number past single thresh < number REQUIRED past single thresh
+									{
+										System.out.println("Station.getAlertFrames(): (7) skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
+										alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
+									}
+									else
 									{	
-										twitter_triggered = true; // <---------------
-										reporter.setLastAlert(getTimestampInMillis(), "twitter", which_timers); // set last alert regardless of credentials, successful posting or twitter_active
-									} 
-									
-									if(!reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec))
-									{
-										facebook_triggered = true; // <---------------
-										reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials, successful posting or facebook_active
-									} 
-									
-									long trigger_timestamp_in_ms = timestamp_in_ms;
-									double trigger_score = getScore(highest_ma_designation);
-									int trigger_maw_int = maw_int;
-									double trigger_ma5 = getMovingAverage5(highest_ma_designation);
-									double trigger_ma6 = getMovingAverage6(highest_ma_designation);
-									int trigger_numframes = frames_in_window.size();
-									double trigger_delta = highest_ma - second_highest_ma;
-									int trigger_npst = npst;
-									
-									if(alert_mode.equals("live") || alert_mode.equals("test"))
-									{
-										if(twitter_triggered)
+										System.out.println("Station.getAlertFrames(): (!) adding (not skipping) timestamp " + getTimestampInMillis());
+										long trigger_timestamp_in_ms = timestamp_in_ms;
+										double trigger_score = getScore(highest_ma_designation);
+										int trigger_maw_int = maw_int;
+										double trigger_ma5 = getMovingAverage5(highest_ma_designation);
+										double trigger_ma6 = getMovingAverage6(highest_ma_designation);
+										int trigger_numframes = frames_in_window.size();
+										double trigger_delta = highest_score - second_highest_score;
+										int trigger_npst = npst;
+										
+										
+										return_jo = getAsJSONObject(true, null); // no designation specified
+										return_jo.put("designation", highest_ma_designation);
+										return_jo.put("single_threshold", homogeneity);
+										return_jo.put("ma_threshold", homogeneity * ma_modifier_double);
+										return_jo.put("trigger_timestamp_in_ms", trigger_timestamp_in_ms);
+										return_jo.put("trigger_score", trigger_score);
+										return_jo.put("trigger_maw_int", trigger_maw_int);
+										return_jo.put("trigger_ma5", trigger_ma5);
+										return_jo.put("trigger_ma6", trigger_ma6);
+										return_jo.put("trigger_numframes", trigger_numframes);
+										return_jo.put("trigger_delta", trigger_delta);
+										return_jo.put("trigger_npst", trigger_npst);
+										return_jo.put("second_highest_designation", second_highest_ma_designation);
+										return_jo.put("second_highest_ma", second_highest_ma);
+										return_jo.put("second_highest_score", second_highest_score); // FIXME this isn't necessarily the score of the second_highest_ma_designation
+										
+										alert_triggered = true; // <---------------
+										ExecutorService executor = Executors.newFixedThreadPool(300);
+										Future<JSONObject> twittertask_individual = null;
+										Future<JSONObject> facebooktask_individual = null;
+										Future<JSONObject> twittertask_master = null;
+										Future<JSONObject> facebooktask_master = null;
+										
+										if(!reporter.isWithinTwitterWindow(getTimestampInMillis(),which_timers, tw_wp_override_in_sec))
+										{	
+											twitter_triggered = true; // <---------------
+											reporter.setLastAlert(getTimestampInMillis(), "twitter", which_timers); // set last alert regardless of credentials, successful posting or twitter_active
+										} 
+										
+										if(!reporter.isWithinFacebookWindow(getTimestampInMillis(), which_timers, fb_wp_override_in_sec))
 										{
-											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											if(station_object.isTwitterActiveIndividual())
-												twittertask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual", 
-														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
-														
-											else
-												(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_individual");
-											
-											if(station_object.isTwitterActiveMaster())
-												twittertask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "master", 
-														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
-											else
-												(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_master");
-										}
-										if(facebook_triggered)
+											facebook_triggered = true; // <---------------
+											reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials, successful posting or facebook_active
+										} 
+										
+										
+										
+										if(alert_mode.equals("live") || alert_mode.equals("test"))
 										{
-											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
-											if(station_object.isFacebookActiveIndividual())
-												facebooktask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual", 
-														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
-											else
-												(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_individual");
-											
-											if(station_object.isFacebookActiveMaster())
-												facebooktask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "master", 
-														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
-											else
-												(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_master");
+											if(twitter_triggered)
+											{
+												// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
+												if(station_object.isTwitterActiveIndividual())
+													twittertask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual", 
+															trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
+															
+												else
+													(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_individual");
+												
+												if(station_object.isTwitterActiveMaster())
+													twittertask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "master", 
+															trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
+												else
+													(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_master");
+											}
+											if(facebook_triggered)
+											{
+												// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
+												if(station_object.isFacebookActiveIndividual())
+													facebooktask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual", 
+															trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
+												else
+													(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_individual");
+												
+												if(station_object.isFacebookActiveMaster())
+													facebooktask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "master", 
+															trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
+												else
+													(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_master");
+											}
 										}
-									}
-									// else if simulation do do not perform any actual twitter or facebook postings.
-									
-									// CHECK THE RESULTS OF THE CALLABLE THREADS
-									JSONObject twittertask_individual_jo = null;
-									JSONObject facebooktask_individual_jo = null;
-									if(twittertask_individual != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
-									{
-										twittertask_individual_jo = twittertask_individual.get();
-										twitter_individual_successful = twittertask_individual_jo.getBoolean("twitter_successful");  // returning from social uploader, there is no "individual" or "master"
-										if(!twitter_individual_successful)																// only need failure message if twitter not successful
-											twitter_individual_failure_message = twittertask_individual_jo.getString("twitter_failure_message"); // returning from social uploader, there is no "individual" or "master"
-									}
-									if(facebooktask_individual != null)
-									{
-										facebooktask_individual_jo = facebooktask_individual.get();
-										facebook_individual_successful = facebooktask_individual_jo.getBoolean("facebook_successful"); // returning from social uploader, there is no "individual" or "master"
-										if(!facebook_individual_successful)
-											facebook_individual_failure_message = facebooktask_individual_jo.getString("facebook_failure_message"); // returning from social uploader, there is no "individual" or "master"
-									}
-									
-									JSONObject twittertask_master_jo = null;
-									JSONObject facebooktask_master_jo = null;
-									if(twittertask_master != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
-									{
-										twittertask_master_jo = twittertask_master.get();
-										twitter_master_successful = twittertask_master_jo.getBoolean("twitter_successful");  // returning from social uploader, there is no "master" or "master"
-										if(!twitter_master_successful)																// only need failure message if twitter not successful
-											twitter_master_failure_message = twittertask_master_jo.getString("twitter_failure_message"); // returning from social uploader, there is no "master" or "master"
-									}
-									if(facebooktask_master != null)
-									{
-										facebooktask_master_jo = facebooktask_master.get();
-										facebook_master_successful = facebooktask_master_jo.getBoolean("facebook_successful"); // returning from social uploader, there is no "master" or "master"
-										if(!facebook_master_successful)
-											facebook_master_failure_message = facebooktask_master_jo.getString("facebook_failure_message"); // returning from social uploader, there is no "master" or "master"
+										// else if simulation do do not perform any actual twitter or facebook postings.
+										
+										// CHECK THE RESULTS OF THE CALLABLE THREADS
+										JSONObject twittertask_individual_jo = null;
+										JSONObject facebooktask_individual_jo = null;
+										if(twittertask_individual != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+										{
+											twittertask_individual_jo = twittertask_individual.get();
+											twitter_individual_successful = twittertask_individual_jo.getBoolean("twitter_successful");  // returning from social uploader, there is no "individual" or "master"
+											if(!twitter_individual_successful)																// only need failure message if twitter not successful
+												twitter_individual_failure_message = twittertask_individual_jo.getString("twitter_failure_message"); // returning from social uploader, there is no "individual" or "master"
+										}
+										if(facebooktask_individual != null)
+										{
+											facebooktask_individual_jo = facebooktask_individual.get();
+											facebook_individual_successful = facebooktask_individual_jo.getBoolean("facebook_successful"); // returning from social uploader, there is no "individual" or "master"
+											if(!facebook_individual_successful)
+												facebook_individual_failure_message = facebooktask_individual_jo.getString("facebook_failure_message"); // returning from social uploader, there is no "individual" or "master"
+										}
+										
+										JSONObject twittertask_master_jo = null;
+										JSONObject facebooktask_master_jo = null;
+										if(twittertask_master != null) 			// if twittertask==null, it was never initialized, twitter_triggered stays false and we don't need twitter_successful or twitter_failure_message just stay
+										{
+											twittertask_master_jo = twittertask_master.get();
+											twitter_master_successful = twittertask_master_jo.getBoolean("twitter_successful");  // returning from social uploader, there is no "master" or "master"
+											if(!twitter_master_successful)																// only need failure message if twitter not successful
+												twitter_master_failure_message = twittertask_master_jo.getString("twitter_failure_message"); // returning from social uploader, there is no "master" or "master"
+										}
+										if(facebooktask_master != null)
+										{
+											facebooktask_master_jo = facebooktask_master.get();
+											facebook_master_successful = facebooktask_master_jo.getBoolean("facebook_successful"); // returning from social uploader, there is no "master" or "master"
+											if(!facebook_master_successful)
+												facebook_master_failure_message = facebooktask_master_jo.getString("facebook_failure_message"); // returning from social uploader, there is no "master" or "master"
+										}
 									}
 								}
-									
 							}
 						}
 					}
