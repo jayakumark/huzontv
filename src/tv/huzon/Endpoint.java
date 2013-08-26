@@ -987,6 +987,7 @@ public class Endpoint extends HttpServlet {
 										 }
 										 else if (method.equals("getFrames")) // inclusive
 										 {
+											 System.out.println("Endpoint.getFrames(): entering");
 											 String get_score_data = request.getParameter("get_score_data");
 											 if(get_score_data == null)
 											 {
@@ -1000,18 +1001,30 @@ public class Endpoint extends HttpServlet {
 												 {	
 													 jsonresponse.put("response_status", "success");
 													 if(use_long)
+													 {
+														 System.out.println("Endpoint.getFrames(): before station.getFramesAsJSONArray using datelongs & get_score_data=true");
 														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin_long, end_long, true));
+													 }
 													 else
+													 {
+														 System.out.println("Endpoint.getFrames(): before station.getFramesAsJSONArray using datestrings & get_score_data=true");
 														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin, end, true));
+													 }
 													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 												 }
 												 else if(get_score_data.equals("false"))
 												 {
 													 jsonresponse.put("response_status", "success");
 													 if(use_long)
+													 {
+														 System.out.println("Endpoint.getFrames(): before station.getFramesAsJSONArray using datelongs & get_score_data=false");
 														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin_long, end_long, false));
+													 }
 													 else
+													 {
+														 System.out.println("Endpoint.getFrames(): before station.getFramesAsJSONArray using datestrings & get_score_data=false");
 														 jsonresponse.put("frames_ja", station_object.getFramesAsJSONArray(begin, end, false));
+													 }
 													 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");
 												 }
 												 else

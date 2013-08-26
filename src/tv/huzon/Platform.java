@@ -165,7 +165,62 @@ public class Platform {
 		}
 	}
 	
-	long createAlertInDB(Station station_object, String social_type, String designation, String image_name, User postinguser)
+	public String escapeJSON(String string) {
+        if (string == null || string.length() == 0) {
+            return "\"\"";
+        }
+
+        char         c = 0;
+        int          i;
+        int          len = string.length();
+        StringBuilder sb = new StringBuilder(len + 4);
+        String       t;
+
+        sb.append('"');
+        for (i = 0; i < len; i += 1) {
+            c = string.charAt(i);
+            switch (c) {
+            case '\\':
+            case '"':
+                sb.append('\\');
+                sb.append(c);
+                break;
+            case '/':
+//                if (b == '<') {
+                    sb.append('\\');
+//                }
+                sb.append(c);
+                break;
+            case '\b':
+                sb.append("\\b");
+                break;
+            case '\t':
+                sb.append("\\t");
+                break;
+            case '\n':
+                sb.append("\\n");
+                break;
+            case '\f':
+                sb.append("\\f");
+                break;
+            case '\r':
+               sb.append("\\r");
+               break;
+            default:
+                if (c < ' ') {
+                    t = "000" + Integer.toHexString(c);
+                    sb.append("\\u" + t.substring(t.length() - 4));
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+        sb.append('"');
+        return sb.toString();
+    }
+	
+	long createAlertInDB(Station station_object, String social_type, String designation, String image_name, User postinguser, 
+			long trigger_timestamp_in_ms, double trigger_score, int trigger_maw_int, double trigger_ma5, double trigger_ma6, int trigger_numframes, double trigger_delta, int trigger_npst)
 	{
 		long returnval = -1L;
 		ResultSet rs = null;
@@ -192,11 +247,14 @@ public class Platform {
 			String timestamp_hr = year  + month + day + "_" + hour24 + minute + second + "_" + ms;	
 			con = datasource.getConnection();
 			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			System.out.println("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`) "
-	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')");
-			stmt.executeUpdate("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`) "
-	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "')",
-	                    Statement.RETURN_GENERATED_KEYS);
+			System.out.println("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`, `trigger_timestamp_in_ms`, `trigger_score`, `trigger_maw_int`, `trigger_ma5`, `trigger_ma6`, `trigger_numframes`, `trigger_delta`, `trigger_npst`) "
+	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "'," + 
+	                    " '" + trigger_timestamp_in_ms + "', '" + trigger_score + "', '" + trigger_maw_int + "', '" + trigger_ma5 + "', '" + trigger_ma6 + "', '" + trigger_numframes + "', '" + trigger_delta + "', '" + trigger_npst + "')"
+	                    );
+			stmt.executeUpdate("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`, `information_jo`) "
+					+ " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "'," + 
+                    " '" + trigger_timestamp_in_ms + "', '" + trigger_score + "', '" + trigger_maw_int + "', '" + trigger_ma5 + "', '" + trigger_ma6 + "', '" + trigger_numframes + "', '" + trigger_delta + "', '" + trigger_npst + "')",
+                    Statement.RETURN_GENERATED_KEYS);
 			
 		    rs = stmt.getGeneratedKeys();
 

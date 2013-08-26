@@ -649,7 +649,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// designation can be null. If designation supplied, then get all frames above the single threshold
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation) // INCLUSIVE
 	{
-		//System.out.println("Station.getFrames(): long method begin");
+		System.out.println("Station.getFrames(): long method begin");
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -684,7 +684,7 @@ public class Station implements java.lang.Comparable<Station> {
 			//System.out.println("Does the resultset have any rows?");
 			if(rs.next()) // at least one row exists
 			{
-				//System.out.println("Getting frames from resultset");
+				System.out.println("Station.getFrames(long,long,designation): Getting frames from resultset");
 				returnset = getFramesFromResultSet(rs);
 			}
 			
@@ -714,15 +714,15 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method
 	public JSONArray getFramesAsJSONArray(String beginstring, String endstring, boolean get_score_data)
 	{
-		//System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
+		System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
 		if(beginstring.length() < 8)
 		{
-			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			System.out.println("Station.getFramesAsJSONArray(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
 			return null;
 		}
 		if(endstring.length() < 8)
 		{
-			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			System.out.println("Station.getFramesAsJSONArray(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
 			return null;
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
@@ -734,7 +734,7 @@ public class Station implements java.lang.Comparable<Station> {
 		while(it.hasNext())
 		{
 			currentframe = it.next();
-			//System.out.println("putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
+			System.out.println("Station.getFramesAsJSONArray(): putting frame " + currentframe.getTimestampInMillis() + " into jsonarray");
 			frames_ja.put(currentframe.getAsJSONObject(get_score_data, null)); // no designation specified
 		}
 		return frames_ja;
@@ -742,7 +742,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
 	{
-		//System.out.println("Station.getFramesAsJSONArray(): long method begin");
+		System.out.println("Station.getFramesAsJSONArray(): long method begin");
 		JSONArray frames_ja = new JSONArray();
 		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null);
 		Iterator<Frame> it = frameset.iterator();
@@ -1266,12 +1266,12 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		if(rs == null)
 		{
-			System.out.println("Station.getFramesFromResultSet() entering with rs == null, returning");
+			System.out.println("Station.getFramesFromResultSet(): entering with rs == null, returning");
 			return null;
 		}
 		else
 		{
-			//System.out.println("Station.getFramesFromResultSet() entering with rs != null");
+			System.out.println("Station.getFramesFromResultSet(): entering with rs != null");
 		}
 		
 		TreeSet<Frame> returnframes = new TreeSet<Frame>();
@@ -1307,7 +1307,8 @@ public class Station implements java.lang.Comparable<Station> {
 			/*double reporter_ma4s[] = null;
 			double reporter_ma3s[] = null;*/
 			rs.beforeFirst();
-			//System.out.println("Starting loop through resultset of frames...");
+			System.out.println("Station.getFramesFromResultSet(): Starting loop through resultset of frames...");
+			int rowcount = 0;
 			while(rs.next())
 			{
 				reporter_designations = new String[reportercount];
@@ -1330,6 +1331,7 @@ public class Station implements java.lang.Comparable<Station> {
 					//System.out.println("Reading columname: " + rsmd.getColumnName(x));
 					if(rsmd.getColumnName(x).endsWith("_score"))
 					{
+						//System.out.print("s");
 						reporter_designations[reporter_index] = rsmd.getColumnName(x).substring(0,rsmd.getColumnName(x).indexOf("_score"));
 						reporter_scores[reporter_index] = rs.getDouble(x);
 					}
@@ -1365,6 +1367,7 @@ public class Station implements java.lang.Comparable<Station> {
 					}*/
 					else if(rsmd.getColumnName(x).endsWith("_ma5"))
 					{
+						//System.out.print("5");
 						if(db_has_ma5_data == true) // it could either be true or assumed to be true at this point
 						{	
 							reporter_ma5s[reporter_index] = rs.getDouble(x); // try to start saving reporter_ma6 data. 
@@ -1378,6 +1381,7 @@ public class Station implements java.lang.Comparable<Station> {
 					}
 					else if(rsmd.getColumnName(x).endsWith("_ma6"))
 					{
+						//System.out.print("6");
 						//reporter_ma6s[reporter_index] = rs.getDouble(x);
 						//reporter_index++;
 						if(db_has_ma6_data == true) // it could either be true or assumed to be true at this point
@@ -1406,7 +1410,10 @@ public class Station implements java.lang.Comparable<Station> {
 						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
 						reporter_scores, reporter_score_arrays, reporter_ma5s, reporter_ma6s));
 				//System.out.println("... frame added");
+				rowcount++;
 			}
+			System.out.println();
+			System.out.println("Station.getFramesFromResultSet(): after loop where rowcount=" + rowcount);
 		}
 		catch(SQLException sqle)
 		{

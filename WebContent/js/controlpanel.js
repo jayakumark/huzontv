@@ -193,6 +193,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    		general_string = general_string + "<br><b>ma window:</b> " + data.station_jo.maw;
 	    		general_string = general_string + "<br><b>ma modifier:</b> " + data.station_jo.mamodifier;
 	    		general_string = general_string + "<br><b>delta:</b> " + data.station_jo.delta;
+	    		general_string = general_string + "<br><b>NRPST:</b> " + data.station_jo.nrpst;
 	    		general_string = general_string + "<br><b>frame rate:</b> " + data.station_jo.frame_rate;
 	    		general_string = general_string + "<br><b>TW indiv alerts:</b>";
 	    		general_string = general_string + "<select id=\"twitter_individual_select\">";

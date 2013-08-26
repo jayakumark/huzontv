@@ -34,14 +34,31 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 	Station station_object;
 	String social_type;
 	String which_lock;
-
-	public SocialUploaderCallable(Frame inc_frame2upload, User inc_reporter, Station inc_station_object, String inc_social_type, String inc_which_lock)
+	long trigger_timestamp_in_ms;
+	double trigger_score;
+	int trigger_maw_int;
+	double trigger_ma5;
+	double trigger_ma6;
+	int trigger_numframes;
+	double trigger_delta;
+	int trigger_npst;
+	
+	public SocialUploaderCallable(Frame inc_frame2upload, User inc_reporter, Station inc_station_object, String inc_social_type, String inc_which_lock, 
+			long inc_trigger_timestamp_in_ms, double inc_trigger_score, int inc_trigger_maw_int, double inc_trigger_ma5, double inc_trigger_ma6, int inc_trigger_numframes, double inc_trigger_delta, int inc_trigger_npst)
 	{
 		frame2upload = inc_frame2upload;
 		station_object = inc_station_object;
 		reporter = inc_reporter;
 		social_type = inc_social_type;
 		which_lock = inc_which_lock;
+		trigger_timestamp_in_ms = inc_trigger_timestamp_in_ms;
+		trigger_score = inc_trigger_score;
+		trigger_maw_int = inc_trigger_maw_int;
+		trigger_ma5 = inc_trigger_ma5;
+		trigger_ma6 = inc_trigger_ma6;
+		trigger_numframes = inc_trigger_numframes;
+		trigger_delta = inc_trigger_delta;
+		trigger_npst = inc_trigger_npst;
 	}
 
 	public String getMissingCredentialsEmailMessage()
@@ -195,7 +212,8 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 								image_files[3].delete();
 
 								Platform p = new Platform();
-								long redirect_id = p.createAlertInDB(station_object, social_type, reporter.getDesignation(), frame2upload.getURLString(), postinguser);
+								long redirect_id = p.createAlertInDB(station_object, social_type, reporter.getDesignation(), frame2upload.getURLString(), postinguser, 
+										trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst);
 								String message = station_object.getMessage(social_type, frame2upload.getTimestampInMillis(), redirect_id, reporter);
 								if(social_type.equals("twitter"))
 								{	

@@ -714,11 +714,20 @@ public class Frame implements Comparable<Frame> {
 				JSONObject jo2 = null;
 				while(x < reporter_designations.length)
 				{
+					//System.out.print("reporter_scores[" + x + "]=" + reporter_scores[x] + "reporter_ma5s[" + x + "]=" + reporter_ma5s[x] + "reporter_ma6s[" + x + "]=" + reporter_ma6s[x]);
+					//System.out.print(" reporter_ma5s[" + x + "]=" + reporter_ma5s[x]);
+					//System.out.println(" reporter_ma6s[" + x + "]=" + reporter_ma6s[x]);
 					jo2 = new JSONObject();
 					jo2.put("designation", reporter_designations[x]);
 					jo2.put("score", reporter_scores[x]);
-					//jo2.put("num", reporter_nums[x]);
-					jo2.put("ma6", reporter_ma6s[x]);
+					if(reporter_ma5s == null) 
+						jo2.put("ma5", 0);
+					else
+						jo2.put("ma5", reporter_ma5s[x]);
+					if(reporter_ma6s == null) 
+						jo2.put("ma6", 0);
+					else
+						jo2.put("ma6", reporter_ma6s[x]);
 					reporter_jo.put(reporter_designations[x],jo2);
 					x++;
 				}
@@ -876,7 +885,8 @@ public class Frame implements Comparable<Frame> {
 								// SIXTH, are there enough frames in the window above the single threshold?
 								// this check comes as late as possible to avoid going to the database for frames
 								//TreeSet<Frame> frames_in_window_above_single_thresh = station_object.getFrames(getTimestampInMillis() - 6000, getTimestampInMillis(), highest_ma6_designation);
-								if(getNumFramesInWindowAboveSingleThresh(highest_ma_designation, reporter.getHomogeneity()) < nrpst_int)
+								int npst = getNumFramesInWindowAboveSingleThresh(highest_ma_designation, reporter.getHomogeneity());
+								if(npst < nrpst_int) // number past single thresh < number REQUIRED past single thresh
 								{
 									System.out.println("Station.getAlertFrames(): (6) skipping timestamp " + getTimestampInMillis() + " because not enough frames in the window were above the single thresh.");
 									alert_triggered_failure_message = "Face did not surpass the single thresh of " + nrpst_int + " frames in the window";
@@ -898,6 +908,7 @@ public class Frame implements Comparable<Frame> {
 									return_jo.put("second_highest_designation", second_highest_ma_designation);
 									return_jo.put("second_highest_ma", second_highest_ma);
 									return_jo.put("second_highest_score", second_highest_score); // FIXME this isn't necessarily the score of the second_highest_ma_designation
+									return_jo.put("num_frames_in_window", frames_in_window.size()); // i.e. how many frames were used to make this decision?
 									
 									alert_triggered = true; // <---------------
 									ExecutorService executor = Executors.newFixedThreadPool(300);
@@ -918,18 +929,30 @@ public class Frame implements Comparable<Frame> {
 										reporter.setLastAlert(getTimestampInMillis(), "facebook", which_timers); // set last alert regardless of credentials, successful posting or facebook_active
 									} 
 									
+									long trigger_timestamp_in_ms = timestamp_in_ms;
+									double trigger_score = getScore(highest_ma_designation);
+									int trigger_maw_int = maw_int;
+									double trigger_ma5 = getMovingAverage5(highest_ma_designation);
+									double trigger_ma6 = getMovingAverage6(highest_ma_designation);
+									int trigger_numframes = frames_in_window.size();
+									double trigger_delta = highest_ma - second_highest_ma;
+									int trigger_npst = npst;
+									
 									if(alert_mode.equals("live") || alert_mode.equals("test"))
 									{
 										if(twitter_triggered)
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
 											if(station_object.isTwitterActiveIndividual())
-												twittertask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual"));
+												twittertask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "individual", 
+														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
+														
 											else
 												(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_individual");
 											
 											if(station_object.isTwitterActiveMaster())
-												twittertask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "master"));
+												twittertask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "twitter", "master", 
+														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
 											else
 												(new Platform()).addMessageToLog("Twitter task skipped because station is not twitter_active_master");
 										}
@@ -937,12 +960,14 @@ public class Frame implements Comparable<Frame> {
 										{
 											// can't set lock here because this is asynchronous, lock would immediately be unlocked on the other side of this next call
 											if(station_object.isFacebookActiveIndividual())
-												facebooktask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual"));
+												facebooktask_individual = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "individual", 
+														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
 											else
 												(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_individual");
 											
 											if(station_object.isFacebookActiveMaster())
-												facebooktask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "master"));
+												facebooktask_master = executor.submit(new SocialUploaderCallable(this, reporter, station_object, "facebook", "master", 
+														trigger_timestamp_in_ms, trigger_score, trigger_maw_int, trigger_ma5, trigger_ma6, trigger_numframes, trigger_delta, trigger_npst));
 											else
 												(new Platform()).addMessageToLog("Facebook task skipped because station is not facebook_active_master");
 										}
@@ -1076,8 +1101,8 @@ public class Frame implements Comparable<Frame> {
 		
 		int num_frames_in_m6_window = ma6_window_frames.size();
 		int num_frames_in_m5_window = ma5_window_frames.size();
-		int num_frames_in_m4_window = ma4_window_frames.size();
-		int num_frames_in_m3_window = ma3_window_frames.size();
+		//int num_frames_in_m4_window = ma4_window_frames.size();
+		//int num_frames_in_m3_window = ma3_window_frames.size();
 		
 		int x = 0;
 		
