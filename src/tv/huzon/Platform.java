@@ -251,7 +251,7 @@ public class Platform {
 	                    + " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "'," + 
 	                    " '" + trigger_timestamp_in_ms + "', '" + trigger_score + "', '" + trigger_maw_int + "', '" + trigger_ma5 + "', '" + trigger_ma6 + "', '" + trigger_numframes + "', '" + trigger_delta + "', '" + trigger_npst + "')"
 	                    );
-			stmt.executeUpdate("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`, `information_jo`) "
+			stmt.executeUpdate("INSERT INTO alerts (`timestamp_in_ms`, `timestamp_hr`, `social_type`,`designation`,`image_url`,`station`,`created_by`, `trigger_timestamp_in_ms`, `trigger_score`, `trigger_maw_int`, `trigger_ma5`, `trigger_ma6`, `trigger_numframes`, `trigger_delta`, `trigger_npst`) "
 					+ " VALUES('" + timestamp_in_ms + "','" + timestamp_hr + "','" + social_type + "','" + designation + "','" + image_name + "','" + station_object.getCallLetters() + "','" + postinguser.getDesignation() + "'," + 
                     " '" + trigger_timestamp_in_ms + "', '" + trigger_score + "', '" + trigger_maw_int + "', '" + trigger_ma5 + "', '" + trigger_ma6 + "', '" + trigger_numframes + "', '" + trigger_delta + "', '" + trigger_npst + "')",
                     Statement.RETURN_GENERATED_KEYS);
