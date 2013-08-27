@@ -38,7 +38,7 @@ var devel = true;
 //document.addEventListener('DOMContentLoaded', function () {
 $(window).load(function () {	
 	//alert("window loaded");
-	
+	var administering_station = docCookies.getItem("administering_station");
 	var twitter_handle = docCookies.getItem("twitter_handle");
 	var twitter_access_token = docCookies.getItem("twitter_access_token");
 	var station = ""; 
@@ -95,6 +95,69 @@ $(window).load(function () {
 		}	
 		else
 		{
+			
+			$.ajax({
+				type: 'GET',
+				url: endpoint,
+				data: {
+		            method: "getStations",
+		            twitter_handle: twitter_handle,
+		            twitter_access_token: twitter_access_token
+				},
+		        dataType: 'json',
+		        async: false,
+		        success: function (data, status) {
+		        	if(data.response_status === 'success')
+		        	{
+		        		/*var mds = "";
+		        		mds = mds + "<div style=\"font-size:16;color:green\">Select a station:</div>";
+		        		for(var x = 0; x < data.stations_ja.length; x++)
+		        		{
+		        			mds = mds + "<div style=\"font-size:16\"><a href=\"#\" id=\"" + data.stations_ja[x].call_letters  + "_link\">" + data.stations_ja[x].call_letters  + "</a></div>";
+		        		}	
+		        		$("#message_div").html(mds);
+		        		for(var x = 0; x < data.stations_ja.length; x++)
+		        		{
+		        			$("#" + data.stations_ja[x].call_letters  + "_link").click({value: data.stations_ja[x].call_letters},
+		        					function (event) {
+		        						docCookies.setItem("administering_station", event.data.value, 3000000);
+		        						window.location.reload();
+		        					});
+		        		}*/
+		        		
+		        		var station_select_str = "";
+		        		station_select_str = station_select_str + "<select id=\"station_select\">";
+		        		for(var x = 0; x < data.stations_ja.length; x++)
+		        		{	
+		        			station_select_str = station_select_str + "	<option id=\"station_select_" + data.stations_ja[x].call_letters + "\" value=\"" + data.stations_ja[x].call_letters + "\">" + data.stations_ja[x].call_letters + "</option>";
+		        		}
+		        		station_select_str = station_select_str + "</select> <span id=\"station_select_change_span\"></span>";
+		        		$("#station_select_td").html(station_select_str);
+		        		
+		        		if(administering_station == null)
+		        		{
+		        			administering_station = "wkyt";
+		        			docCookies.setItem("administering_station", "wkyt");
+		        		}
+		        		
+		        		$("#station_select_" + administering_station).prop('selected', true);
+			    		$("#station_select").change(function () {
+			    			docCookies.setItem("administering_station", $("#station_select").val(), 30000000);
+			    			$("#station_select_change_span").html("reloading page");
+			    			window.location.reload();
+		            	});	
+		        	}
+		        	else
+		        	{
+		        		$("#message_div").html("<span style=\"font-size:16;color:red\">Error: message=" + data.message  + "</span>");
+		        	}
+		        },
+		        error: function (XMLHttpRequest, textStatus, errorThrown) {
+		        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+		            console.log(textStatus, errorThrown);
+		        }
+			});
+			
 			//alert("twitter_handle !== null && tat !== null");
 			$.ajax({
 				type: 'GET',
@@ -126,32 +189,32 @@ $(window).load(function () {
 		        		}
 		        		else
 		        		{	
-		        			if(data.user_jo.stations_as_admin_ja.length > 1)
+		        		/*	if(data.user_jo.stations_as_admin_ja.length > 1)
 			        		{
 			        			//$("#message_div").html("Multiple stations as admin. Using administering_station cookie.");
 			        			station = docCookies.getItem("administering_station");
 			        		}	
 		        			else
-		        				station = data.user_jo.stations_as_admin_ja[0];
+		        				station = data.user_jo.stations_as_admin_ja[0];*/
 		        			
 		        			
-		        			getStationInformation(twitter_handle, twitter_access_token, station);
+		        			getStationInformation(twitter_handle, twitter_access_token, administering_station);
 	    	        		
 		        			var numdays = docCookies.getItem("num_days_for_statistics");
 		        			if(numdays == null)
 		        				numdays = 14;
 		        			else
 		        				numdays = numdays * 1;
-		        			graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, station);
+		        			graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, administering_station);
 		        			
-	    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, station);
+	    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, administering_station);
 		        			
 	    	        		var d = new Date();
 		        			var end = d.getTime();
 		        			var endstring = end + "";
 		        			var begin = end - (86400000*2); // 2 days
 		        			var beginstring = begin + "";
-	    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station);
+	    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, administering_station);
 		        		}
 		        	}
 		        },
