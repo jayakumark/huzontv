@@ -357,7 +357,14 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 		{
 			social_successful = false;
 			social_failure_message = "Failed to set " + social_abbrev + " " + which_lock + " lock for this station. It seems to be in use already.";
-			(new Platform()).addMessageToLog("Skipped " + social_abbrev + " action (post or email) for " + reporter.getDesignation() + ". Tried to set " + which_lock + " lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
+			(new Platform()).addMessageToLog("Skipped " + social_abbrev + " action for " + reporter.getDesignation() + ". Tried to set " + which_lock + " lock but station.lock() returned false.  user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);
+			try{
+				se.sendMail(station_object.getCallLetters() + " " + social_abbrev + " triggered for " + reporter.getDesignation() + " but unable to fire due to existing lock.", "user=" + postinguser.getDesignation() + ". which_lock=" + which_lock, "cyrus7580@gmail.com", "info@huzon.tv");
+			}
+			catch (MessagingException e) 
+			{
+				e.printStackTrace();
+			}
 		}
 		
 		JSONObject return_jo = new JSONObject();
