@@ -1166,19 +1166,17 @@ function verifyPageFBCredentials(designation)
 function graphFrameScoresAndMovingAverages(frames_ja, designation, reporter_homogeneity, mamodifier, maw_int)
 {
 	$("#chart1").html("");
-	var scores = []; 
+	var scores = [];
+	var ma5s = [];
 	var ma6s = [];
-	var ma = 0;
-	var sum = 0; 
-	var num = 0;
-	var ts = 0;
 	// looping through all frames gathered to graph
 	for(var x = 0; x < frames_ja.length; x++)
 	{
 		scores.push(frames_ja[x].reporters[designation].score);
 		ma6s.push(frames_ja[x].reporters[designation].ma6);
+		ma5s.push(frames_ja[x].reporters[designation].ma5);
 	}
-	var plot1 = $.jqplot ('chart1', [scores, ma6s],{
+	var plot1 = $.jqplot ('chart1', [scores, ma5s, ma6s],{
 		axes: {
 			yaxis: {
 	            min:0,max:1

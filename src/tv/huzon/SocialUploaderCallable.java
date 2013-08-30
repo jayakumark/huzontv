@@ -296,7 +296,7 @@ public class SocialUploaderCallable implements Callable<JSONObject> {
 										{
 											if(which_lock.equals("individual"))
 											{	
-												reporter.resetFacebookCredentialsInDB(); // the credentials are no good anymore. Delete them to allow the user to start over.
+												reporter.resetFacebookInfo(); // the credentials are no good anymore. Delete them to allow the user to start over.
 												String emailmessage = getMissingCredentialsEmailMessage();
 												se.sendMail("Action required: huzon.tv FB alert was unable to fire. Please link your accounts.", emailmessage, reporter.getEmail(), "info@huzon.tv");
 												(new Platform()).addMessageToLog(reporter.getDesignation() + " was notified of invalid FB credentials. Actual FB response=" + facebookresponse + " user=" + postinguser.getDesignation() + ". which_lock=" + which_lock);

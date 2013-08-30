@@ -52,8 +52,10 @@ public class User implements java.lang.Comparable<User> {
 	private String twitter_access_token;
 	private String twitter_access_token_secret;
 	private long facebook_uid;
+	private String facebook_name;
 	private String facebook_access_token;
 	private long facebook_access_token_expires;
+	private String facebook_access_token_expires_hr;
 	private long facebook_page_id;
 	private String facebook_page_name;
 	private String facebook_page_access_token;
@@ -113,8 +115,10 @@ public class User implements java.lang.Comparable<User> {
 				twitter_access_token = rs.getString("twitter_access_token");
 				twitter_access_token_secret = rs.getString("twitter_access_token_secret");
 				facebook_uid = rs.getLong("facebook_uid");
+				facebook_name = rs.getString("facebook_name");
 				facebook_access_token = rs.getString("facebook_access_token");
 				facebook_access_token_expires = rs.getLong("facebook_access_token_expires");
+				facebook_access_token_expires_hr = rs.getString("facebook_access_token_expires_hr");
 				facebook_page_id = rs.getLong("facebook_page_id");
 				facebook_page_name = rs.getString("facebook_page_name");
 				facebook_page_access_token = rs.getString("facebook_page_access_token");
@@ -495,10 +499,107 @@ public class User implements java.lang.Comparable<User> {
 		return returnval;
 	}
 	
-	boolean resetFacebookCredentialsInDB()
+	// facebook_uid, facebook_name, facebook_access_token, facebook_expires, facebook_expires_hr
+	boolean resetFacebookTopLevelInfo()
 	{
-		boolean reset_top_level = setFacebookAccessTokenExpiresAndUID("", 0L, 0L);
-		boolean reset_sub_account = resetFacebookSubAccountIdNameAndAccessToken();
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = datasource.getConnection();
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_name", "");
+				rs.updateLong("facebook_uid", 0);
+				rs.updateString("facebook_access_token", "");
+				rs.updateLong("facebook_access_token_expires", 0);
+				rs.updateString("facebook_access_token_expires_hr", "");
+				facebook_name = "";
+				facebook_access_token = "";
+				facebook_uid = 0;
+				facebook_access_token_expires_hr = "";
+				facebook_access_token_expires = 0;
+				rs.updateRow();
+				returnval = true;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in user.resetFacebookPageInfo: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in user.resetFacebookPageInfo: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return returnval;
+	}
+	
+	boolean resetFacebookPageInfo()
+	{
+		boolean returnval = false;
+		ResultSet rs = null;
+		Connection con = null;
+		Statement stmt = null;
+		try
+		{
+			con = datasource.getConnection();
+			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			rs = stmt.executeQuery("SELECT * FROM people WHERE designation='" + designation + "' "); 
+			if(rs.next())
+			{
+				rs.updateString("facebook_page_access_token", "");
+				rs.updateLong("facebook_page_id", 0);
+				rs.updateString("facebook_page_name", "");
+				facebook_page_access_token = "";
+				facebook_page_name = "";
+				facebook_page_id = 0;
+				rs.updateRow();
+				returnval = true;
+			}
+			rs.close();
+			stmt.close();
+			con.close();
+		}
+		catch(SQLException sqle)
+		{
+			sqle.printStackTrace();
+			(new Platform()).addMessageToLog("SQLException in user.resetFacebookPageInfo: message=" +sqle.getMessage());
+		}
+		finally
+		{
+			try
+			{
+				if (rs  != null){ rs.close(); } if (stmt  != null) { stmt.close(); } if (con != null) { con.close(); }
+			}
+			catch(SQLException sqle)
+			{ 
+				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
+				(new Platform()).addMessageToLog("SQLException in user.resetFacebookPageInfo: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+			}
+		}  	
+		return returnval;
+	}
+	
+	boolean resetFacebookInfo()
+	{
+		boolean reset_top_level = resetFacebookTopLevelInfo();
+		boolean reset_sub_account = resetFacebookPageInfo();
 		if(reset_top_level && reset_sub_account)
 			return true;
 		return false;
@@ -538,7 +639,7 @@ public class User implements java.lang.Comparable<User> {
 		catch(SQLException sqle)
 		{
 			sqle.printStackTrace();
-			(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID: message=" +sqle.getMessage());
+			(new Platform()).addMessageToLog("SQLException in user.setFacebookAccessToken: message=" +sqle.getMessage());
 		}
 		finally
 		{
@@ -549,14 +650,14 @@ public class User implements java.lang.Comparable<User> {
 			catch(SQLException sqle)
 			{ 
 				System.out.println("Problem closing resultset, statement and/or connection to the database."); 
-				(new Platform()).addMessageToLog("SQLException in Endpoint setFacebookAccessTokenExpiresAndUID: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
+				(new Platform()).addMessageToLog("SQLException in user.setFacebookAccessToken: Error occurred when closing rs, stmt and con. message=" +sqle.getMessage());
 			}
 		}  	
 		return returnval;
 	}
 	
 	// boolean ok. Either db update succeeded or failed. If failed, then an error will be sent to admin.
-	boolean setFacebookAccessTokenExpiresAndUID(String access_token, long expires_timestamp, long fb_uid)
+	boolean setFacebookAccessTokenExpiresUIDAndName(String access_token, long expires_timestamp, long fb_uid, String facebook_name)
 	{
 		boolean returnval = false;
 		ResultSet rs = null;
@@ -587,6 +688,7 @@ public class User implements java.lang.Comparable<User> {
 				String timestring = year  + month + day + "_" + hour24 + minute + second;
 				rs.updateString("facebook_access_token_expires_hr", timestring);
 				rs.updateLong("facebook_uid", fb_uid);
+				rs.updateString("facebook_name", facebook_name);
 				rs.updateRow();
 				returnval = true;
 				facebook_access_token = access_token;
@@ -1224,7 +1326,9 @@ public class User implements java.lang.Comparable<User> {
 			}
 			response_jo.put("twitter_handle", twitter_handle);
 			response_jo.put("facebook_uid", facebook_uid);
+			response_jo.put("facebook_name", facebook_name);
 			response_jo.put("facebook_access_token_expires", facebook_access_token_expires);
+			response_jo.put("facebook_access_token_expires_hr", facebook_access_token_expires_hr);
 			response_jo.put("facebook_page_id", facebook_page_id);
 			response_jo.put("facebook_page_name", facebook_page_name);
 			response_jo.put("facebook_cooldown", facebook_cooldown);

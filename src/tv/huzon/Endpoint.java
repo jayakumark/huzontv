@@ -539,11 +539,14 @@ public class Endpoint extends HttpServlet {
 								user.setFacebookAccessToken(preliminary_jsonresponse.getString("access_token"));
 								JSONObject fb_profile_jo = user.getProfileFromFacebook();
 								long fb_uid = 0L;
+								String facebook_name = "";
 								try
 								{
 									if(fb_profile_jo != null && fb_profile_jo.has("id"))
 									{
 										fb_uid = fb_profile_jo.getLong("id");
+										if(fb_profile_jo.has("name"))
+											facebook_name = fb_profile_jo.getString("name");
 										Calendar cal = Calendar.getInstance();
 										cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 										String expires = preliminary_jsonresponse.getString("expires");
@@ -556,7 +559,7 @@ public class Endpoint extends HttpServlet {
 											expires_in_seconds = Integer.parseInt(expires);
 										cal.add(Calendar.SECOND, expires_in_seconds);
 										long expires_timestamp = cal.getTimeInMillis() / 1000;
-										boolean successful = user.setFacebookAccessTokenExpiresAndUID(preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid);
+										boolean successful = user.setFacebookAccessTokenExpiresUIDAndName(preliminary_jsonresponse.getString("access_token"), expires_timestamp, fb_uid, facebook_name);
 																					
 										if(successful)
 										{	
@@ -703,6 +706,45 @@ public class Endpoint extends HttpServlet {
 									}
 								}
 							}
+						}
+					}
+					else if (method.equals("resetFacebookTopLevelInfo")) // 5 fields will be reset in the database: facebook_uid, facebook_name, facebook_access_token, facebook_access_token_expires, facebook_access_token_expires_hr
+					{
+						boolean successful = user.resetFacebookTopLevelInfo();
+						if(successful)
+						{
+							jsonresponse.put("response_status", "success");
+						}
+						else
+						{
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("message", "Error removing facebook toplevel info from database.");
+						}
+					}
+					else if (method.equals("resetFacebookPageInfo")) // 3 fields will be reset in the database: facebook_page_id, facebook_page_name, facebook_page_access_token
+					{
+						boolean successful = user.resetFacebookPageInfo();
+						if(successful)
+						{
+							jsonresponse.put("response_status", "success");
+						}
+						else
+						{
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("message", "Error removing facebook page info from database.");
+						}
+					}
+					else if (method.equals("resetFacebookInfo")) // 8 fields: facebook_uid, facebook_name, facebook_access_token, facebook_access_token_expires, facebook_access_token_expires_hr, facebook_page_id, facebook_page_name, facebook_page_access_token
+					{
+						boolean successful = user.resetFacebookInfo();
+						if(successful)
+						{
+							jsonresponse.put("response_status", "success");
+						}
+						else
+						{
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("message", "Error removing facebook info from database.");
 						}
 					}
 					else if(user.isGlobalAdmin()) // everything else requires global permissions

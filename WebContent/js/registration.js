@@ -104,8 +104,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		        	else
 		        	{
 		        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">You have successfully linked your Twitter account (" +  data.twitter_handle + ") to huzon.tv!<br><br>Please wait. Reloading page...</span>");
-		        		docCookies.setItem("twitter_handle", data.twitter_handle, 31536e3);
-		        		docCookies.setItem("twitter_access_token", data.twitter_access_token, 31536e3);
+		        		docCookies.setItem("twitter_handle", data.twitter_handle, 604800);
+		        		docCookies.setItem("twitter_access_token", data.twitter_access_token, 604800);
 		        		//alert('twitter_handle null, oauth verifier existed, returning from call to gTATFAC. Reloading.');
 		        		window.location.href = "https://www.huzon.tv/registration.html";
 		        	}
@@ -257,6 +257,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		        		}	
 		        		else
 		        		{*/	
+		        		var get_self_user_jo = data.user_jo;
 		        			mds = mds + "1. Twitter linked? <span style=\"color:blue\">YES</span> (" + data.user_jo.twitter_handle + ") <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
 			        		mds = mds + "2. Facebook linked? ";
 			        		var fb_toplevel_valid = false;
@@ -270,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			        	            twitter_handle: twitter_handle,
 			        	            twitter_access_token: twitter_access_token
 			        			},
-			        	        dataType: 'json',
+			        	        dataType: 'json', 
 			        	        async: false,
 			        	        success: function (data, status) {
 			        	        	if (data.response_status === "error")
@@ -280,7 +281,13 @@ document.addEventListener('DOMContentLoaded', function () {
 			        	        		//alert(JSON.stringify(data));
 			        	        		if(data.valid === true)
 			        	        		{
-			        	        			mds = mds + "<span style=\"color:blue\">YES</span> <img src=\"images/check.png\" style=\"width:20px;height:20px\"><br>";
+			        	        			mds = mds + "<span style=\"color:blue\">YES</span> ";
+			        	        			if(typeof get_self_user_jo.facebook_name !== undefined && get_self_user_jo.facebook_name !== null && get_self_user_jo.facebook_name !== "")
+			        	        			{
+			        	        				mds = mds + " (" + get_self_user_jo.facebook_name + ")";
+			        	        			}
+			        	        			mds = mds + " <img src=\"images/check.png\" style=\"width:20px;height:20px\">";
+			        	        			mds = mds + "<br>";
 			        	        			fb_toplevel_valid = true;
 			        	        		}
 			        	        		else
@@ -351,23 +358,43 @@ document.addEventListener('DOMContentLoaded', function () {
 		        					        	{
 		        					        		//$("#message_div").html("<span style=\"font-size:16;color:blue\">Brand pages successfully retrieved from Facebook. Select the correct one below.</span>");
 		        					        		fb_subaccounts_ja = data.fb_subaccounts_ja;
-		        					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
-		        					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
+		        					        		// alert(fb_subaccounts_ja);
+		        					        		//if(twitter_handle === "huzontv")  // this is to test when no subaccounts are found.
+		        					        		//	fb_subaccounts_ja = [];
+		        					        		if(typeof fb_subaccounts_ja === undefined || fb_subaccounts_ja == null || fb_subaccounts_ja.length === 0)
 		        					        		{
-		        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
-		        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1)));
-		        					        			if(fb_page_valid === true && ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1))) // this is the checked option
-		        					        			{
-		        					        				//alert(fb_subaccounts_ja[x].name + "checked");
-		        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type='radio' CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
-		        					        			}
-		        					        			else
-		        					        			{
-		        					        				//alert(fb_subaccounts_ja[x].name + "not checked");
-		        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
-		        					        			}
+		        					        			mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
+		        					        			mds = mds + " 			<tr><td style=\"text-align:center;padding-top:10px;color:red;valign:middle;font-style:italic;font-size:12px;\">";
+		        					        			mds = mds + " 				No subaccounts found under this FB account. Do you have a brand page?";
+		        					        			mds = mds + " 				<br><br>To try a different FB account,<br>(1) click <a href=\"#\" id=\"facebook_reset_link\">here</a> to start over,<br>(2) switch accounts on facebook.com and<br>(3) return to this page.";
+		        					        			mds = mds + " 				<br><br>Please contact help@huzon.tv or call 646-926-3101 for immediate assistance.";
+		        					        			mds = mds + " 			</td></tr>";
+		        					        			mds = mds + "			</table>";
+		        					        		}	
+		        					        		else //if(typeof fb_subaccounts_ja !== undefined && fb_subaccounts_ja !== null)
+		        					        		{	
+			        					        		mds = mds + " 			<table style=\"margin-right:auto;margin-left:auto;font-size:20px\">";
+			        					        		for(var x=0; x < fb_subaccounts_ja.length; x++)
+			        					        		{
+			        					        			//alert("fb_page_valid=" + fb_page_valid + " comparison to true=" + (fb_page_valid === true));
+			        					        			//alert("fb_subaccounts_ja[x].id=" + fb_subaccounts_ja[x].id + " valid_page_id=" + valid_page_id + "comparison=" + ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1)));
+			        					        			if(fb_page_valid === true && ((fb_subaccounts_ja[x].id*1) === (valid_page_id*1))) // this is the checked option
+			        					        			{
+			        					        				//alert(fb_subaccounts_ja[x].name + "checked");
+			        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type='radio' CHECKED id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + " <img src=\"images/check.png\" style=\"width:20px;height:20px\"></td></tr>";
+			        					        			}
+			        					        			else
+			        					        			{
+			        					        				//alert(fb_subaccounts_ja[x].name + "not checked");
+			        					        				mds = mds + " 			<tr><td style=\"valign:middle\"><input name='fbsubaccounts' type=radio id=\"" + fb_subaccounts_ja[x].id + "_radio\"></td><td>" + fb_subaccounts_ja[x].name + "</td></tr>";
+			        					        			}
+			        					        		}
+			        					        		mds = mds + "			</table>";
+			        					        		if(!fb_page_valid)
+			        					        		{
+			        					        			mds = mds + " 			<div style=\"text-align:center;padding-top:10px;color:red;valign:middle;font-style:italic;font-size:12px;\"> Not listed? To try a different top-level FB account,<br>(1) click <a href=\"#\" id=\"facebook_reset_link\">here</a> to start over,<br>(2) switch accounts on facebook.com and<br>(3) return to this page.</div>";
+			        					        		}
 		        					        		}
-		        					        		mds = mds + "			</table>";
 		        					        	}
 		        					        }
 		        					        ,
@@ -396,12 +423,42 @@ document.addEventListener('DOMContentLoaded', function () {
 			        		
 			        		$("#main_div").html(mds);
 			        		
+			        		$("#facebook_reset_link").click(
+		        					function() {
+		        						$.ajax({
+	    	        						type: 'GET',
+	    	        						url: endpoint,
+	    	        						data: {
+	    	        				            method: "resetFacebookInfo",
+	    	        				            twitter_handle: twitter_handle,
+	    	    					            twitter_access_token: twitter_access_token,
+	    	        						},
+	    	        				        dataType: 'json',
+	    	        				        async: false,
+	    	        				        success: function (data, status) {
+	    	        				        	if (data.response_status === "error")
+	    	        				        		$("#message_div").html("<span style=\"font-size:16;color:red\">error setting designated account. message= " + data.message + "</span>");
+	    	        				        	else
+	    	        				        	{
+	    	        				        		window.location.href = "https://www.huzon.tv/registration.html";
+	    	        				        	}
+	    	        				        }
+	    	        				        ,
+	    	        				        error: function (XMLHttpRequest, textStatus, errorThrown) {
+	    	        				        	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+	    	        				            console.log(textStatus, errorThrown);
+	    	        				        }
+	    	        					});
+		        						return false;
+		        					}
+		        				);
+			        		
 			        		$("#facebook_link").click({value1: data.user_jo.designation},
 		        					function (event) {
 			        					var randomnumber=Math.floor(Math.random()*1000000);
 			        					var state = randomnumber+"";
 			        					docCookies.setItem("state", state, 300);
-			        					docCookies.setItem("designation", event.data.value1, 31536e3);
+			        					docCookies.setItem("designation", event.data.value1, 604800);
 			        					alert('Sending you to Facebook. Grant ALL permissions you are prompted for. Otherwise, huzon.tv will not work properly.');
 			        					window.location.href = "https://www.facebook.com/dialog/oauth?client_id=176524552501035&redirect_uri=https://www.huzon.tv/registration.html&scope=publish_stream,manage_pages&state=" + randomnumber;
 			        					return false;
