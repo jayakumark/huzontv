@@ -406,7 +406,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	JSONArray getFiredAlertsAsJSONArray(String beginstring, String endstring, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertsAsJSONArray(" + beginstring + "," + endstring + ", " + self_posted_only);
+		//System.out.println("Station.getFiredAlertsAsJSONArray(" + beginstring + "," + endstring + ", " + self_posted_only);
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFiredAlerts(beginstring, endstring): beginstring must be at least 8 char long");
@@ -424,7 +424,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	JSONArray getFiredAlertsAsJSONArray(long begin_long, long end_long, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertsAsJSONArray(" + begin_long + "(long)," + end_long + "(long), " + self_posted_only);
+		//System.out.println("Station.getFiredAlertsAsJSONArray(" + begin_long + "(long)," + end_long + "(long), " + self_posted_only);
 		TreeSet<Alert> alertset = getFiredAlerts(begin_long, end_long, self_posted_only);
 		JSONArray return_ja = new JSONArray();
 		Alert currentalert = null;
@@ -440,8 +440,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method
 	JSONArray getFiredAlertStatistics(String beginstring, String endstring, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatistics(" + beginstring + "," + endstring + ", " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
-		
+		//System.out.println("Station.getFiredAlertStatistics(" + beginstring + "," + endstring + ", " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFiredAlertStatistics(beginstring,endstring,interval, incl_redir_count, incl_sansbot_count): beginstring must be at least 8 char long");
@@ -459,7 +458,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	JSONArray getFiredAlertStatistics(long begin_long, long end_long, long interval_in_ms, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
+		//System.out.println("Station.getFiredAlertStatistics(" + begin_long + "(long)," + end_long + "(long), " + interval_in_ms + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
 		JSONArray return_ja = new JSONArray();
 		long x = begin_long;
 		while(x < end_long)
@@ -474,7 +473,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// begin_long and end_long are set to this one, specific interval
 	JSONObject getFiredAlertStatisticsForInterval(long begin_long, long end_long, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
-		System.out.print("Station.getFiredAlertStatisticsForInterval(" + begin_long + "(long)," + end_long + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
+		//System.out.print("Station.getFiredAlertStatisticsForInterval(" + begin_long + "(long)," + end_long + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
 		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long, self_posted_only); // get the fired alerts for just this interval
 		long unabridged_redirect_count = 0; long sansbot_redirect_count = 0;
 		Iterator<Alert> alert_it = fired_alert_set.iterator();
@@ -539,12 +538,12 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		if(beginstring.length() < 8)
 		{
-			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			//System.out.println("Station.getFrameTimestamps(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
 			return null;
 		}
 		if(endstring.length() < 8)
 		{
-			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			//System.out.println("Station.getFrameTimestamps(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
 			return null;
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
@@ -562,7 +561,7 @@ public class Station implements java.lang.Comparable<Station> {
 		{
 			con = datasource.getConnection();
 			stmt = con.createStatement();
-			System.out.println("Station.getFrameTimestamps(): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+			//System.out.println("Station.getFrameTimestamps(): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 			rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
 			while(rs.next()) // at least one row exists
 			{
@@ -622,14 +621,14 @@ public class Station implements java.lang.Comparable<Station> {
 			cal.set(Calendar.MILLISECOND, 0);
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z");
-		System.out.println(dateFormat.format(cal.getTime()));
+		//System.out.println(dateFormat.format(cal.getTime()));
 		
 		return cal.getTimeInMillis();
 	}
 	
 	public TreeSet<Frame> getFrames(String beginstring, String endstring, String designation) // convenience method for taking datestring in the form YYYYMMDD_HHMMSS_sss
 	{
-		System.out.println("Station.getFrames(): datestring method begin");
+		//System.out.println("Station.getFrames(): datestring method begin");
 		if(beginstring.length() < 8)
 		{
 			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
@@ -649,7 +648,7 @@ public class Station implements java.lang.Comparable<Station> {
 	// designation can be null. If designation supplied, then get all frames above the single threshold
 	public TreeSet<Frame> getFrames(long begin_in_ms, long end_in_ms, String designation) // INCLUSIVE
 	{
-		System.out.println("Station.getFrames(): long method begin");
+		//System.out.println("Station.getFrames(): long method begin");
 		TreeSet<Frame> returnset = new TreeSet<Frame>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -661,7 +660,7 @@ public class Station implements java.lang.Comparable<Station> {
 			stmt = con.createStatement();
 			if(designation == null) // get all frames
 			{	
-				System.out.println("Station.getFrames(no designation): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
+				//System.out.println("Station.getFrames(no designation): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")");
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + ")"); 
 			}
 			else if(designation != null) // get all frames where designation is above single thresh
@@ -669,7 +668,7 @@ public class Station implements java.lang.Comparable<Station> {
 				User reporter = new User(designation, "designation");
 				double homogeneity_double = reporter.getHomogeneity();
 				double threshold = homogeneity_double;
-				System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_score > " + threshold + ")"); 
+				//System.out.println("Station.getFrames("+ designation + "): SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_score > " + threshold + ")"); 
 				rs = stmt.executeQuery("SELECT * FROM frames_" + getCallLetters() + " WHERE (timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms + " AND " + designation + "_score > " + threshold + ")"); 
 			}
 		
@@ -684,7 +683,7 @@ public class Station implements java.lang.Comparable<Station> {
 			//System.out.println("Does the resultset have any rows?");
 			if(rs.next()) // at least one row exists
 			{
-				System.out.println("Station.getFrames(long,long,designation): Getting frames from resultset");
+				//System.out.println("Station.getFrames(long,long,designation): Getting frames from resultset");
 				returnset = getFramesFromResultSet(rs);
 			}
 			
@@ -714,15 +713,15 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method
 	public JSONArray getFramesAsJSONArray(String beginstring, String endstring, boolean get_score_data)
 	{
-		System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
+		//System.out.println("Station.getFramesAsJSONArray(): datestring method begin");
 		if(beginstring.length() < 8)
 		{
-			System.out.println("Station.getFramesAsJSONArray(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			//System.out.println("Station.getFramesAsJSONArray(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
 			return null;
 		}
 		if(endstring.length() < 8)
 		{
-			System.out.println("Station.getFramesAsJSONArray(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			//System.out.println("Station.getFramesAsJSONArray(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
 			return null;
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
@@ -742,7 +741,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	public JSONArray getFramesAsJSONArray(long begin_in_ms, long end_in_ms, boolean get_score_data)
 	{
-		System.out.println("Station.getFramesAsJSONArray(): long method begin");
+		//System.out.println("Station.getFramesAsJSONArray(): long method begin");
 		JSONArray frames_ja = new JSONArray();
 		TreeSet<Frame> frameset = getFrames(begin_in_ms, end_in_ms, null);
 		Iterator<Frame> it = frameset.iterator();
@@ -774,14 +773,15 @@ public class Station implements java.lang.Comparable<Station> {
 	// datestring convenience method.
 	JSONArray getAlertFrames(String beginstring, String endstring, double ma_modifier_double, int awp_int, int nrpst, double delta_double, int maw)
 	{
+		//System.out.println("Station.getAlertFrames(strings): begin");
 		if(beginstring.length() < 8)
 		{
-			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
+			//System.out.println("Station.getAlertFrames(beginstring,endstring,designation,singlemodifier): beginstring must be at least 8 char long");
 			return null;
 		}
 		if(endstring.length() < 8)
 		{
-			System.out.println("Station.getFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
+			//System.out.println("Station.getAlertFrames(beginstring,endstring,designation,singlemodifier): endstring must be at least 8 char long");
 			return null;
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
@@ -791,7 +791,7 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	JSONArray getAlertFrames(long begin_in_ms, long end_in_ms, double ma_modifier_double, int awp_int, int nrpst_int, double delta_double, int maw_int)
 	{
-		System.out.println("Station.getAlertFrames(): begin");
+		//System.out.println("Station.getAlertFrames(longs): begin");
 		JSONArray return_ja = new JSONArray();
 		TreeSet<String> reporters = getReporterDesignations();
 		Iterator<String> it = reporters.iterator();
@@ -816,7 +816,7 @@ public class Station implements java.lang.Comparable<Station> {
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(querystring);
 			TreeSet<Frame> frames = getFramesFromResultSet(rs);
-			System.out.println("Station.getAlertFrames(): # of frames=" + frames.size());
+			//System.out.println("Station.getAlertFrames(): # of frames=" + frames.size());
 			Iterator<Frame> frames_it = frames.iterator();
 			Frame currentframe = null;
 
@@ -1060,10 +1060,10 @@ public class Station implements java.lang.Comparable<Station> {
 				updateString = "UPDATE stations SET `twitter_lock_" + which_lock + "`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock_" + which_lock + "`='') ";
 			else if (social_type.equals("facebook"))
 				updateString = "UPDATE stations SET `facebook_lock_" + which_lock + "`='" + uuid + "' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock_" + which_lock + "`='')";
-			System.out.println("Executing statement: " + updateString);
+			//System.out.println("Executing statement: " + updateString);
 			pstmt = con.prepareStatement(updateString);
 			pstmt.executeUpdate();
-			System.out.println(pstmt.getUpdateCount());
+			//System.out.println(pstmt.getUpdateCount());
 			if(pstmt.getUpdateCount() == 1) // the update actually occurred
 				returnval = true; 
 			else
@@ -1111,10 +1111,10 @@ public class Station implements java.lang.Comparable<Station> {
 				updateString = "UPDATE stations SET `twitter_lock_" + which_lock + "`='' WHERE (call_letters='" + getCallLetters() + "' AND `twitter_lock_" + which_lock + "`='" + uuid + "') ";
 			else if (social_type.equals("facebook"))
 				updateString = "UPDATE stations SET `facebook_lock_" + which_lock + "`='' WHERE (call_letters='" + getCallLetters() + "' AND `facebook_lock_" + which_lock + "`='" + uuid + "')";
-			System.out.println("Executing statement: " + updateString);
+			//System.out.println("Executing statement: " + updateString);
 			pstmt = con.prepareStatement(updateString);
 			pstmt.executeUpdate();
-			System.out.println(pstmt.getUpdateCount());
+			//System.out.println(pstmt.getUpdateCount());
 			if(pstmt.getUpdateCount() == 1) // the update actually occurred
 				returnval = true; 
 			else
@@ -1266,12 +1266,12 @@ public class Station implements java.lang.Comparable<Station> {
 	{
 		if(rs == null)
 		{
-			System.out.println("Station.getFramesFromResultSet(): entering with rs == null, returning");
+			//System.out.println("Station.getFramesFromResultSet(): entering with rs == null, returning");
 			return null;
 		}
 		else
 		{
-			System.out.println("Station.getFramesFromResultSet(): entering with rs != null");
+			//System.out.println("Station.getFramesFromResultSet(): entering with rs != null");
 		}
 		
 		TreeSet<Frame> returnframes = new TreeSet<Frame>();
@@ -1307,7 +1307,7 @@ public class Station implements java.lang.Comparable<Station> {
 			/*double reporter_ma4s[] = null;
 			double reporter_ma3s[] = null;*/
 			rs.beforeFirst();
-			System.out.println("Station.getFramesFromResultSet(): Starting loop through resultset of frames...");
+			//System.out.println("Station.getFramesFromResultSet(): Starting loop through resultset of frames...");
 			int rowcount = 0;
 			while(rs.next())
 			{
@@ -1413,7 +1413,7 @@ public class Station implements java.lang.Comparable<Station> {
 				rowcount++;
 			}
 			System.out.println();
-			System.out.println("Station.getFramesFromResultSet(): after loop where rowcount=" + rowcount);
+			//System.out.println("Station.getFramesFromResultSet(): after loop where rowcount=" + rowcount);
 		}
 		catch(SQLException sqle)
 		{

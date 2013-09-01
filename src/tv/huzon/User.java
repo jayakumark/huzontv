@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.TimeZone;
@@ -59,10 +60,20 @@ public class User implements java.lang.Comparable<User> {
 	private long facebook_page_id;
 	private String facebook_page_name;
 	private String facebook_page_access_token;
-	private String weekend_expected_begin_string;
-	private String weekend_expected_end_string;
-	private String weekday_expected_begin_string;
-	private String weekday_expected_end_string;
+	private String sunday_expected_begin_string;
+	private String sunday_expected_end_string;
+	private String monday_expected_begin_string;
+	private String monday_expected_end_string;
+	private String tuesday_expected_begin_string;
+	private String tuesday_expected_end_string;
+	private String wednesday_expected_begin_string;
+	private String wednesday_expected_end_string;
+	private String thursday_expected_begin_string;
+	private String thursday_expected_end_string;
+	private String friday_expected_begin_string;
+	private String friday_expected_end_string;
+	private String saturday_expected_begin_string;
+	private String saturday_expected_end_string;
 	private boolean anchor;
 	private boolean weather;
 	private boolean sports;
@@ -122,10 +133,22 @@ public class User implements java.lang.Comparable<User> {
 				facebook_page_id = rs.getLong("facebook_page_id");
 				facebook_page_name = rs.getString("facebook_page_name");
 				facebook_page_access_token = rs.getString("facebook_page_access_token");
-				weekday_expected_begin_string = rs.getString("weekday_expected_begin");
-				weekday_expected_end_string = rs.getString("weekday_expected_end");
-				weekend_expected_begin_string = rs.getString("weekend_expected_begin");
-				weekend_expected_end_string = rs.getString("weekend_expected_end");
+				
+				sunday_expected_begin_string = rs.getString("sunday_expected_begin");
+				sunday_expected_end_string = rs.getString("sunday_expected_end");
+				monday_expected_begin_string = rs.getString("monday_expected_begin");
+				monday_expected_end_string = rs.getString("monday_expected_end");
+				tuesday_expected_begin_string = rs.getString("tuesday_expected_begin");
+				tuesday_expected_end_string = rs.getString("tuesday_expected_end");
+				wednesday_expected_begin_string = rs.getString("wednesday_expected_begin");
+				wednesday_expected_end_string = rs.getString("wednesday_expected_end");
+				thursday_expected_begin_string = rs.getString("thursday_expected_begin");
+				thursday_expected_end_string = rs.getString("thursday_expected_end");
+				friday_expected_begin_string = rs.getString("friday_expected_begin");
+				friday_expected_end_string = rs.getString("friday_expected_end");
+				saturday_expected_begin_string = rs.getString("saturday_expected_begin");
+				saturday_expected_end_string = rs.getString("saturday_expected_end");
+				
 				anchor = rs.getBoolean("anchor");
 				weather = rs.getBoolean("weather");
 				sports = rs.getBoolean("sports");
@@ -1300,6 +1323,71 @@ public class User implements java.lang.Comparable<User> {
 		return return_ja;
 	}
 	
+	public boolean isWithinExpectedTimeBoundaries(long timestamp_in_ms, Station station_object)
+	{
+		//long current = System.currentTimeMillis();
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(station_object.getJavaTimezoneString()));
+		cal.setTimeInMillis(timestamp_in_ms);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss z");
+		sdf.setTimeZone(TimeZone.getTimeZone(station_object.getJavaTimezoneString()));
+		System.out.println("User.isWithinExpectedTimeBoundaries(): The current time is " + sdf.format(cal.getTime()) + " millis=" + timestamp_in_ms);
+		int day_of_week = cal.get(Calendar.DAY_OF_WEEK);
+		System.out.println("User.isWithinExpectedTimeBoundaries(): day_of_week=" + day_of_week);
+		String expected_begin = "";
+		String expected_end = "";
+		switch(day_of_week)
+		{
+		 	case 1:  
+		 		expected_begin = sunday_expected_begin_string; 
+		 		expected_end = sunday_expected_end_string;
+		 		break;
+            case 2:  
+            	expected_begin = monday_expected_begin_string; 
+            	expected_end = monday_expected_end_string;
+                break;
+            case 3:  
+            	expected_begin = tuesday_expected_begin_string; 
+            	expected_end = tuesday_expected_end_string;
+                break;
+            case 4:  
+            	expected_begin = wednesday_expected_begin_string; 
+            	expected_end = wednesday_expected_end_string;
+                break;
+            case 5:  
+            	expected_begin = thursday_expected_begin_string; 
+            	expected_end = thursday_expected_end_string;
+                break;
+            case 6:  
+            	expected_begin = friday_expected_begin_string; 
+            	expected_end = friday_expected_end_string;
+                break;
+            case 7:  
+            	expected_begin = saturday_expected_begin_string; 
+            	expected_end = saturday_expected_end_string;
+                break;
+        }
+		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected begin time is " + expected_begin + " sunday=" + sunday_expected_begin_string);
+		cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(expected_begin.substring(0,2)));
+		cal.set(Calendar.MINUTE, Integer.parseInt(expected_begin.substring(2,4)));
+		long beginlong = cal.getTimeInMillis();
+		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected begin time is " + sdf.format(cal.getTime()) + " millis=" + beginlong);
+		
+		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected end time is " + expected_end + " sunday=" + sunday_expected_end_string);
+		cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(expected_end.substring(0,2)));
+		cal.set(Calendar.MINUTE, Integer.parseInt(expected_end.substring(2,4)));
+		long endlong = cal.getTimeInMillis();
+		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected end time is " + sdf.format(cal.getTime()) + " millis=" + endlong);
+		if(beginlong < timestamp_in_ms && timestamp_in_ms < endlong)
+		{
+			System.out.println("User.isWithinExpectedTimeBoundaries(): returning true");
+			return true;
+		}
+		else
+		{
+			System.out.println("User.isWithinExpectedTimeBoundaries(): returning false");
+			return false;
+		}
+	}
 	
 	public JSONObject getAsJSONObject(boolean return_tokens, boolean return_tw_profile, boolean return_fb_profile, boolean return_fb_page, int alert_history_in_hours) 
 	{
@@ -1312,10 +1400,20 @@ public class User implements java.lang.Comparable<User> {
 			response_jo.put("sports", isSports());
 			response_jo.put("reporter", isReporter());
 			response_jo.put("homogeneity", homogeneity);
-			response_jo.put("weekend_expected_begin", weekend_expected_begin_string);
-			response_jo.put("weekend_expected_end", weekend_expected_end_string);
-			response_jo.put("weekday_expected_begin", weekday_expected_begin_string);
-			response_jo.put("weekday_expected_end", weekday_expected_end_string);
+			response_jo.put("sunday_expected_begin", sunday_expected_begin_string);
+			response_jo.put("sunday_expected_end", sunday_expected_end_string);
+			response_jo.put("monday_expected_begin", monday_expected_begin_string);
+			response_jo.put("monday_expected_end", monday_expected_end_string);
+			response_jo.put("tuesday_expected_begin", tuesday_expected_begin_string);
+			response_jo.put("tuesday_expected_end", tuesday_expected_end_string);
+			response_jo.put("wednesday_expected_begin", wednesday_expected_begin_string);
+			response_jo.put("wednesday_expected_end", wednesday_expected_end_string);
+			response_jo.put("thursday_expected_begin", thursday_expected_begin_string);
+			response_jo.put("thursday_expected_end", thursday_expected_end_string);
+			response_jo.put("friday_expected_begin", friday_expected_begin_string);
+			response_jo.put("friday_expected_end", friday_expected_end_string);
+			response_jo.put("saturday_expected_begin", saturday_expected_begin_string);
+			response_jo.put("saturday_expected_end", saturday_expected_end_string);
 			response_jo.put("twitter_handle", twitter_handle);
 			if(return_tokens)
 			{	
@@ -1382,8 +1480,7 @@ public class User implements java.lang.Comparable<User> {
 	
 	public static void main(String args[])
 	{
-		User user = new User("kristen_kennedy", "designation");
-		user.getFiredAlertsAsJSONArray(720, "twitter");
+		//User user = new User("kristen_kennedy", "designation");
 	}
 	
 	
