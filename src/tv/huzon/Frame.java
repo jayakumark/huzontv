@@ -865,6 +865,7 @@ public class Frame implements Comparable<Frame> {
 					else
 					{	
 						// FOURTH, does the highest score pass the delta value? (i.e. is it delta_double higher than the second highest?)
+						
 						if((highest_score - second_highest_score) < delta_double)
 						{
 							System.out.println("Frame.process(): (4) skipping timestamp " + getTimestampInMillis() + " because highest_score=" + highest_score + " - second_highest_score=" + second_highest_score + "=" + (highest_score - second_highest_score) + " was less than the required delta=" + delta_double);
@@ -910,7 +911,7 @@ public class Frame implements Comparable<Frame> {
 										{
 											System.out.println("Frame.process(): (8) skipping timestamp " + getTimestampInMillis() + " for " + highest_ma_designation + " because the reporter is outside expected time boundaries");
 											alert_triggered_failure_message = "Reporter outside expected time boundaries.";
-											// temporary alert
+											// temporary dev alert
 											SimpleEmailer se = new SimpleEmailer();
 											try
 											{
