@@ -334,7 +334,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	// datestring convenience method
-	TreeSet<Alert> getFiredAlerts(String beginstring, String endstring, boolean self_posted_only)
+	TreeSet<Alert> getFiredAlerts(String beginstring, String endstring, boolean self_posted_only, boolean get_social_objects)
 	{
 		System.out.println("Station.getFiredAlerts(" + beginstring + "," + endstring + ", " + self_posted_only);
 		if(beginstring.length() < 8)
@@ -349,10 +349,10 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getFiredAlerts(begin_in_ms, end_in_ms, self_posted_only);
+		return getFiredAlerts(begin_in_ms, end_in_ms, self_posted_only, get_social_objects);
 	}
 	
-	TreeSet<Alert> getFiredAlerts(long begin_long, long end_long, boolean self_posted_only)
+	TreeSet<Alert> getFiredAlerts(long begin_long, long end_long, boolean self_posted_only, boolean get_social_objects)
 	{
 		System.out.println("Station.getFiredAlerts(" + begin_long + "(long)," + end_long + "(long), " + self_posted_only);
 		TreeSet<Alert> returnset = new TreeSet<Alert>();
@@ -404,7 +404,7 @@ public class Station implements java.lang.Comparable<Station> {
 	}
 	
 	
-	JSONArray getFiredAlertsAsJSONArray(String beginstring, String endstring, boolean self_posted_only)
+	JSONArray getFiredAlertsAsJSONArray(String beginstring, String endstring, boolean self_posted_only, boolean get_social_objects)
 	{
 		//System.out.println("Station.getFiredAlertsAsJSONArray(" + beginstring + "," + endstring + ", " + self_posted_only);
 		if(beginstring.length() < 8)
@@ -419,20 +419,20 @@ public class Station implements java.lang.Comparable<Station> {
 		}
 		long begin_in_ms = convertDateTimeStringToLong(beginstring);
 		long end_in_ms = convertDateTimeStringToLong(endstring);
-		return getFiredAlertsAsJSONArray(begin_in_ms, end_in_ms, self_posted_only);
+		return getFiredAlertsAsJSONArray(begin_in_ms, end_in_ms, self_posted_only, get_social_objects);
 	}
 	
-	JSONArray getFiredAlertsAsJSONArray(long begin_long, long end_long, boolean self_posted_only)
+	JSONArray getFiredAlertsAsJSONArray(long begin_long, long end_long, boolean self_posted_only, boolean get_social_objects)
 	{
 		//System.out.println("Station.getFiredAlertsAsJSONArray(" + begin_long + "(long)," + end_long + "(long), " + self_posted_only);
-		TreeSet<Alert> alertset = getFiredAlerts(begin_long, end_long, self_posted_only);
+		TreeSet<Alert> alertset = getFiredAlerts(begin_long, end_long, self_posted_only, get_social_objects);
 		JSONArray return_ja = new JSONArray();
 		Alert currentalert = null;
 		Iterator<Alert> alert_it = alertset.iterator();
 		while(alert_it.hasNext())
 		{
 			currentalert = alert_it.next();
-			return_ja.put(currentalert.getAsJSONObject());
+			return_ja.put(currentalert.getAsJSONObject(get_social_objects));
 		}
 		return return_ja;
 	}
@@ -474,7 +474,8 @@ public class Station implements java.lang.Comparable<Station> {
 	JSONObject getFiredAlertStatisticsForInterval(long begin_long, long end_long, boolean include_unabridged_redirect_count, boolean include_sansbot_redirect_count, boolean self_posted_only)
 	{
 		//System.out.print("Station.getFiredAlertStatisticsForInterval(" + begin_long + "(long)," + end_long + "(long), " + include_unabridged_redirect_count + ", " + include_sansbot_redirect_count +  ", " + self_posted_only + ")");
-		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long, self_posted_only); // get the fired alerts for just this interval
+		boolean get_social_objects = false; // always false in this context
+		TreeSet<Alert> fired_alert_set = getFiredAlerts(begin_long, end_long, self_posted_only, get_social_objects); // get the fired alerts for just this interval
 		long unabridged_redirect_count = 0; long sansbot_redirect_count = 0;
 		Iterator<Alert> alert_it = fired_alert_set.iterator();
 		Alert currentalert = null;

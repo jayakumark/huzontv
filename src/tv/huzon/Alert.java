@@ -430,53 +430,56 @@ public class Alert implements java.lang.Comparable<Alert> {
 		return return_jo;
 	}
 	
-	public JSONObject getAsJSONObject()
+	public JSONObject getAsJSONObject(boolean get_social_objects)
 	{
 		JSONObject response_jo = new JSONObject();
 		try {
 			response_jo.put("designation", getDesignation());
 			response_jo.put("id", getID());
 			response_jo.put("social_type", getSocialType());
-			if(getSocialType().equals("twitter"))
-			{
-				Twitter t = new Twitter();
-				User user = new User(getCreatedByUser().getDesignation(), "designation");
-				JSONObject twitter_object_response_jo = t.getTweet(user.getTwitterAccessToken(), user.getTwitterAccessTokenSecret(), getSocialItemID());
-				if(!twitter_object_response_jo.has("response_status")) // no error returned from twitter, just the object itself
+			if(get_social_objects)
+			{	
+				if(getSocialType().equals("twitter"))
 				{
-					response_jo.put("tweet_jo", twitter_object_response_jo);
-				}
-			}
-			if(getSocialType().equals("facebook"))
-			{
-				JSONObject jsonresponse = new JSONObject();
-				try
-				{
-					HttpClient client = new DefaultHttpClient();
-					HttpGet request = new HttpGet("https://graph.facebook.com/"+ getSocialItemID());
-					HttpResponse response;
-					try 
+					Twitter t = new Twitter();
+					User user = new User(getCreatedByUser().getDesignation(), "designation");
+					JSONObject twitter_object_response_jo = t.getTweet(user.getTwitterAccessToken(), user.getTwitterAccessTokenSecret(), getSocialItemID());
+					if(!twitter_object_response_jo.has("response_status")) // no error returned from twitter, just the object itself
 					{
-						response = client.execute(request);
-						// Get the response
-						BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-						String text = "";
-						String line = "";
-						while ((line = rd.readLine()) != null) {
-							text = text + line;
-						} 
-						System.out.println(text);
-						jsonresponse = new JSONObject(text);
-					} catch (ClientProtocolException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
+						response_jo.put("tweet_jo", twitter_object_response_jo);
+					}
+				}
+				if(getSocialType().equals("facebook"))
+				{
+					JSONObject jsonresponse = new JSONObject();
+					try
+					{
+						HttpClient client = new DefaultHttpClient();
+						HttpGet request = new HttpGet("https://graph.facebook.com/"+ getSocialItemID());
+						HttpResponse response;
+						try 
+						{
+							response = client.execute(request);
+							// Get the response
+							BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+							String text = "";
+							String line = "";
+							while ((line = rd.readLine()) != null) {
+								text = text + line;
+							} 
+							System.out.println(text);
+							jsonresponse = new JSONObject(text);
+						} catch (ClientProtocolException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}	
+					catch (JSONException e) {
 						e.printStackTrace();
 					}
-				}	
-				catch (JSONException e) {
-					e.printStackTrace();
+					response_jo.put("fbpost_jo", jsonresponse);
 				}
-				response_jo.put("fbpost_jo", jsonresponse);
 			}
 			response_jo.put("unabridged_redirect_count", getRedirectCount(false));
 			response_jo.put("sansbot_redirect_count", getRedirectCount(true));

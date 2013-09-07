@@ -1311,7 +1311,7 @@ public class User implements java.lang.Comparable<User> {
 		return alerts;
 	}
 	
-	public JSONArray getFiredAlertsAsJSONArray(int hours, String social_type)
+	public JSONArray getFiredAlertsAsJSONArray(int hours, String social_type, boolean get_social_objects)
 	{
 		JSONArray return_ja = new JSONArray();
 		TreeSet<Alert> alerts_ts = getFiredAlerts(hours, social_type);
@@ -1321,7 +1321,7 @@ public class User implements java.lang.Comparable<User> {
 		{
 			System.out.println("User.getFiredAlertsAsJSONArray(): adding alert");
 			currentalert = alerts_it.next();
-			return_ja.put(currentalert.getAsJSONObject());
+			return_ja.put(currentalert.getAsJSONObject(get_social_objects));
 		}
 		return return_ja;
 	}
@@ -1447,10 +1447,11 @@ public class User implements java.lang.Comparable<User> {
 			if(return_fb_page)
 				response_jo.put("facebook_page_jo", getSubAccountFromFacebookWithCredentials());
 			
+			boolean get_social_objects = true; // always true in this context
 			if(alert_history_in_hours != -1 && alert_history_in_hours <= 2160) // no more than 90 days
 			{
-				response_jo.put("twitter_alert_history_ja", getFiredAlertsAsJSONArray(alert_history_in_hours, "twitter")); 
-				response_jo.put("facebook_alert_history_ja", getFiredAlertsAsJSONArray(alert_history_in_hours, "facebook"));
+				response_jo.put("twitter_alert_history_ja", getFiredAlertsAsJSONArray(alert_history_in_hours, "twitter", get_social_objects)); 
+				response_jo.put("facebook_alert_history_ja", getFiredAlertsAsJSONArray(alert_history_in_hours, "facebook", get_social_objects));
 			}
 						
 			TreeSet<Station> stations_ts = getStationsAsAdmin();

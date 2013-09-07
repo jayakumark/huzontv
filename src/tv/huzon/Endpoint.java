@@ -1168,23 +1168,33 @@ public class Endpoint extends HttpServlet {
 										 {
 											 System.out.println("Ep.doGet.getFiredAlerts() called");
 											 String self_posted_only = request.getParameter("self_posted_only");
+											 String get_social_objects = request.getParameter("get_social_objects");
 											 boolean spo_bool = false;
+											 boolean social_objects_bool = false;
 											 if(self_posted_only == null)
 											 {
 												 jsonresponse.put("message", "A self_posted_only value must be supplied to this method.");
 												 jsonresponse.put("response_status", "error");
 												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An self_posted_only value is required.");
 											 }
+											 if(get_social_objects == null)
+											 {
+												 jsonresponse.put("message", "A get_social_objects value must be supplied to this method.");
+												 jsonresponse.put("response_status", "error");
+												 (new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " unsuccessful. An get_social_objects value is required.");
+											 }
 											 else
 											 {
 												 if(self_posted_only.toLowerCase().equals("true") || self_posted_only.toLowerCase().equals("yes"))
 													 spo_bool = true;
+												 if(get_social_objects.toLowerCase().equals("true") || get_social_objects.toLowerCase().equals("yes"))
+													 social_objects_bool = true;
 											 }
 											 JSONArray fired_alerts_ja = null;
 											 if(use_long)
-												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin_long, end_long, spo_bool);
+												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin_long, end_long, spo_bool, social_objects_bool);
 											 else
-												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin, end, spo_bool);
+												 fired_alerts_ja = station_object.getFiredAlertsAsJSONArray(begin, end, spo_bool, social_objects_bool);
 											 jsonresponse.put("response_status", "success");
 											 jsonresponse.put("fired_alerts_ja", fired_alerts_ja);
 											 //(new Platform()).addMessageToLog("Ep.doGet():  method (" + method + ") requested by twitter_handle=" + twitter_handle + " successful.");

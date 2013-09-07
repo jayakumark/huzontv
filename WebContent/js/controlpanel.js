@@ -35,6 +35,7 @@ var docCookies = {
 
 var devel = true;
 
+
 //document.addEventListener('DOMContentLoaded', function () {
 $(window).load(function () {	
 	//alert("window loaded");
@@ -205,6 +206,7 @@ $(window).load(function () {
 		        				numdays = 14;
 		        			else
 		        				numdays = numdays * 1;
+		        			
 		        			graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, administering_station);
 		        			
 	    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, administering_station);
@@ -212,7 +214,11 @@ $(window).load(function () {
 	    	        		var d = new Date();
 		        			var end = d.getTime();
 		        			var endstring = end + "";
-		        			var begin = end - (86400000*2); // 2 days
+		        			var begin = end - (86400000*numdays);
+		        			var beginstring = begin + "";
+		        			showPieChartOfUltimateDestinations(beginstring, endstring, twitter_handle, twitter_access_token, administering_station);
+		        			
+		        			begin =  end - (86400000*2); // 2 days only for retrieving social objects and images
 		        			var beginstring = begin + "";
 	    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, administering_station);
 		        		}
@@ -249,10 +255,7 @@ function getStationInformation(twitter_handle, twitter_access_token, station)
 	    	else
 	    	{
 	    		general_string = general_string + "<div style=\"font-weight:bold;font-size:12px\">STATION INFO</div>";
-	    		general_string = general_string + "<b>station:</b> " + data.station_jo.call_letters;
-	    		general_string = general_string + "<br><b>city:</b> " + data.station_jo.city;
-	    		general_string = general_string + "<br><b>state:</b> " + data.station_jo.state;
-	    		general_string = general_string + "<br><b>2013 dma:</b> " + data.station_jo.dma2013;
+	    		general_string = general_string + "<b>station:</b> " + data.station_jo.call_letters + " " + data.station_jo.city + ", " + data.station_jo.state;
 	    		general_string = general_string + "<br><b>ma window:</b> " + data.station_jo.maw;
 	    		general_string = general_string + "<br><b>ma modifier:</b> " + data.station_jo.mamodifier;
 	    		general_string = general_string + "<br><b>delta:</b> " + data.station_jo.delta;
@@ -541,29 +544,29 @@ function graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token
     			        ]*/
     			      }
     			    });
-    		
+    			
     			var chartinfo_str = "<div style=\"font-weight:bold;font-size:12px\">STATISTICS</div>";
-    			chartinfo_str = chartinfo_str + "<b>Total alerts:</b> " + total_fired_alerts;
-    			chartinfo_str = chartinfo_str + "<br><b>Total sansbot redirects:</b> " + total_sansbot_redirects;
-    			chartinfo_str = chartinfo_str + "<br><b>Redirects per alert: </b> " + (Math.floor((total_sansbot_redirects/total_fired_alerts)*10)/10);
-    			chartinfo_str = chartinfo_str + "<br><b># days to show:</b> ";
-    			chartinfo_str = chartinfo_str + "<select id=\"days_select\">";
-    			for(var x = 1; x <= 30; x++)
-    			{	
-    				chartinfo_str = chartinfo_str + "	<option id=\"days_select_" + x + "\" value=\"" + x + "\">" + x + "</option>";
-    			}
-	    		chartinfo_str = chartinfo_str + "</select> <span id=\"days_select_change_span\"></span>";
-	    		
-	    		$("#chartinfo_div").html(chartinfo_str);
-	    		//alert("setting #days_select_" + numdays + " to true");
-	    		$("#days_select_" + numdays).prop('selected', true);
-	    		$("#days_select").change(function () {
-	    			docCookies.setItem("num_days_for_statistics", $("#days_select").val(), 30000000);
-	    			$("#chart1").html("");
-	    			$("#days_select_change_span").html("Reloading...");
-	    			$("#days_select_change_span").css("color", "blue");
-	    			graphFiredAlertStatistics($("#days_select").val(), twitter_handle, twitter_access_token, station);
-            	});	
+     			chartinfo_str = chartinfo_str + "<b>Total alerts:</b> " + total_fired_alerts;
+     			chartinfo_str = chartinfo_str + "<br><b>Total sansbot redirects:</b> " + total_sansbot_redirects;
+     			chartinfo_str = chartinfo_str + "<br><b>Redirects per alert: </b> " + (Math.floor((total_sansbot_redirects/total_fired_alerts)*10)/10);
+     			chartinfo_str = chartinfo_str + "<br><b># days to show:</b> ";
+     			chartinfo_str = chartinfo_str + "<select id=\"days_select\">";
+     			for(var x = 1; x <= 30; x++)
+     			{	
+     				chartinfo_str = chartinfo_str + "	<option id=\"days_select_" + x + "\" value=\"" + x + "\">" + x + "</option>";
+     			}
+ 	    		chartinfo_str = chartinfo_str + "</select> <span id=\"days_select_change_span\"></span>";
+ 	    		
+ 	    		$("#chartinfo_div").html(chartinfo_str);
+ 	    		//alert("setting #days_select_" + numdays + " to true");
+ 	    		$("#days_select_" + numdays).prop('selected', true);
+ 	    		$("#days_select").change(function () {
+ 	    			docCookies.setItem("num_days_for_statistics", $("#days_select").val(), 30000000);
+ 	    			$("#chart1").html("");
+ 	    			$("#days_select_change_span").html("Reloading...");
+ 	    			$("#days_select_change_span").css("color", "blue");
+ 	    			graphFiredAlertStatistics($("#days_select").val(), twitter_handle, twitter_access_token, station);
+             	});	
 	    	}
 	    }
 	    ,
@@ -606,7 +609,7 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "		<td colspan=8 style=\"background-color:#CCFFFF;text-align:center;font-weight:bold\">";
 				reporters_string = reporters_string + "			Twitter settings";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td colspan=6 style=\"background-color:#A9CAEB;text-align:center;font-weight:bold\">";
+				reporters_string = reporters_string + "		<td colspan=8 style=\"background-color:#A9CAEB;text-align:center;font-weight:bold\">";
 				reporters_string = reporters_string + "			Facebook settings";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "	</tr>";
@@ -662,6 +665,12 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
 				reporters_string = reporters_string + "			30d";
 				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			clx 30d";
+				reporters_string = reporters_string + "		</td>";
+				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "			clx/alrt";
+				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "	</tr>";
 				var cooldown_in_hours = 0;
 				for(var x=0; x < reporters_ja.length; x++)
@@ -685,6 +694,8 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_cooldown_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_likes_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_alert_count_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_click_count_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
+					reporters_string = reporters_string + "		<td id=\"" + reporters_ja[x] + "_facebook_click_rate_td\"><img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\"></td>";
 					reporters_string = reporters_string + "	</tr>";
 				}
 				reporters_string = reporters_string + "</table>";
@@ -777,21 +788,21 @@ function getUser(designation)
         		
         		$("#" + designation + "_twitter_alert_count_td").html(data.user_jo.twitter_alert_history_ja.length);
         		
-        		var sansbot_clicks = 0;
+        		var tw_sansbot_clicks = 0;
         		for(var a = 0; a < data.user_jo.twitter_alert_history_ja.length; a++)
         		{	
-        			sansbot_clicks = sansbot_clicks + data.user_jo.twitter_alert_history_ja[a].sansbot_redirect_count;
+        			tw_sansbot_clicks = tw_sansbot_clicks + data.user_jo.twitter_alert_history_ja[a].sansbot_redirect_count;
         		}
-        		$("#" + designation + "_twitter_click_count_td").html(sansbot_clicks);
-        		var click_rate = 0;
+        		$("#" + designation + "_twitter_click_count_td").html(tw_sansbot_clicks);
+        		var tw_click_rate = 0;
         		if(data.user_jo.twitter_alert_history_ja.length != 0 )
         		{
-        			click_rate = sansbot_clicks / data.user_jo.twitter_alert_history_ja.length;
-        			click_rate = click_rate * 10;
-        			click_rate = Math.floor(click_rate);
-        			click_rate = click_rate/10;
+        			tw_click_rate = tw_sansbot_clicks / data.user_jo.twitter_alert_history_ja.length;
+        			tw_click_rate = tw_click_rate * 10;
+        			tw_click_rate = Math.floor(tw_click_rate);
+        			tw_click_rate = tw_click_rate/10;
         		}
-        		$("#" + designation + "_twitter_click_rate_td").html(click_rate);
+        		$("#" + designation + "_twitter_click_rate_td").html(tw_click_rate);
         		
         		if(data.user_jo.facebook_active)
         			$("#" + designation + "_facebook_active_td").html("yes");
@@ -829,6 +840,21 @@ function getUser(designation)
         		
         		$("#" + designation + "_facebook_alert_count_td").html(data.user_jo.facebook_alert_history_ja.length);
         		
+        		var fb_sansbot_clicks = 0;
+        		for(var a = 0; a < data.user_jo.facebook_alert_history_ja.length; a++)
+        		{	
+        			fb_sansbot_clicks = fb_sansbot_clicks + data.user_jo.facebook_alert_history_ja[a].sansbot_redirect_count;
+        		}
+        		$("#" + designation + "_facebook_click_count_td").html(fb_sansbot_clicks);
+        		var fb_click_rate = 0;
+        		if(data.user_jo.facebook_alert_history_ja.length != 0 )
+        		{
+        			fb_click_rate = fb_sansbot_clicks / data.user_jo.facebook_alert_history_ja.length;
+        			fb_click_rate = fb_click_rate * 10;
+        			fb_click_rate = Math.floor(fb_click_rate);
+        			fb_click_rate = fb_click_rate/10;
+        		}
+        		$("#" + designation + "_facebook_click_rate_td").html(fb_click_rate);
         	}
         	else
         	{
@@ -843,7 +869,7 @@ function getUser(designation)
 	});
 }
 
-function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station)
+function showPieChartOfUltimateDestinations(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
 	$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
@@ -855,6 +881,7 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
             end: endstring,
             station: station,
             self_posted_only: false,
+            get_social_objects: false,
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
 		},
@@ -868,9 +895,104 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
         	else // getMostRecentAlerts was successful, meaning twitter_handle and twitter_access_token were OK
         	{
         		var alerts_ja = data.fired_alerts_ja;
+        		
+        		var homepage_count = 0;
+        		var android_app_count = 0;
+        		var iphone_app_count = 0;
+        		var livestream_eventual_count = 0;
+        		var livestream_immediate_count = 0;
+        		var clips_count = 0;
+        		var recent_newscasts_count = 0;
+        		var blank_count = 0;
+        		for(var x = 0; x < alerts_ja.length; x++) // no more than 20
+        		{
+        			if(alerts_ja[x].ultimate_destination_stats.homepage)
+        				homepage_count++;
+        			if(alerts_ja[x].ultimate_destination_stats.android_app)
+        				android_app_count++;
+        			if(alerts_ja[x].ultimate_destination_stats.iphone_app)
+        				iphone_app_count++;
+        			if(alerts_ja[x].ultimate_destination_stats.livestream_eventual)
+        				livestream_eventual_count++;
+        			if(alerts_ja[x].ultimate_destination_stats.livestream_immediate)
+        				livestream_immediate_count++;
+        			if(alerts_ja[x].ultimate_destination_stats.clips)
+        				clips_count++;
+        			if(alerts_ja[x].ultimate_destination_stats.recent_newscasts)
+        				recent_newscasts_count++;
+        			if(alerts_ja[x].ultimate_destination_stats[''])
+        				blank_count++;
+        		}
+        		/*alert('homepage=' + homepage_count);
+        		alert('android_app=' + android_app_count);
+        		alert('iphone_app=' + iphone_app_count);
+        		alert('livestream_eventual=' + livestream_eventual_count);
+        		alert('livestream_immediate=' + livestream_immediate_count);
+        		alert('clips_count=' + clips_count);
+        		alert('recent_newscasts_count=' + recent_newscasts_count);
+        		alert('blank_count=' + blank_count);*/
+        		
+        		var data = [
+        		            ['livestream immediate', livestream_immediate_count],['livestream eventual', livestream_eventual_count], ['recent newscasts', recent_newscasts_count],
+     			     	    ['homepage', homepage_count],['android app', android_app_count], ['iphone app', iphone_app_count], ['blank', blank_count]
+     			     	    
+     			     	  ];
+     			     	  var plot2 = jQuery.jqplot ('piechart', [data], 
+     			     	    { 
+     			     		title: "Ultimate destinations",
+     			     	      seriesDefaults: {
+     			     	        // Make this a pie chart.
+     			     	        renderer: jQuery.jqplot.PieRenderer, 
+     			     	        rendererOptions: {
+     			     	          // Put data labels on the pie slices.
+     			     	          // By default, labels show the percentage of the slice.
+     			     	          showDataLabels: true
+     			     	        }
+     			     	      }, 
+     			     	      legend: { show:true, location: 'e' }
+     			     	    }
+     			     	  );
+     		
+     			
+        	  }
+         }
+	     ,
+         error: function (XMLHttpRequest, textStatus, errorThrown) {
+         	$("#message_div").html("<span style=\"font-size:16;color:red\">ajax error</span>");
+             console.log(textStatus, errorThrown);
+         }
+ 	});
+}
+
+function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, station)
+{	
+	$.ajax({
+		type: 'GET',
+		url: endpoint,
+		data: {
+            method: "getFiredAlerts",
+            begin: beginstring,
+            end: endstring,
+            station: station,
+            self_posted_only: false,
+            get_social_objects: true,
+            twitter_handle: twitter_handle,
+            twitter_access_token: twitter_access_token
+		},
+        dataType: 'json',
+        async: true,
+        success: function (data, status) {
+        	if (data.response_status == "error")
+        	{
+        		$("#message_div").html("<span style=\"font-size:16;color:red\">gS Error: " + data.message + "</span>");
+        	}
+        	else // getMostRecentAlerts was successful, meaning twitter_handle and twitter_access_token were OK
+        	{
+        		var alerts_ja = data.fired_alerts_ja;
+        		
         		var mds = "";
         		mds = mds + "<table style=\"margin-left:auto;margin-right:auto;border-spacing:10px\">";
-        		for(var x = 0; x < alerts_ja.length; x++)
+        		for(var x = 0; x < alerts_ja.length &&  x < 20; x++) // no more than 20
         		{	
         			if(x%2 == 0)
         				mds = mds + "	<tr>";
