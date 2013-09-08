@@ -331,7 +331,7 @@ public class Alert implements java.lang.Comparable<Alert> {
 			con = datasource.getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("SELECT * FROM redirects_" + station_object.getCallLetters() + " WHERE alert_id=" + id + 
-						" AND `user_agent` NOT LIKE '%bot%' AND `user_agent` NOT LIKE '%UnwindFetchor%' AND `user_agent` NOT LIKE '%JS-Kit%'" +
+						" AND `user_agent` NOT LIKE '%bot%' AND `user_agent` NOT LIKE '%UnwindFetchor%' AND `user_agent` NOT LIKE '%JS-Kit%' AND `user_agent` NOT LIKE '%MetaURI%'" +
 						" AND `user_agent` NOT LIKE '%NING%' AND `user_agent` NOT LIKE '%facebookexternalhit%' AND `user_agent` NOT LIKE '%RockmeltEmbedder%' " +
 						"AND `user_agent`!='' AND `user_agent` NOT LIKE '%LongURL API%' AND `user_agent` NOT LIKE '%PycURL%' AND `user_agent` NOT LIKE '%Java/%' " +
 						"AND `user_agent` NOT LIKE '%spider%'  AND `user_agent` NOT LIKE '%Spider%' AND `user_agent` NOT LIKE '%Butterfly%' " + 
