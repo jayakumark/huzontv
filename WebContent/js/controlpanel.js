@@ -665,10 +665,10 @@ function getActiveReporterDesignations(twitter_handle, twitter_access_token, sta
 				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
 				reporters_string = reporters_string + "			30d";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
 				reporters_string = reporters_string + "			clx 30d";
 				reporters_string = reporters_string + "		</td>";
-				reporters_string = reporters_string + "		<td style=\"background-color:#CCFFFF;font-weight:bold\">";
+				reporters_string = reporters_string + "		<td style=\"background-color:#A9CAEB;font-weight:bold\">";
 				reporters_string = reporters_string + "			clx/alrt";
 				reporters_string = reporters_string + "		</td>";
 				reporters_string = reporters_string + "	</tr>";
