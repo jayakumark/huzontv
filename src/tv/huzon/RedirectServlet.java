@@ -180,9 +180,12 @@ public class RedirectServlet extends HttpServlet {
 								out.println("		<td><a href=\"" + station_object.getLiveStreamURLAlias() + "?id=" + id + "&redirect=android_app&redirect_id=" + redirect_id + "\">Android app</a></td>");
 								out.println("	</tr>");
 							}
-							out.println("	<tr>");
-							out.println("		<td><a href=\"" + station_object.getLiveStreamURLAlias() + "?id=" + id + "&redirect=livestream_eventual&redirect_id=" + redirect_id + "\">Take me to the live stream anyway</a></td>");
-							out.println("	</tr>");
+							if(!station_object.getCallLetters().equals("wkyc"))
+							{
+								out.println("	<tr>");
+								out.println("		<td><a href=\"" + station_object.getLiveStreamURLAlias() + "?id=" + id + "&redirect=livestream_eventual&redirect_id=" + redirect_id + "\">Take me to the live stream anyway</a></td>");
+								out.println("	</tr>");
+							}
 							out.println("</table>");
 						}
 						else // link is not old, do immediate redirect
