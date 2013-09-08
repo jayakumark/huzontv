@@ -880,7 +880,7 @@ function showPieChartOfUltimateDestinations(beginstring, endstring, twitter_hand
             begin: beginstring,
             end: endstring,
             station: station,
-            self_posted_only: false,
+            self_posted_only: true,
             get_social_objects: false,
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
@@ -974,7 +974,7 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
             begin: beginstring,
             end: endstring,
             station: station,
-            self_posted_only: false,
+            self_posted_only: true,
             get_social_objects: true,
             twitter_handle: twitter_handle,
             twitter_access_token: twitter_access_token
@@ -1045,7 +1045,8 @@ function getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_t
 	        		mds = mds + "			<br><b>social type:</b> " + alerts_ja[x].social_type;
 	        		mds = mds + "			<br><b>posted acct:</b> " + alerts_ja[x].created_by;
 	        		mds = mds + "			<br><b>human clicks:</b> " + alerts_ja[x].sansbot_redirect_count;
-	        		mds = mds + "			<br><b>all clicks (+bots):</b> " +  alerts_ja[x].unabridged_redirect_count;
+	        		mds = mds + "			<br><b>bot clicks:</b> " + (alerts_ja[x].unabridged_redirect_count - alerts_ja[x].sansbot_redirect_count);
+	        		mds = mds + "			<br><b>total clicks:</b> " +  alerts_ja[x].unabridged_redirect_count;
 	        		mds = mds + "			<br><a href=\"#\" id=\"delete_link_" + x + "\">DELETE</a>";
 	        		mds = mds + "		</td>";
 	        		if(x%2 == 1)

@@ -1262,12 +1262,12 @@ public class User implements java.lang.Comparable<User> {
 	
 	public TreeSet<Alert> getFiredAlerts(int hours, String social_type)
 	{
-		/*Calendar cal = Calendar.getInstance();
+		Calendar cal = Calendar.getInstance();
 		long end_in_ms = cal.getTimeInMillis();
 		cal.setTimeZone(TimeZone.getTimeZone("America/Louisville"));
 		cal.add(Calendar.HOUR, -1 * hours);
-		long begin_in_ms = cal.getTimeInMillis();*/
-		
+		long begin_in_ms = cal.getTimeInMillis();
+				
 		TreeSet<Alert> alerts = new TreeSet<Alert>();
 		ResultSet rs = null;
 		Connection con = null;
@@ -1276,10 +1276,14 @@ public class User implements java.lang.Comparable<User> {
 		{
 			con = datasource.getConnection();
 			stmt = con.createStatement();
-			System.out.println("User.getFiredAlerts(): SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
+		/*	System.out.println("User.getFiredAlerts(): SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
 					" creation_timestamp <= CURRENT_DATE AND creation_timestamp >= (CURRENT_DATE - interval '" + hours + "' hour)");
 			rs = stmt.executeQuery("SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
-					" creation_timestamp <= CURRENT_DATE AND creation_timestamp >= (CURRENT_DATE - interval '" + hours + "' hour)");
+					" creation_timestamp <= CURRENT_DATE AND creation_timestamp >= (CURRENT_DATE - interval '" + hours + "' hour)");*/
+			System.out.println("User.getFiredAlerts(): SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
+					" timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms);
+			rs = stmt.executeQuery("SELECT * FROM `alerts` WHERE `social_type`='" + social_type + "' AND `designation`='" + getDesignation() + "' AND `created_by`='" + getDesignation() + "' AND " +
+					" timestamp_in_ms <= " + end_in_ms + " AND timestamp_in_ms >= " + begin_in_ms);
 			Alert currentalert = null;
 			while(rs.next())
 			{
