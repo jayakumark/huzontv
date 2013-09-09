@@ -1376,12 +1376,14 @@ public class User implements java.lang.Comparable<User> {
 		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected begin time is " + expected_begin + " sunday=" + sunday_expected_begin_string);
 		cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(expected_begin.substring(0,2)));
 		cal.set(Calendar.MINUTE, Integer.parseInt(expected_begin.substring(2,4)));
+		cal.set(Calendar.SECOND, 0);
 		long beginlong = cal.getTimeInMillis();
 		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected begin time is " + sdf.format(cal.getTime()) + " millis=" + beginlong);
 		
 		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected end time is " + expected_end + " sunday=" + sunday_expected_end_string);
 		cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(expected_end.substring(0,2)));
 		cal.set(Calendar.MINUTE, Integer.parseInt(expected_end.substring(2,4)));
+		cal.set(Calendar.SECOND, 0);
 		long endlong = cal.getTimeInMillis();
 		System.out.println("User.isWithinExpectedTimeBoundaries(): The expected end time is " + sdf.format(cal.getTime()) + " millis=" + endlong);
 		if(beginlong < timestamp_in_ms && timestamp_in_ms < endlong)

@@ -547,7 +547,7 @@ function graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token
     			
     			var chartinfo_str = "<div style=\"font-weight:bold;font-size:12px\">STATISTICS</div>";
      			chartinfo_str = chartinfo_str + "<b>Total alerts:</b> " + total_fired_alerts;
-     			chartinfo_str = chartinfo_str + "<br><b>Total sansbot redirects:</b> " + total_sansbot_redirects;
+     			chartinfo_str = chartinfo_str + "<br><b>Total human redirects:</b> " + total_sansbot_redirects;
      			chartinfo_str = chartinfo_str + "<br><b>Redirects per alert: </b> " + (Math.floor((total_sansbot_redirects/total_fired_alerts)*10)/10);
      			chartinfo_str = chartinfo_str + "<br><b># days to show:</b> ";
      			chartinfo_str = chartinfo_str + "<select id=\"days_select\">";
@@ -934,7 +934,7 @@ function showPieChartOfUltimateDestinations(beginstring, endstring, twitter_hand
         		
         		var data = [
         		            ['livestream immediate', livestream_immediate_count],['livestream eventual', livestream_eventual_count], ['recent newscasts', recent_newscasts_count],
-     			     	    ['homepage', homepage_count],['android app', android_app_count], ['iphone app', iphone_app_count], ['blank', blank_count]
+     			     	    ['homepage', homepage_count],['android app', android_app_count], ['iphone app', iphone_app_count], ['blank (exited)', blank_count]
      			     	    
      			     	  ];
      			     	  var plot2 = jQuery.jqplot ('piechart', [data], 
