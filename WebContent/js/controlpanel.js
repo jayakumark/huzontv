@@ -221,7 +221,7 @@ $(window).load(function () {
 		        			$("#reporter_info_link").click(
 		        					function() { getActiveReporterDesignations(twitter_handle, twitter_access_token, administering_station); }
 		        				);
-	    	        		
+		        			
 		        			
 	    	        		var d = new Date();
 		        			var end = d.getTime();
