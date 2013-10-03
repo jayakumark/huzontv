@@ -199,17 +199,29 @@ $(window).load(function () {
 		        				station = data.user_jo.stations_as_admin_ja[0];*/
 		        			
 		        			
-		        			getStationInformation(twitter_handle, twitter_access_token, administering_station);
-	    	        		
+		        			$("#general_div").html("<a href=\"#\" id=\"gen_info_link\">Load general station information</a>");
+		        			
+		        			$("#gen_info_link").click(
+		        					function() { getStationInformation(twitter_handle, twitter_access_token, administering_station); }
+		        				);
+		        			
+		        			
 		        			var numdays = docCookies.getItem("num_days_for_statistics");
 		        			if(numdays == null)
 		        				numdays = 14;
 		        			else
 		        				numdays = numdays * 1;
 		        			
-		        			graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, administering_station);
+		        			$("#chartinfo_div").html("<a href=\"#\" id=\"fired_alert_stats_link\">Load and graph fired alert statistics</a>");
+		        			$("#fired_alert_stats_link").click(
+		        					function() { graphFiredAlertStatistics(numdays, twitter_handle, twitter_access_token, administering_station); }
+		        				);
 		        			
-	    	        		getActiveReporterDesignations(twitter_handle, twitter_access_token, administering_station);
+		        			$("#reporters_div").html("<a href=\"#\" id=\"reporter_info_link\">Load individual reporter information</a>");
+		        			$("#reporter_info_link").click(
+		        					function() { getActiveReporterDesignations(twitter_handle, twitter_access_token, administering_station); }
+		        				);
+	    	        		
 		        			
 	    	        		var d = new Date();
 		        			var end = d.getTime();
@@ -217,10 +229,18 @@ $(window).load(function () {
 		        			var begin = end - (86400000*numdays);
 		        			var beginstring = begin + "";
 		        			showPieChartOfUltimateDestinations(beginstring, endstring, twitter_handle, twitter_access_token, administering_station);
+		        			/*$("#piechart").html("<a href=\"#\" id=\"pie_chart_link\">Load ultimate destination pie chart</a>");
+		        			$("#pie_chart_link").click(
+		        					function() { showPieChartOfUltimateDestinations(beginstring, endstring, twitter_handle, twitter_access_token, administering_station); }
+		        				);*/
 		        			
 		        			begin =  end - (86400000*2); // 2 days only for retrieving social objects and images
 		        			var beginstring = begin + "";
-	    	        		getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, administering_station);
+		        			$("#alerts_div").html("<a href=\"#\" id=\"show_fired_alerts_link\">Load fired alerts</a>");
+		        			$("#show_fired_alerts_link").click(
+		        					function() { getFiredAlerts(beginstring, endstring, twitter_handle, twitter_access_token, administering_station); }
+		        				);
+	    	        		
 		        		}
 		        	}
 		        },
@@ -871,7 +891,7 @@ function getUser(designation)
 
 function showPieChartOfUltimateDestinations(beginstring, endstring, twitter_handle, twitter_access_token, station)
 {
-	$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
+	//$("#alerts_div").html("Loading recent alerts... <img src=\"images/progress_16x16.gif\" style=\"width:16px;height:16px\">");
 	$.ajax({
 		type: 'GET',
 		url: endpoint,
