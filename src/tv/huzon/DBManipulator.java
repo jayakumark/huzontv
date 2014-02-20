@@ -40,7 +40,6 @@ public class DBManipulator {
 				Timestamp currenttimestamp = null;
 				long timestamp_in_ms = 0L;
 				Calendar cal = Calendar.getInstance();
-				int x = 0;
 				while(rs.next())
 				{
 					currenttimestamp = rs.getTimestamp("creation_timestamp");
@@ -68,7 +67,6 @@ public class DBManipulator {
 					rs.updateString("timestamp_hr", timestamp_hr);
 					rs.updateLong("timestamp_in_ms", timestamp_in_ms);
 					rs.updateRow();
-					x++;
 				} 
 				rs.close();
 				stmt.close();

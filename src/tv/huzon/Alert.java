@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -31,10 +30,6 @@ import org.apache.http.util.EntityUtils;
 
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
-
-import facebook4j.Facebook;
-import facebook4j.FacebookFactory;
-import facebook4j.auth.AccessToken;
 
 public class Alert implements java.lang.Comparable<Alert> {
 

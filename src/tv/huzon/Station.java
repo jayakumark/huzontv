@@ -1,17 +1,15 @@
 package tv.huzon;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
+//import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -511,7 +509,7 @@ public class Station implements java.lang.Comparable<Station> {
 		if(month.length() == 1) { month = "0" + month; }
 		String day = new Integer(cal.get(Calendar.DAY_OF_MONTH)).toString();
 		if(day.length() == 1) { day = "0" + day;} 
-		String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
+		//String hour24 = new Integer(cal.get(Calendar.HOUR_OF_DAY)).toString();
 		/*if(hour24.length() == 1) { hour24 = "0" + hour24;} 
 		String minute = new Integer(cal.get(Calendar.MINUTE)).toString();
 		if(minute.length() == 1) { minute = "0" + minute;} 
@@ -527,8 +525,8 @@ public class Station implements java.lang.Comparable<Station> {
 	
 	
 	public static void main(String[] args) {
-		Station s = new Station("wkyt");
-		JSONObject fired_alert_count_jo = null;
+		//Station s = new Station("wkyt");
+		//JSONObject fired_alert_count_jo = null;
 		//fired_alert_count_jo = s.getFiredAlertCount(1374454057000L, 1374768476258L, false, false);
 		//s.unlock("testval3", "twitter");
 		//s.getAlertFrames(long begin_long, long end_long, int maw_int, double ma_modifier_double, double single_modifier_double, int awp_int, int nrpst)
@@ -621,7 +619,7 @@ public class Station implements java.lang.Comparable<Station> {
 		else
 			cal.set(Calendar.MILLISECOND, 0);
 		
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z");
+		//SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z");
 		//System.out.println(dateFormat.format(cal.getTime()));
 		
 		return cal.getTimeInMillis();
@@ -1309,7 +1307,7 @@ public class Station implements java.lang.Comparable<Station> {
 			double reporter_ma3s[] = null;*/
 			rs.beforeFirst();
 			//System.out.println("Station.getFramesFromResultSet(): Starting loop through resultset of frames...");
-			int rowcount = 0;
+			//int rowcount = 0;
 			while(rs.next())
 			{
 				reporter_designations = new String[reportercount];
@@ -1411,7 +1409,7 @@ public class Station implements java.lang.Comparable<Station> {
 						rs.getString("url"), rs.getInt("frame_rate"), station, reporter_designations, 
 						reporter_scores, reporter_score_arrays, reporter_ma5s, reporter_ma6s));
 				//System.out.println("... frame added");
-				rowcount++;
+				//rowcount++;
 			}
 			System.out.println();
 			//System.out.println("Station.getFramesFromResultSet(): after loop where rowcount=" + rowcount);

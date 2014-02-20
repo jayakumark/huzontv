@@ -179,8 +179,8 @@ public class Frame implements Comparable<Frame> {
 				//reporter_nums = new int[reportercount];
 				boolean db_has_ma6_data = true; // assume true until proven false
 				boolean db_has_ma5_data = true;
-				boolean db_has_ma4_data = true;
-				boolean db_has_ma3_data = true;
+				//boolean db_has_ma4_data = true;
+				//boolean db_has_ma3_data = true;
 				while(x <= columncount)
 				{
 					if(rsmd.getColumnName(x).endsWith("_score"))

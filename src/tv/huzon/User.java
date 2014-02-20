@@ -74,7 +74,6 @@ public class User implements java.lang.Comparable<User> {
 	private String friday_expected_end_string;
 	private String saturday_expected_begin_string;
 	private String saturday_expected_end_string;
-	private String alias_of;
 	private boolean anchor;
 	private boolean weather;
 	private boolean sports;
@@ -157,7 +156,6 @@ public class User implements java.lang.Comparable<User> {
 				global_admin = rs.getBoolean("global_admin");
 				valid = true;
 				
-				alias_of = rs.getString("alias_of");
 			}
 			else
 			{

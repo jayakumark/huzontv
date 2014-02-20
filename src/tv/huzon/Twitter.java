@@ -10,9 +10,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.crypto.Mac;
@@ -20,7 +18,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
-import javax.swing.text.TabSet;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpException;
@@ -53,35 +50,9 @@ import org.apache.http.util.EntityUtils;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-
-/***
- *    ______ _____  ___ ______   _____ _   _ _____ _____ 
- *    | ___ \  ___|/ _ \|  _  \ |_   _| | | |_   _/  ___|
- *    | |_/ / |__ / /_\ \ | | |   | | | |_| | | | \ `--. 
- *    |    /|  __||  _  | | | |   | | |  _  | | |  `--. \
- *    | |\ \| |___| | | | |/ /    | | | | | |_| |_/\__/ /
- *    \_| \_\____/\_| |_/___/     \_/ \_| |_/\___/\____/ 
- *----------------------------------------------------------------------                                                       
- *   While you're struggling to get this working, I highly recommend three things:
- *   
- *   1. First, use HTTP, not HTTPS so you can see what you're doing, then switch back to HTTPS once it's working
- *   2. Use Fiddler or Wireshark to see your actual requests and the Twitter responses
- *   3. Use the example data from the following address. Get that working first as a baseline, then use your own credentials: 
- *   		https://dev.twitter.com/docs/auth/implementing-sign-twitter
- *
- *
-// REQUIRED LIBRARIES
-// Apache commons codec
-// Apache HTTP Core
-// JSON
- *
- */
-
-
-
 public class Twitter {
 	
-	
+	// todo: put these credentials in a separate file. Duh
 	private String twitter_consumer_key = "vaM6XV9tzrDWgwnMlcPb1Q";
 	private String twitter_consumer_secret = "iZMijHv3dE2PJWrd1Le6Dn56qAhlTUJtkwos1Uahm4";	
 	
@@ -130,6 +101,7 @@ public class Twitter {
 	// INPUT: nothing
 	// OUTPUT: if successful, twitter API will return oauth_token, oauth_token_secret and oauth_token_confirmed
 	
+	@SuppressWarnings("deprecation")
 	public JSONObject startTwitterAuthentication()
 	{
 		JSONObject jsonresponse = new JSONObject();
@@ -336,6 +308,7 @@ public class Twitter {
 	// INPUT: pin, generic request token
 	// OUTPUT: if successful, twitter API will return access_token, access_token_secret, screen_name and user_id
 	
+	@SuppressWarnings("deprecation")
 	public JSONObject getTwitterAccessTokenFromAuthorizationCode(String verifier_or_pin, String oauth_token)
 	{
 		JSONObject jsonresponse = new JSONObject();
@@ -665,6 +638,7 @@ public class Twitter {
 	// INPUT:the user's access_token and the user's access_token_secret and the text of the status update
 	// OUTPUT: if successful, the tweet gets posted.
 		
+	@SuppressWarnings("deprecation")
 	public JSONObject updateStatus(String access_token, String access_token_secret, String text)
 	{
 		JSONObject jsonresponse = new JSONObject();

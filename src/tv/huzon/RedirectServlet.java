@@ -2,7 +2,6 @@ package tv.huzon;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.UUID;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

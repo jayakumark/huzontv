@@ -500,7 +500,7 @@ public class Platform {
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		Platform p = new Platform();
+		//Platform p = new Platform();
 	}
 
 }
